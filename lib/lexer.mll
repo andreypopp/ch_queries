@@ -70,7 +70,12 @@ rule token = parse
   | whitespace+         { token lexbuf }
   | newline             { Lexing.new_line lexbuf; token lexbuf }
   | number as s         { NUMBER (int_of_string s) }
-  | '\''                { STRING (string_literal (Buffer.create 16) lexbuf) }
+  | '\''                { 
+    (* remember start position to restore later, needed because string token is matched through multiple patterns *)
+    let lex_start_p = Lexing.lexeme_start_p lexbuf in
+    let s = string_literal (Buffer.create 16) lexbuf in
+    lexbuf.Lexing.lex_start_p <- lex_start_p;
+    STRING s }
   | id as s             { get_keyword_or_id s }
   | '('                 { LPAREN }
   | ')'                 { RPAREN }
@@ -106,8 +111,8 @@ and string_literal buf = parse
     let lexbuf = Lexing.from_string q in
     try
       let rec loop () =
-        let start_pos = Lexing.lexeme_start_p lexbuf in
         let token = token lexbuf in
+        let start_pos = Lexing.lexeme_start_p lexbuf in
         let end_pos = Lexing.lexeme_end_p lexbuf in
         print_endline (Printf.sprintf "%s %s" (string_of_token token) (string_of_pos start_pos end_pos));
         match token with Parser.EOF -> () | _ -> loop ()
