@@ -28,6 +28,34 @@
   let get_keyword_or_id s =
     try Hashtbl.find keyword_table (String.uppercase_ascii s)
     with Not_found -> ID s
+
+  let string_of_token : Parser.token -> string = function
+    | Parser.ID s -> Printf.sprintf "ID(%s)" s
+    | Parser.STRING s -> Printf.sprintf "STRING(%s)" s
+    | Parser.NUMBER n -> Printf.sprintf "NUMBER(%d)" n
+    | Parser.TRUE -> "TRUE"
+    | Parser.FALSE -> "FALSE"
+    | Parser.SELECT -> "SELECT"
+    | Parser.FROM -> "FROM"
+    | Parser.WHERE -> "WHERE"
+    | Parser.AS -> "AS"
+    | Parser.DOT -> "DOT"
+    | Parser.LPAREN -> "LPAREN"
+    | Parser.RPAREN -> "RPAREN"
+    | Parser.COMMA -> "COMMA"
+    | Parser.PLUS -> "PLUS"
+    | Parser.MINUS -> "MINUS"
+    | Parser.STAR -> "STAR"
+    | Parser.SLASH -> "SLASH"
+    | Parser.EQUALS -> "EQUALS"
+    | Parser.AND -> "AND"
+    | Parser.OR -> "OR"
+    | Parser.INNER -> "INNER"
+    | Parser.JOIN -> "JOIN"
+    | Parser.LEFT -> "LEFT"
+    | Parser.ON -> "ON"
+    | Parser.EOF -> "EOF"
+
 }
 
 let whitespace = [' ' '\t']
@@ -67,3 +95,23 @@ and string_literal buf = parse
   | newline             { Lexing.new_line lexbuf; Buffer.add_char buf '\n'; string_literal buf lexbuf }
   | _ as c              { Buffer.add_char buf c; string_literal buf lexbuf }
   | eof                 { raise (Lexical_error "Unterminated string literal") }
+
+{
+  let tokenize_debug q =
+    let string_of_pos start_pos end_pos =
+      Printf.sprintf "line %d, col %d-%d" start_pos.Lexing.pos_lnum
+        (start_pos.Lexing.pos_cnum - start_pos.Lexing.pos_bol + 1)
+        (end_pos.Lexing.pos_cnum - end_pos.Lexing.pos_bol + 1)
+    in
+    let lexbuf = Lexing.from_string q in
+    try
+      let rec loop () =
+        let start_pos = Lexing.lexeme_start_p lexbuf in
+        let token = token lexbuf in
+        let end_pos = Lexing.lexeme_end_p lexbuf in
+        print_endline (Printf.sprintf "%s %s" (string_of_token token) (string_of_pos start_pos end_pos));
+        match token with Parser.EOF -> () | _ -> loop ()
+      in
+      loop ()
+    with Lexical_error msg -> failwith ("Lexical error: " ^ msg)
+}

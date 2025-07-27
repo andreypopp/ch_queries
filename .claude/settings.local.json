@@ -7,13 +7,8 @@
       "WebFetch(domain:dune.readthedocs.io)",
       "Bash(opam install:*)",
       "Bash(ocamlfind:*)",
-      "Bash(DUNE_CONFIG__GLOBAL_LOCK=disabled dune exec queries --no-build -- parse 'SELECT x.name FROM x WHERE true')",
-      "Bash(DUNE_CONFIG__GLOBAL_LOCK=disabled dune exec queries --no-build -- parse 'SELECT x.name FROM x WHERE @where')",
-      "Bash(DUNE_CONFIG__GLOBAL_LOCK=disabled dune exec queries --no-build -- parse 'SELECT @var FROM x')",
-      "Bash(DUNE_CONFIG__GLOBAL_LOCK=disabled dune exec queries --no-build -- parse 'SELECT x.name FROM x WHERE x.active AND @where')",
-      "Bash(DUNE_CONFIG__GLOBAL_LOCK=disabled dune exec queries --no-build -- parse 'SELECT @where FROM x')",
-      "Bash(DUNE_CONFIG__GLOBAL_LOCK=disabled dune exec queries --no-build -- parse 'SELECT x.name FROM x WHERE @condition')",
-      "Bash(dune build:*)"
+      "Bash(dune build:*)",
+      "Bash(DUNE_CONFIG__GLOBAL_LOCK=disabled dune exec queries --no-build -- *)"
     ],
     "deny": []
   }

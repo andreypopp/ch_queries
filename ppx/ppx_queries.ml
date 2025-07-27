@@ -1,12 +1,16 @@
 open Ppxlib
 open Ast_builder.Default
 
-let parse_query_string ~loc query_str =
-  let lexbuf = Lexing.from_string query_str in
+let parse_query_string ~loc s =
+  let lexbuf = Lexing.from_string s in
   Lexing.set_position lexbuf
     {
       loc.Location.loc_start with
-      pos_cnum = loc.Location.loc_start.pos_cnum + 1;
+      pos_cnum =
+        loc.Location.loc_start.pos_cnum
+        +
+        (* for openning quote, but breaks in case of "{|", this is a TODO *)
+        1;
     };
   try Queries.Parser.a_query Queries.Lexer.token lexbuf
   with exn ->
@@ -15,8 +19,8 @@ let parse_query_string ~loc query_str =
     in
     Location.Error.raise (Location.Error.make ~loc:Location.none ~sub:[] msg)
 
-let parse_expr_string expr_str =
-  let lexbuf = Lexing.from_string expr_str in
+let parse_expr_string s =
+  let lexbuf = Lexing.from_string s in
   try Queries.Parser.a_expr Queries.Lexer.token lexbuf
   with exn ->
     let msg =

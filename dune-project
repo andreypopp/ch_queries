@@ -21,7 +21,7 @@
  (name queries)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml menhir pprint ppxlib)
+ (depends ocaml menhir pprint ppxlib cmdliner containers)
  (tags
   ("add topics" "to describe" your project)))
 

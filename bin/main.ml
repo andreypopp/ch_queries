@@ -27,9 +27,23 @@ let parse_cmd =
   in
   Cmd.v (Cmd.info "parse" ~doc) Term.(const parse_query $ query)
 
+let tokenize_cmd =
+  let doc = "Tokenize a query and print tokens with locations" in
+  let query =
+    let doc = "SQL query to tokenize" in
+    Arg.(required & pos 0 (some string) None & info [] ~docv:"QUERY" ~doc)
+  in
+  let debug_query q =
+    try Queries.Lexer.tokenize_debug q
+    with Failure msg ->
+      Printf.eprintf "%s\n" msg;
+      exit 1
+  in
+  Cmd.v (Cmd.info "tokenize" ~doc) Term.(const debug_query $ query)
+
 let main_cmd =
   let doc = "A SQL query parser" in
   let info = Cmd.info "queries" ~doc in
-  Cmd.group info [ version_cmd; parse_cmd ]
+  Cmd.group info [ version_cmd; parse_cmd; tokenize_cmd ]
 
 let () = exit (Cmd.eval main_cmd)
