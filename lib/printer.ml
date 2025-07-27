@@ -88,12 +88,11 @@ and pp_query { Loc.node = { Syntax.fields; from; where }; _ } =
   in
   group (separate (break 1) [ select_clause; from_clause; where_clause_doc ])
 
-let print_expr expr =
+let print' pp v =
   let buffer = Buffer.create 256 in
-  ToBuffer.pretty 1.0 80 buffer (pp_expr expr);
+  ToBuffer.pretty 1.0 80 buffer (pp v);
   Buffer.contents buffer
 
-let print_query query =
-  let buffer = Buffer.create 256 in
-  ToBuffer.pretty 1.0 80 buffer (pp_query query);
-  Buffer.contents buffer
+let print_expr = print' pp_expr
+let print_query = print' pp_query
+let print_from_one = print' pp_from_one

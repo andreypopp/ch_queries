@@ -30,6 +30,12 @@ module Expr : sig
   val ( && ) : ([< null ], bool) t -> ([< null ], bool) t -> ([> null ], bool) t
   val ( || ) : ('n, bool) t -> ('n, bool) t -> ('n, bool) t
   val not_ : ('n, bool) t -> ('n, bool) t
+
+  val to_syntax : _ t -> Syntax.expr
+  (** Convert the expression to an untyped syntax representation. *)
+
+  val to_sql : _ t -> string
+  (** Convert the expression to a SQL string. *)
 end = struct
   type null = [ `null | `not_null ]
   type non_null = [ `not_null ]
@@ -68,6 +74,30 @@ end = struct
   let ( && ) x y = E_app ("and", [ x; y ])
   let ( || ) x y = E_app ("or", [ x; y ])
   let not_ x = E_app ("not", [ x ])
+
+  let rec to_syntax : type n typ. (n, typ) t -> Syntax.expr = function
+    | E_id name -> Loc.with_dummy_loc (Syntax.E_value (Loc.with_dummy_loc name))
+    | E_lit lit ->
+        let syntax_lit =
+          match lit with
+          | L_int x -> Syntax.L_int x
+          | L_bool x -> Syntax.L_bool x
+          | L_string x -> Syntax.L_string x
+          | L_float _ -> failwith "float literals not supported in syntax"
+          | L_null -> failwith "null literals not supported in syntax"
+        in
+        Loc.with_dummy_loc (Syntax.E_lit syntax_lit)
+    | E_app (name, args) ->
+        let rec convert_args : args -> Syntax.expr list = function
+          | [] -> []
+          | expr :: rest -> to_syntax expr :: convert_args rest
+        in
+        let args = convert_args args in
+        Loc.with_dummy_loc (Syntax.E_call (Loc.with_dummy_loc name, args))
+
+  let to_sql e =
+    let syn = to_syntax e in
+    Printer.print_expr syn
 end
 
 module Query : sig
@@ -91,8 +121,7 @@ module Query : sig
     ?where:('a -> ('n, bool) Expr.t) ->
     select:('a -> 'b) ->
     unit ->
-    alias:string ->
-    'b scope from_one
+    'b scope select
 
   val from_select : alias:string -> 'a scope select -> 'a scope from_one
 
@@ -116,6 +145,9 @@ module Query : sig
     'b scope from_one ->
     on:('a * 'b scope -> ('c, bool) Expr.t) ->
     ('a * 'b nullable_scope) from
+
+  val to_syntax : _ select -> Syntax.query
+  val to_sql : _ select -> string
 end = struct
   type 'a scope = < query : 'n 'e. ('a -> ('n, 'e) Expr.t) -> ('n, 'e) Expr.t >
 
@@ -191,7 +223,7 @@ end = struct
       end
     in
     let where = Option.map (fun where -> A_expr (where inner_scope)) where in
-    from_select (Select { from = A_from from; scope; where; fields = [] })
+    Select { from = A_from from; scope; where; fields = [] }
 
   let scope_from_one = function
     | From_table { scope; _ } -> scope
@@ -245,6 +277,71 @@ end = struct
       }
 
   let union x y scope = Union { x; y; scope }
+
+  let to_syntax q =
+    let rec select_to_syntax : type a. a select -> Syntax.querysyn = function
+      | Select { from = A_from from; where; fields; scope = _ } ->
+          let syntax_fields =
+            List.map
+              ~f:(fun (A_field (expr, alias)) ->
+                {
+                  Syntax.expr = Expr.to_syntax expr;
+                  alias = Some (Loc.with_dummy_loc alias);
+                })
+              fields
+          in
+          let syntax_where =
+            Option.map (fun (A_expr expr) -> Expr.to_syntax expr) where
+          in
+          let syntax_from = from_to_syntax from in
+          {
+            Syntax.fields = syntax_fields;
+            from = syntax_from;
+            where = syntax_where;
+          }
+      | Union { x = _; y = _; _ } ->
+          failwith "TODO: union queries not yet supported"
+    and from_one_to_syntax : type a. a from_one -> Syntax.from_one = function
+      | From_table { db; table; alias; _ } ->
+          Loc.with_dummy_loc
+            (Syntax.F_table
+               {
+                 db = Loc.with_dummy_loc db;
+                 table = Loc.with_dummy_loc table;
+                 alias = Loc.with_dummy_loc alias;
+               })
+      | From_select { select; alias } ->
+          Loc.with_dummy_loc
+            (Syntax.F_select
+               {
+                 select = Loc.with_dummy_loc (select_to_syntax select);
+                 alias = Loc.with_dummy_loc alias;
+               })
+    and from_to_syntax : type a. a from -> Syntax.from = function
+      | From { from = A_from_one from; _ } ->
+          Loc.with_dummy_loc (Syntax.F (from_one_to_syntax from))
+      | From_join
+          {
+            kind;
+            from = A_from from;
+            join = A_from_one join;
+            on = A_expr on;
+            _;
+          } ->
+          Loc.with_dummy_loc
+            (Syntax.F_join
+               {
+                 kind;
+                 from = from_to_syntax from;
+                 join = from_one_to_syntax join;
+                 on = Expr.to_syntax on;
+               })
+    in
+    Loc.with_dummy_loc (select_to_syntax q)
+
+  let to_sql q =
+    let syn = to_syntax q in
+    Printer.print_query syn
 end
 
 include Query

@@ -16,7 +16,8 @@
 
 basic form:
   $ dotest '
-  > let users = [%query "SELECT users.x AS x FROM public.users WHERE users.is_active"]
+  > let users = [%query "SELECT users.x AS x FROM public.users WHERE users.is_active"];;
+  > let () = print_endline (Queries.Query.to_sql users);;
   > '
   >>> PREPROCESSING
   let users =
@@ -26,7 +27,9 @@ basic form:
                  object method x = users#query (fun users -> users#x) end)
       ~where:(fun (users : _ Queries.scope) ->
                 users#query (fun users -> users#is_active))
+  let () = print_endline (Queries.Query.to_sql users)
   >>> RUNNING
+  SELECT  FROM public.users AS users WHERE users.is_active
 
 select from a subquery:
   $ dotest '
@@ -36,12 +39,13 @@ select from a subquery:
   let users =
     Queries.select ()
       ~from:(Queries.from
-               ((Queries.select ()
-                   ~from:(Queries.from (Database.Public.users ~alias:"users"))
-                   ~select:(fun (users : _ Queries.scope) ->
-                              object
-                                method x = users#query (fun users -> users#x)
-                              end)) ~alias:"q"))
+               (Queries.Query.from_select
+                  (Queries.select ()
+                     ~from:(Queries.from (Database.Public.users ~alias:"users"))
+                     ~select:(fun (users : _ Queries.scope) ->
+                                object
+                                  method x = users#query (fun users -> users#x)
+                                end)) ~alias:"q"))
       ~select:(fun (q : _ Queries.scope) ->
                  object method _1 = q#query (fun q -> q#x) end)
   >>> RUNNING
@@ -98,15 +102,14 @@ select from a JOIN:
                      (Queries.Expr.int 0)) (Queries.Expr.int 1))
   >>> RUNNING
   val q :
-    alias:string ->
     < user_id : (Queries.Expr.non_null, int Queries.Expr.number) Queries.Expr.t;
       user_name : (Queries.Expr.null, string) Queries.Expr.t >
-    Queries.scope Queries.from_one
+    Queries.scope Queries.select
 
 select from an OCaml value:
   $ dotest '
   > let users t = [%query "SELECT q.x FROM t AS q WHERE q.is_active"]
-  > let (_ : alias:string -> _ Queries.from_one) = users Database.Public.users
+  > let (_ : _ Queries.select) = users Database.Public.users
   > '
   >>> PREPROCESSING
   let users t =
@@ -114,7 +117,7 @@ select from an OCaml value:
       ~select:(fun (q : _ Queries.scope) ->
                  object method _1 = q#query (fun q -> q#x) end)
       ~where:(fun (q : _ Queries.scope) -> q#query (fun q -> q#is_active))
-  let (_ : alias:string -> _ Queries.from_one) = users Database.Public.users
+  let (_ : _ Queries.select) = users Database.Public.users
   >>> RUNNING
 
 select from an OCaml value with JOIN:
@@ -157,15 +160,13 @@ select from an OCaml value with JOIN:
                  Queries.Expr.t;
        .. >
      Queries.scope Queries.from_one) ->
-    alias:string ->
     < user_id : (Queries.Expr.non_null, int Queries.Expr.number) Queries.Expr.t;
       user_name : (Queries.Expr.null, 'b) Queries.Expr.t >
-    Queries.scope Queries.from_one
+    Queries.scope Queries.select
   val q :
-    alias:string ->
     < user_id : (Queries.Expr.non_null, int Queries.Expr.number) Queries.Expr.t;
       user_name : (Queries.Expr.null, string) Queries.Expr.t >
-    Queries.scope Queries.from_one
+    Queries.scope Queries.select
 
 splicing ocaml values into WHERE:
   $ dotest '
@@ -186,9 +187,8 @@ splicing ocaml values into WHERE:
                     is_active : (Queries.Expr.non_null, bool) Queries.Expr.t;
                     x : (Queries.Expr.non_null, string) Queries.Expr.t >
                   Queries.scope -> ('a, bool) Queries.Expr.t) ->
-    alias:string ->
     < x : (Queries.Expr.non_null, string) Queries.Expr.t > Queries.scope
-    Queries.from_one
+    Queries.select
 
 splicing ocaml values into SELECT:
   $ dotest '
@@ -208,7 +208,7 @@ splicing ocaml values into SELECT:
             is_active : (Queries.Expr.non_null, bool) Queries.Expr.t;
             x : (Queries.Expr.non_null, string) Queries.Expr.t >
           Queries.scope -> 'a) ->
-    alias:string -> < field : 'a > Queries.scope Queries.from_one
+    < field : 'a > Queries.scope Queries.select
 
 splicing ocaml values into JOIN-ON:
   $ dotest '
@@ -247,6 +247,5 @@ splicing ocaml values into JOIN-ON:
        user_id : (Queries.Expr.non_null, int Queries.Expr.number)
                  Queries.Expr.t >
      Queries.scope -> ('a, bool) Queries.Expr.t) ->
-    alias:string ->
     < one : (Queries.Expr.non_null, int Queries.Expr.number) Queries.Expr.t >
-    Queries.scope Queries.from_one
+    Queries.scope Queries.select

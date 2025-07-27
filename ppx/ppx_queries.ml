@@ -178,7 +178,7 @@ and stage_from_one from_one =
   | F_select { select; alias } ->
       let select_expr = stage_query select in
       let alias_expr = estring ~loc alias.node in
-      [%expr [%e select_expr] ~alias:[%e alias_expr]]
+      [%expr Queries.Query.from_select [%e select_expr] ~alias:[%e alias_expr]]
   | F_value { id; alias } ->
       let loc = loc_to_location id.loc in
       [%expr [%e evar ~loc id.node] ~alias:[%e estring ~loc alias.node]]
