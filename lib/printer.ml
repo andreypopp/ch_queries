@@ -1,0 +1,99 @@
+open PPrint
+open Syntax
+
+let pp_id id = string id.Loc.node
+
+let escape_single_quoted s =
+  let buf = Buffer.create (String.length s) in
+  String.iter s ~f:(function
+    | '\'' -> Buffer.add_string buf "\\'"
+    | '\\' -> Buffer.add_string buf "\\\\"
+    | '\n' -> Buffer.add_string buf "\\n"
+    | '\t' -> Buffer.add_string buf "\\t"
+    | '\r' -> Buffer.add_string buf "\\r"
+    | c -> Buffer.add_char buf c);
+  Buffer.contents buf
+
+let rec pp_expr expr =
+  match expr.Loc.node with
+  | E_col (ns, id) -> string (Printf.sprintf "%s.%s" ns.Loc.node id.Loc.node)
+  | E_lit (L_int n) -> string (string_of_int n)
+  | E_lit (L_bool b) -> string (string_of_bool b)
+  | E_lit (L_string s) ->
+      string (Printf.sprintf "'%s'" (escape_single_quoted s))
+  | E_value v -> string v.node
+  | E_call (name, args) -> (
+      match (name.Loc.node, args) with
+      | "+", [ left; right ] ->
+          group (pp_expr left ^/^ string "+" ^/^ pp_expr right)
+      | "-", [ left; right ] ->
+          group (pp_expr left ^/^ string "-" ^/^ pp_expr right)
+      | "*", [ left; right ] ->
+          group (pp_expr left ^/^ string "*" ^/^ pp_expr right)
+      | "/", [ left; right ] ->
+          group (pp_expr left ^/^ string "/" ^/^ pp_expr right)
+      | "AND", [ left; right ] ->
+          group (pp_expr left ^/^ string "AND" ^/^ pp_expr right)
+      | "OR", [ left; right ] ->
+          group (pp_expr left ^/^ string "OR" ^/^ pp_expr right)
+      | "=", [ left; right ] ->
+          group (pp_expr left ^/^ string "=" ^/^ pp_expr right)
+      | _, _ ->
+          let pp_args =
+            match args with
+            | [] -> empty
+            | _ -> separate (string "," ^^ space) (List.map ~f:pp_expr args)
+          in
+          group (pp_id name ^^ string "(" ^^ pp_args ^^ string ")"))
+
+let pp_field { expr; alias } =
+  match alias with
+  | None -> pp_expr expr
+  | Some alias_name -> group (pp_expr expr ^/^ string "AS" ^/^ pp_id alias_name)
+
+let rec pp_from_one from_one =
+  match from_one.Loc.node with
+  | F_table { db; table; alias } ->
+      group
+        (pp_id db ^^ string "." ^^ pp_id table ^/^ string "AS" ^/^ pp_id alias)
+  | F_select { select; alias } ->
+      group
+        (string "(" ^^ pp_query select ^^ string ")" ^/^ string "AS"
+       ^/^ pp_id alias)
+  | F_value { id; alias } -> group (pp_id id ^/^ string "AS" ^/^ pp_id alias)
+
+and pp_from from =
+  match from.Loc.node with
+  | F from_one -> pp_from_one from_one
+  | F_join { kind; from; join; on; _ } ->
+      let join_kind_str =
+        match kind with
+        | `INNER_JOIN -> "INNER JOIN"
+        | `LEFT_JOIN -> "LEFT JOIN"
+      in
+      group
+        (pp_from from ^/^ string join_kind_str ^/^ pp_from_one join
+       ^/^ string "ON" ^/^ pp_expr on)
+
+and pp_query { Loc.node = { Syntax.fields; from; where }; _ } =
+  let pp_fields =
+    separate (string "," ^^ space) (List.map ~f:pp_field fields)
+  in
+  let select_clause = group (string "SELECT" ^/^ pp_fields) in
+  let from_clause = group (string "FROM" ^/^ pp_from from) in
+  let where_clause_doc =
+    match where with
+    | None -> empty
+    | Some expr -> group (string "WHERE" ^/^ pp_expr expr)
+  in
+  group (separate (break 1) [ select_clause; from_clause; where_clause_doc ])
+
+let print_expr expr =
+  let buffer = Buffer.create 256 in
+  ToBuffer.pretty 1.0 80 buffer (pp_expr expr);
+  Buffer.contents buffer
+
+let print_query query =
+  let buffer = Buffer.create 256 in
+  ToBuffer.pretty 1.0 80 buffer (pp_query query);
+  Buffer.contents buffer

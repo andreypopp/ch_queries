@@ -1,0 +1,35 @@
+open Cmdliner
+
+let version_cmd =
+  let doc = "Show version information" in
+  let version () = print_endline "queries 0.1.0" in
+  Cmd.v (Cmd.info "version" ~doc) Term.(const version $ const ())
+
+let parse_cmd =
+  let doc = "Parse a SQL query" in
+  let query =
+    let doc = "SQL query to parse" in
+    Arg.(required & pos 0 (some string) None & info [] ~docv:"QUERY" ~doc)
+  in
+  let parse_query query_str =
+    try
+      let lexbuf = Lexing.from_string query_str in
+      let query = Queries.Parser.a_query Queries.Lexer.token lexbuf in
+      let pretty_printed = Queries.Printer.print_query query in
+      print_endline pretty_printed
+    with
+    | Queries.Lexer.Lexical_error msg ->
+        Printf.eprintf "Lexical error: %s\n" msg;
+        exit 1
+    | Queries.Parser.Error ->
+        Printf.eprintf "Parse error\n";
+        exit 1
+  in
+  Cmd.v (Cmd.info "parse" ~doc) Term.(const parse_query $ query)
+
+let main_cmd =
+  let doc = "A SQL query parser" in
+  let info = Cmd.info "queries" ~doc in
+  Cmd.group info [ version_cmd; parse_cmd ]
+
+let () = exit (Cmd.eval main_cmd)

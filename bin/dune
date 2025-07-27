@@ -1,0 +1,5 @@
+(executable
+ (public_name queries)
+ (package queries)
+ (name main)
+ (libraries queries cmdliner))

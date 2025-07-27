@@ -1,0 +1,10 @@
+(library
+ (name test_queries)
+ (preprocess
+  (pps queries.ppx))
+ (libraries queries))
+
+(cram
+ (deps
+  ./test_queries.ml
+  (package queries)))

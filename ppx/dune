@@ -1,0 +1,14 @@
+(library
+ (public_name queries.ppx)
+ (name ppx_queries)
+ (libraries ppxlib queries)
+ (kind ppx_rewriter)
+ (modules :standard \ ppx_queries_exe)
+ (preprocess
+  (pps ppxlib.metaquot)))
+
+(executable
+ (name ppx_queries_exe)
+ (public_name ppx_queries)
+ (modules ppx_queries_exe)
+ (libraries ppx_queries ppxlib))

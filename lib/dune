@@ -1,0 +1,11 @@
+(ocamllex lexer)
+
+(menhir
+ (modules parser))
+
+(library
+ (name queries)
+ (public_name queries)
+ (flags
+  (:standard -open ContainersLabels))
+ (libraries containers pprint))
