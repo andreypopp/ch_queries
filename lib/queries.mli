@@ -91,10 +91,7 @@ module Expr : sig
   val sub : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
   val mul : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
   val div : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
-
-  val ( && ) :
-    ([< null ], bool) expr -> ([< null ], bool) expr -> ([> null ], bool) expr
-
+  val ( && ) : ('n, bool) expr -> ('n, bool) expr -> ('n, bool) expr
   val ( || ) : ('n, bool) expr -> ('n, bool) expr -> ('n, bool) expr
   val not_ : ('n, bool) expr -> ('n, bool) expr
 end
