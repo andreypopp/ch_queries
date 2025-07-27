@@ -42,4 +42,4 @@ let x =
       FROM users as u
       LEFT JOIN public.profiles as p
       ON u.id = p.user_id
-      WHERE p.name = toNullable('Alice') AND false|}]
+      WHERE p.name = toNullable('Alice') AND toNullable(false)|}]

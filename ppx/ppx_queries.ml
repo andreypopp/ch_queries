@@ -28,12 +28,13 @@ let parse_expr_string s =
     in
     Location.Error.raise (Location.Error.make ~loc:Location.none ~sub:[] msg)
 
-let loc_to_location ({ start_pos; end_pos } : Queries.Loc.t) : location =
+let to_location ({ loc = { start_pos; end_pos }; _ } : _ Queries.Loc.with_loc) :
+    location =
   { loc_start = start_pos; loc_end = end_pos; loc_ghost = false }
 
 let rec from_scope_expr from =
   let open Queries.Syntax in
-  let loc = loc_to_location from.Queries.Loc.loc in
+  let loc = to_location from in
   match from.Queries.Loc.node with
   | F from_one -> from_one_scope_expr from_one
   | F_join { from; join; _ } ->
@@ -43,13 +44,13 @@ let rec from_scope_expr from =
 
 and from_one_scope_expr from_one =
   let open Queries.Syntax in
-  let loc = loc_to_location from_one.Queries.Loc.loc in
+  let loc = to_location from_one in
   match from_one.Queries.Loc.node with
   | F_table { alias; _ } | F_select { alias; _ } | F_value { alias; _ } ->
       evar ~loc alias.node
 
 let rec stage_expr ~from expr =
-  let loc = loc_to_location expr.Queries.Loc.loc in
+  let loc = to_location expr in
   match expr.Queries.Loc.node with
   | Queries.Syntax.E_col (scope, id) ->
       let e = evar ~loc scope.Queries.Loc.node in
@@ -62,14 +63,15 @@ let rec stage_expr ~from expr =
   | Queries.Syntax.E_lit (L_bool b) -> [%expr Queries.bool [%e ebool ~loc b]]
   | Queries.Syntax.E_lit (L_string s) ->
       [%expr Queries.string [%e estring ~loc s]]
-  | Queries.Syntax.E_call (name, args) -> (
-      let args_expr = List.map (stage_expr ~from) args in
-      match name.Queries.Loc.node with
-      | "OR" -> eapply ~loc [%expr Queries.Expr.( || )] args_expr
-      | "AND" -> eapply ~loc [%expr Queries.Expr.( && )] args_expr
-      | _ ->
-          let f = "Queries.Expr." ^ name.Queries.Loc.node in
-          eapply ~loc (evar ~loc f) args_expr)
+  | Queries.Syntax.E_call (name, args) ->
+      let f =
+        let loc = to_location name in
+        match name.Queries.Loc.node with
+        | "OR" -> [%expr Queries.Expr.( || )]
+        | "AND" -> [%expr Queries.Expr.( && )]
+        | _ -> evar ~loc ("Queries.Expr." ^ name.Queries.Loc.node)
+      in
+      eapply ~loc f (List.map (stage_expr ~from) args)
   | Queries.Syntax.E_value var -> (
       let e = evar ~loc var.Queries.Loc.node in
       match Option.map from_scope_expr from with
@@ -78,12 +80,12 @@ let rec stage_expr ~from expr =
 
 let stage_field ~from idx { Queries.Syntax.expr; alias } =
   let idx = idx + 1 in
-  let loc = loc_to_location expr.Queries.Loc.loc in
+  let loc = to_location expr in
   let name =
     let name, loc =
       match alias with
       | Some name ->
-          let loc = loc_to_location name.Queries.Loc.loc in
+          let loc = to_location name in
           (name.Queries.Loc.node, loc)
       | None -> ("_" ^ string_of_int idx, loc)
     in
@@ -93,7 +95,7 @@ let stage_field ~from idx { Queries.Syntax.expr; alias } =
 
 let rec from_scope_pattern ?kind from =
   let open Queries.Syntax in
-  let loc = loc_to_location from.Queries.Loc.loc in
+  let loc = to_location from in
   match from.Queries.Loc.node with
   | F from_one ->
       let p = from_one_scope_pattern from_one in
@@ -113,14 +115,14 @@ let rec from_scope_pattern ?kind from =
 
 and from_one_scope_pattern from_one =
   let open Queries.Syntax in
-  let loc = loc_to_location from_one.Queries.Loc.loc in
+  let loc = to_location from_one in
   match from_one.Queries.Loc.node with
   | F_table { alias; _ } | F_select { alias; _ } | F_value { alias; _ } ->
       pvar ~loc alias.node
 
 let rec stage_query
-    { Queries.Loc.node = { Queries.Syntax.fields; from; where }; loc } =
-  let loc = loc_to_location loc in
+    ({ Queries.Loc.node = { Queries.Syntax.fields; from; where }; _ } as q) =
+  let loc = to_location q in
   let select =
     let select_methods = List.mapi (stage_field ~from:(Some from)) fields in
     let select_obj =
@@ -136,7 +138,7 @@ let rec stage_query
     match where with
     | None -> args
     | Some where ->
-        let loc = loc_to_location where.Queries.Loc.loc in
+        let loc = to_location where in
         let where_fun =
           pexp_fun ~loc Nolabel None (from_scope_pattern from)
             (stage_expr ~from:(Some from) where)
@@ -147,7 +149,7 @@ let rec stage_query
 
 and stage_from from =
   let open Queries.Syntax in
-  let loc = loc_to_location from.Queries.Loc.loc in
+  let loc = to_location from in
   match from.Queries.Loc.node with
   | F from_one -> [%expr Queries.from [%e stage_from_one from_one]]
   | F_join { kind; from = base; join; on } ->
@@ -165,7 +167,7 @@ and stage_from from =
 
 and stage_from_one from_one =
   let open Queries.Syntax in
-  let loc = loc_to_location from_one.Queries.Loc.loc in
+  let loc = to_location from_one in
   match from_one.Queries.Loc.node with
   | F_table { db; table; alias } ->
       let qname =
@@ -179,7 +181,7 @@ and stage_from_one from_one =
       let alias_expr = estring ~loc alias.node in
       [%expr Queries.from_select [%e select_expr] ~alias:[%e alias_expr]]
   | F_value { id; alias } ->
-      let loc = loc_to_location id.loc in
+      let loc = to_location id in
       [%expr [%e evar ~loc id.node] ~alias:[%e estring ~loc alias.node]]
 
 let expand_select ~ctxt:_ query =
