@@ -30,16 +30,15 @@ end
 [@@@ocaml.warning "-27"]
 
 let users ~condition =
-  [%query "SELECT u.x AS x, u.id AS id FROM public.users as u WHERE condition"]
+  {%query|SELECT u.x AS x, u.id AS id FROM public.users as u WHERE condition|}
 
 let x =
   let users =
-    users ~condition:(fun u -> [%expr "u.is_active OR true"])
+    users ~condition:(fun u -> {%expr|u.is_active OR true|})
     |> Queries.from_select
   in
-  [%query
-    {|SELECT u.x AS name, p.name as pname
-      FROM users as u
-      LEFT JOIN public.profiles as p
-      ON u.id = p.user_id
-      WHERE p.name = toNullable('Alice') AND toNullable(false)|}]
+  {%query|SELECT u.x AS name, p.name as pname
+          FROM users as u
+          LEFT JOIN public.profiles as p
+          ON u.id = p.user_id
+          WHERE p.name = toNullable('Alice') AND toNullable(false)|}

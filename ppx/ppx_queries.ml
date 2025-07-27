@@ -1,17 +1,13 @@
 open Ppxlib
 open Ast_builder.Default
 
-let parse_query_string ~loc s =
-  let lexbuf = Lexing.from_string s in
+let set_position lexbuf loc =
   Lexing.set_position lexbuf
-    {
-      loc.Location.loc_start with
-      pos_cnum =
-        loc.Location.loc_start.pos_cnum
-        +
-        (* for openning quote, but breaks in case of "{|", this is a TODO *)
-        1;
-    };
+    { loc.Location.loc_start with pos_cnum = loc.Location.loc_start.pos_cnum }
+
+let parse_query ~loc s =
+  let lexbuf = Lexing.from_string s in
+  set_position lexbuf loc;
   try Queries.Parser.a_query Queries.Lexer.token lexbuf
   with exn ->
     let msg =
@@ -19,8 +15,9 @@ let parse_query_string ~loc s =
     in
     Location.Error.raise (Location.Error.make ~loc:Location.none ~sub:[] msg)
 
-let parse_expr_string s =
+let parse_expr ~loc s =
   let lexbuf = Lexing.from_string s in
+  set_position lexbuf loc;
   try Queries.Parser.a_expr Queries.Lexer.token lexbuf
   with exn ->
     let msg =
@@ -184,22 +181,28 @@ and stage_from_one from_one =
       let loc = to_location id in
       [%expr [%e evar ~loc id.node] ~alias:[%e estring ~loc alias.node]]
 
-let expand_select ~ctxt:_ query =
-  let query = parse_query_string ~loc:query.Loc.loc query.Loc.txt in
-  stage_query query
+let expand_select ~ctxt:_ expr =
+  match expr.pexp_desc with
+  | Pexp_constant (Pconst_string (txt, loc, _)) ->
+      let query = parse_query ~loc txt in
+      stage_query query
+  | _ -> Location.raise_errorf "expected a string literal for the '%%query"
 
-let expand_expr ~ctxt:_ expr_str =
-  let expr = parse_expr_string expr_str in
-  stage_expr ~from:None expr
+let expand_expr ~ctxt:_ expr =
+  match expr.pexp_desc with
+  | Pexp_constant (Pconst_string (txt, loc, _)) ->
+      let expr = parse_expr ~loc txt in
+      stage_expr ~from:None expr
+  | _ -> Location.raise_errorf "expected a string literal for the '%%expr'"
 
 let select_extension =
   Extension.V3.declare "query" Extension.Context.expression
-    Ast_pattern.(single_expr_payload (estring __'))
+    Ast_pattern.(single_expr_payload __)
     expand_select
 
 let expr_extension =
   Extension.V3.declare "expr" Extension.Context.expression
-    Ast_pattern.(single_expr_payload (estring __))
+    Ast_pattern.(single_expr_payload __)
     expand_expr
 
 let expr_structure_extension =
@@ -210,8 +213,8 @@ let expr_structure_extension =
       (* Transform the expression recursively to find string literals *)
       let rec transform_expr expr =
         match expr.pexp_desc with
-        | Pexp_constant (Pconst_string (expr_str, _, _)) ->
-            let expr = parse_expr_string expr_str in
+        | Pexp_constant (Pconst_string (s, loc, _q)) ->
+            let expr = parse_expr ~loc s in
             stage_expr ~from:None expr
         | Pexp_function ([ param ], constraint_opt, Pfunction_body expr) ->
             {
