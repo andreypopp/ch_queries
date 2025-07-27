@@ -55,24 +55,16 @@ select from a JOIN:
     Queries.select ()
       ~from:(Queries.join (Queries.from (Database.Public.users ~alias:"u"))
                (Database.Public.profiles ~alias:"p")
-               ~on:(fun
-                      (((u : _ Queries.scope) : _ Queries.scope),
-                       (p : _ Queries.scope))
-                      ->
+               ~on:(fun ((u : _ Queries.scope), (p : _ Queries.scope)) ->
                       Queries.Expr.(=) (u#query (fun u -> u#id))
                         (p#query (fun p -> p#user_id))))
-      ~select:(fun
-                 (((u : _ Queries.scope) : _ Queries.scope),
-                  (p : _ Queries.scope))
-                 ->
+      ~select:(fun ((u : _ Queries.scope), (p : _ Queries.scope)) ->
                  object
                    method _1 = u#query (fun u -> u#id)
                    method _2 = p#query (fun p -> p#name)
                  end)
-      ~where:(fun
-                (((u : _ Queries.scope) : _ Queries.scope),
-                 (p : _ Queries.scope))
-                -> u#query (fun u -> u#is_active))
+      ~where:(fun ((u : _ Queries.scope), (p : _ Queries.scope)) ->
+                u#query (fun u -> u#is_active))
   >>> RUNNING
 
 select from a JOIN:
@@ -92,24 +84,15 @@ select from a JOIN:
       ~from:(Queries.left_join
                (Queries.from (Database.Public.users ~alias:"u"))
                (Database.Public.profiles ~alias:"p")
-               ~on:(fun
-                      (((u : _ Queries.scope) : _ Queries.scope),
-                       (p : _ Queries.scope))
-                      ->
+               ~on:(fun ((u : _ Queries.scope), (p : _ Queries.scope)) ->
                       Queries.Expr.(=) (u#query (fun u -> u#id))
                         (p#query (fun p -> p#user_id))))
-      ~select:(fun
-                 (((u : _ Queries.scope) : _ Queries.scope),
-                  (p : _ Queries.nullable_scope))
-                 ->
+      ~select:(fun ((u : _ Queries.scope), (p : _ Queries.nullable_scope)) ->
                  object
                    method user_id = u#query (fun u -> u#id)
                    method user_name = p#query (fun p -> p#name)
                  end)
-      ~where:(fun
-                (((u : _ Queries.scope) : _ Queries.scope),
-                 (p : _ Queries.nullable_scope))
-                ->
+      ~where:(fun ((u : _ Queries.scope), (p : _ Queries.nullable_scope)) ->
                 Queries.Expr.(=)
                   (Queries.Expr.coalesce (p#query (fun p -> p#user_id))
                      (Queries.Expr.int 0)) (Queries.Expr.int 1))
@@ -153,24 +136,15 @@ select from an OCaml value with JOIN:
       ~from:(Queries.left_join
                (Queries.from (Database.Public.users ~alias:"u"))
                (profiles ~alias:"p")
-               ~on:(fun
-                      (((u : _ Queries.scope) : _ Queries.scope),
-                       (p : _ Queries.scope))
-                      ->
+               ~on:(fun ((u : _ Queries.scope), (p : _ Queries.scope)) ->
                       Queries.Expr.(=) (u#query (fun u -> u#id))
                         (p#query (fun p -> p#user_id))))
-      ~select:(fun
-                 (((u : _ Queries.scope) : _ Queries.scope),
-                  (p : _ Queries.nullable_scope))
-                 ->
+      ~select:(fun ((u : _ Queries.scope), (p : _ Queries.nullable_scope)) ->
                  object
                    method user_id = u#query (fun u -> u#id)
                    method user_name = p#query (fun p -> p#name)
                  end)
-      ~where:(fun
-                (((u : _ Queries.scope) : _ Queries.scope),
-                 (p : _ Queries.nullable_scope))
-                ->
+      ~where:(fun ((u : _ Queries.scope), (p : _ Queries.nullable_scope)) ->
                 Queries.Expr.(=)
                   (Queries.Expr.coalesce (p#query (fun p -> p#user_id))
                      (Queries.Expr.int 0)) (Queries.Expr.int 1))
@@ -191,4 +165,88 @@ select from an OCaml value with JOIN:
     alias:string ->
     < user_id : (Queries.Expr.non_null, int Queries.Expr.number) Queries.Expr.t;
       user_name : (Queries.Expr.null, string) Queries.Expr.t >
+    Queries.scope Queries.from_one
+
+splicing ocaml values into WHERE:
+  $ dotest '
+  > let users ~where_clause = [%query "SELECT users.x AS x FROM public.users WHERE where_clause"];;
+  > #show users
+  > '
+  >>> PREPROCESSING
+  let users ~where_clause =
+    Queries.select ()
+      ~from:(Queries.from (Database.Public.users ~alias:"users"))
+      ~select:(fun (users : _ Queries.scope) ->
+                 object method x = users#query (fun users -> users#x) end)
+      ~where:(fun (users : _ Queries.scope) -> where_clause users)
+  >>> RUNNING
+  val users :
+    where_clause:(< id : (Queries.Expr.non_null, int Queries.Expr.number)
+                         Queries.Expr.t;
+                    is_active : (Queries.Expr.non_null, bool) Queries.Expr.t;
+                    x : (Queries.Expr.non_null, string) Queries.Expr.t >
+                  Queries.scope -> ('a, bool) Queries.Expr.t) ->
+    alias:string ->
+    < x : (Queries.Expr.non_null, string) Queries.Expr.t > Queries.scope
+    Queries.from_one
+
+splicing ocaml values into SELECT:
+  $ dotest '
+  > let users ~what = [%query "SELECT what AS field FROM public.users"];;
+  > #show users
+  > '
+  >>> PREPROCESSING
+  let users ~what =
+    Queries.select ()
+      ~from:(Queries.from (Database.Public.users ~alias:"users"))
+      ~select:(fun (users : _ Queries.scope) ->
+                 object method field = what users end)
+  >>> RUNNING
+  val users :
+    what:(< id : (Queries.Expr.non_null, int Queries.Expr.number)
+                 Queries.Expr.t;
+            is_active : (Queries.Expr.non_null, bool) Queries.Expr.t;
+            x : (Queries.Expr.non_null, string) Queries.Expr.t >
+          Queries.scope -> 'a) ->
+    alias:string -> < field : 'a > Queries.scope Queries.from_one
+
+splicing ocaml values into JOIN-ON:
+  $ dotest '
+  > let q cond = [%query "
+  >   SELECT 1 as one
+  >   FROM public.users AS u
+  >   LEFT JOIN public.profiles AS p ON cond
+  >   LEFT JOIN public.profiles AS p2 ON true
+  > "];;
+  > #show q
+  > '
+  >>> PREPROCESSING
+  let q cond =
+    Queries.select ()
+      ~from:(Queries.left_join
+               (Queries.left_join
+                  (Queries.from (Database.Public.users ~alias:"u"))
+                  (Database.Public.profiles ~alias:"p")
+                  ~on:(fun ((u : _ Queries.scope), (p : _ Queries.scope)) ->
+                         cond (u, p))) (Database.Public.profiles ~alias:"p2")
+               ~on:(fun
+                      (((u : _ Queries.scope), (p : _ Queries.nullable_scope)),
+                       (p2 : _ Queries.scope))
+                      -> Queries.Expr.bool true))
+      ~select:(fun
+                 (((u : _ Queries.scope), (p : _ Queries.nullable_scope)),
+                  (p2 : _ Queries.nullable_scope))
+                 -> object method one = Queries.Expr.int 1 end)
+  >>> RUNNING
+  val q :
+    (< id : (Queries.Expr.non_null, int Queries.Expr.number) Queries.Expr.t;
+       is_active : (Queries.Expr.non_null, bool) Queries.Expr.t;
+       x : (Queries.Expr.non_null, string) Queries.Expr.t >
+     Queries.scope *
+     < name : (Queries.Expr.non_null, string) Queries.Expr.t;
+       user_id : (Queries.Expr.non_null, int Queries.Expr.number)
+                 Queries.Expr.t >
+     Queries.scope -> ('a, bool) Queries.Expr.t) ->
+    alias:string ->
+    < one : (Queries.Expr.non_null, int Queries.Expr.number) Queries.Expr.t >
     Queries.scope Queries.from_one

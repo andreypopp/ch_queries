@@ -35,7 +35,7 @@ let users ~condition =
   [%query "SELECT u.x AS x, u.id AS id FROM public.users as u WHERE condition"]
 
 let x =
-  let users = users ~condition:(Queries.Expr.bool true) in
+  let users = users ~condition:(fun u -> [%expr "u.is_active OR true"]) in
   [%query
     {|SELECT u.x AS name, p.name as pname
       FROM users as u
