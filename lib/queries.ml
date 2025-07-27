@@ -148,7 +148,7 @@ module Query : sig
 
   val to_syntax : _ select -> Syntax.query
   val to_sql : _ select -> string
-  val use : 'a scope select -> ('a scope -> 'b) -> 'b
+  val use : 'a scope select -> ('a scope -> 'b) -> string * 'b
 end = struct
   type 'a scope = < query : 'n 'e. ('a -> ('n, 'e) Expr.t) -> ('n, 'e) Expr.t >
 
@@ -160,51 +160,57 @@ end = struct
   type a_field = A_field : _ Expr.t * string -> a_field
   [@@ocaml.warning "-37"]
 
-  type 'scope select =
+  type 'scope select0 =
     | Select of {
-        from : a_from;
-        scope : string -> 'scope;  (** scope of the query, once it is queried *)
+        from : a_from0;
+        scope : 'scope;  (** scope of the query, once it is queried *)
         where : a_expr option;
         mutable fields : a_field list;
             (** list of fields build within the SELECT *)
       }
     | Union of {
-        x : 'scope select;
-        y : 'scope select;
+        x : 'scope select0;
+        y : 'scope select0;
         scope : 'scope -> 'scope -> 'scope;
       }
 
-  and 'a from_one =
+  and 'scope select = alias:string -> 'scope select0
+
+  and 'a from_one0 =
     | From_table : {
         db : string;
         table : string;
         alias : string;
         scope : 'a;
       }
-        -> 'a from_one
-    | From_select : { select : 'a select; alias : string } -> 'a from_one
+        -> 'a from_one0
+    | From_select : { select : 'a select0; alias : string } -> 'a from_one0
 
-  and 'a from =
-    | From : { scope : 'a; from : a_from_one } -> 'a from
+  and 'a from_one = unit -> 'a from_one0
+
+  and 'a from0 =
+    | From : { scope : 'a; from : a_from_one0 } -> 'a from0
     | From_join : {
         scope : 'a * 'b;
         kind : [ `INNER_JOIN | `LEFT_JOIN ];
-        from : a_from;
-        join : a_from_one;
+        from : a_from0;
+        join : a_from_one0;
         on : a_expr;
       }
-        -> ('a * 'b) from
+        -> ('a * 'b) from0
 
-  and a_from = A_from : 'a from -> a_from
-  and a_from_one = A_from_one : 'a from_one -> a_from_one
+  and 'a from = unit -> 'a from0
+  and a_from0 = A_from : 'a from0 -> a_from0
+  and a_from_one0 = A_from_one : 'a from_one0 -> a_from_one0
 
-  let scope_from : type scope. scope from -> scope = function
+  let scope_from : type scope. scope from0 -> scope = function
     | From { scope; _ } -> scope
     | From_join { scope; _ } -> scope
 
-  let from_select ~alias select = From_select { select; alias }
+  let from_select ~alias select () =
+    From_select { select = select ~alias; alias }
 
-  let from_table ~db ~table scope ~alias =
+  let from_table ~db ~table scope ~alias () =
     let scope = scope ~alias in
     let scope : _ scope =
       object
@@ -228,44 +234,49 @@ end = struct
         let _alias = add_field expr u.y in
         alias
 
-  let select ~from ?where ~select () =
+  let select ~from ?where ~select () ~alias =
+    let from = from () in
     let inner_scope = scope_from from in
     let scope' = select inner_scope in
     let where = Option.map (fun where -> A_expr (where inner_scope)) where in
-    let rec select = Select { from = A_from from; scope; where; fields = [] }
-    and scope alias =
-      object
-        method query : 'n 'e. (_ -> ('n, 'e) Expr.t) -> ('n, 'e) Expr.t =
-          fun f ->
-            let e = f scope' in
-            let c = add_field e select in
-            Expr.unsafe_id (Printf.sprintf "%s.%s" alias c)
-      end
+    let rec select =
+      lazy
+        (Select
+           {
+             from = A_from from;
+             scope =
+               object
+                 method query : 'n 'e. (_ -> ('n, 'e) Expr.t) -> ('n, 'e) Expr.t
+                     =
+                   fun f ->
+                     let e = f scope' in
+                     let c = add_field e (Lazy.force select) in
+                     Expr.unsafe_id (Printf.sprintf "%s.%s" alias c)
+               end;
+             where;
+             fields = [];
+           })
     in
-    select
-
-  let use q f =
-    match q with
-    | Select { scope; _ } ->
-        let scope = scope "_" in
-        f scope
-    | Union _ -> failwith "TODO"
+    Lazy.force select
 
   let scope_from_one = function
     | From_table { scope; _ } -> scope
-    | From_select { select; alias } ->
+    | From_select { select; alias = _ } ->
         let rec select_scope select =
           match select with
-          | Select { scope; _ } -> scope alias
+          | Select { scope; _ } -> scope
           | Union { x; y; scope } -> scope (select_scope x) (select_scope y)
         in
         select_scope select
 
-  let from from =
+  let from from () =
+    let from = from () in
     let scope = scope_from_one from in
     From { scope; from = A_from_one from }
 
-  let join from join ~on =
+  let join from join ~on () =
+    let from = from () in
+    let join = join () in
     let scope_join = scope_from_one join in
     let scope = (scope_from from, scope_join) in
     let on = on scope in
@@ -278,7 +289,9 @@ end = struct
         on = A_expr on;
       }
 
-  let left_join from (join : 'a scope from_one) ~on =
+  let left_join from (join : 'a scope from_one) ~on () =
+    let from = from () in
+    let join = join () in
     let scope_from = scope_from from in
     let scope_join : _ scope =
       object
@@ -302,10 +315,10 @@ end = struct
         on = A_expr on;
       }
 
-  let union x y scope = Union { x; y; scope }
+  let union x y scope ~alias = Union { x = x ~alias; y = y ~alias; scope }
 
-  let to_syntax q =
-    let rec select_to_syntax : type a. a select -> Syntax.querysyn = function
+  let to_syntax' q =
+    let rec select_to_syntax : type a. a select0 -> Syntax.querysyn = function
       | Select { from = A_from from; where; fields; scope = _ } ->
           let syntax_fields =
             List.rev_map
@@ -327,7 +340,7 @@ end = struct
           }
       | Union { x = _; y = _; _ } ->
           failwith "TODO: union queries not yet supported"
-    and from_one_to_syntax : type a. a from_one -> Syntax.from_one = function
+    and from_one_to_syntax : type a. a from_one0 -> Syntax.from_one = function
       | From_table { db; table; alias; _ } ->
           Loc.with_dummy_loc
             (Syntax.F_table
@@ -343,7 +356,7 @@ end = struct
                  select = Loc.with_dummy_loc (select_to_syntax select);
                  alias = Loc.with_dummy_loc alias;
                })
-    and from_to_syntax : type a. a from -> Syntax.from = function
+    and from_to_syntax : type a. a from0 -> Syntax.from = function
       | From { from = A_from_one from; _ } ->
           Loc.with_dummy_loc (Syntax.F (from_one_to_syntax from))
       | From_join
@@ -365,9 +378,19 @@ end = struct
     in
     Loc.with_dummy_loc (select_to_syntax q)
 
-  let to_sql q =
-    let syn = to_syntax q in
+  let to_sql' q =
+    let syn = to_syntax' q in
     Printer.print_query syn
+
+  let to_syntax q = to_syntax' (q ~alias:"_")
+  let to_sql q = to_sql' (q ~alias:"_")
+
+  let use q f =
+    match q ~alias:"_" with
+    | Select { scope; _ } as q ->
+        let v = f scope in
+        (to_sql' q, v)
+    | Union _ -> failwith "TODO"
 end
 
 include Query
