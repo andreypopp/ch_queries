@@ -35,8 +35,7 @@ function calls of the form `FUNCTION_NAME(..)` resolve to `Queries.Expr.FUNCTION
   > '
   >>> PREPROCESSING
   let x users =
-    Queries.Expr.coalesce (users#query (fun users -> users#x))
-      (Queries.Expr.int 1)
+    Queries.Expr.coalesce (users#query (fun users -> users#x)) (Queries.int 1)
   >>> RUNNING
 
 AND/OR operators:

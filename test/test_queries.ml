@@ -4,25 +4,23 @@ module Database = struct
   module Public = struct
     let users =
       let scope ~alias =
-        let open Expr in
         object
-          method id : (non_null, int number) t = unsafe_id (alias ^ ".id")
-          method x : (non_null, string) t = unsafe_id (alias ^ ".x")
+          method id : (non_null, int number) expr = unsafe_expr (alias ^ ".id")
+          method x : (non_null, string) expr = unsafe_expr (alias ^ ".x")
 
-          method is_active : (non_null, bool) t =
-            unsafe_id (alias ^ ".is_active")
+          method is_active : (non_null, bool) expr =
+            unsafe_expr (alias ^ ".is_active")
         end
       in
       from_table ~db:"public" ~table:"users" scope
 
     let profiles =
       let scope ~alias =
-        let open Expr in
         object
-          method user_id : (non_null, int number) t =
-            unsafe_id (alias ^ ".user_id")
+          method user_id : (non_null, int number) expr =
+            unsafe_expr (alias ^ ".user_id")
 
-          method name : (non_null, string) t = unsafe_id (alias ^ ".name")
+          method name : (non_null, string) expr = unsafe_expr (alias ^ ".name")
         end
       in
       from_table ~db:"public" ~table:"profiles" scope

@@ -17,7 +17,7 @@
 basic form:
   $ dotest '
   > let users = [%query "SELECT users.x AS x FROM public.users WHERE users.is_active"];;
-  > let sql, () = Queries.Query.use users @@ fun users -> ignore [[%expr "users.x"]]
+  > let sql, () = Queries.use users @@ fun users -> ignore [[%expr "users.x"]]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -29,7 +29,7 @@ basic form:
       ~where:(fun (users : _ Queries.scope) ->
                 users#query (fun users -> users#is_active))
   let (sql, ()) =
-    (Queries.Query.use users) @@
+    (Queries.use users) @@
       (fun users -> ignore [users#query (fun users -> users#x)])
   let () = print_endline sql
   >>> RUNNING
@@ -38,7 +38,7 @@ basic form:
 select from a subquery:
   $ dotest '
   > let users = [%query "SELECT q.x AS x FROM (SELECT users.x AS x, users.is_active AS is_active FROM public.users) AS q WHERE q.is_active"];;
-  > let sql, () = Queries.Query.use users @@ fun users -> ignore [
+  > let sql, () = Queries.use users @@ fun users -> ignore [
   >   [%expr "users.x"];
   > ]
   > let () = print_endline sql;;
@@ -47,7 +47,7 @@ select from a subquery:
   let users =
     Queries.select ()
       ~from:(Queries.from
-               (Queries.Query.from_select
+               (Queries.from_select
                   (Queries.select ()
                      ~from:(Queries.from (Database.Public.users ~alias:"users"))
                      ~select:(fun (users : _ Queries.scope) ->
@@ -60,7 +60,7 @@ select from a subquery:
                  object method x = q#query (fun q -> q#x) end)
       ~where:(fun (q : _ Queries.scope) -> q#query (fun q -> q#is_active))
   let (sql, ()) =
-    (Queries.Query.use users) @@
+    (Queries.use users) @@
       (fun users -> ignore [users#query (fun users -> users#x)])
   let () = print_endline sql
   >>> RUNNING
@@ -118,11 +118,11 @@ select from a JOIN:
       ~where:(fun ((u : _ Queries.scope), (p : _ Queries.nullable_scope)) ->
                 Queries.Expr.(=)
                   (Queries.Expr.coalesce (p#query (fun p -> p#user_id))
-                     (Queries.Expr.int 0)) (Queries.Expr.int 1))
+                     (Queries.int 0)) (Queries.int 1))
   >>> RUNNING
   val q :
-    < user_id : (Queries.Expr.non_null, int Queries.Expr.number) Queries.Expr.t;
-      user_name : (Queries.Expr.null, string) Queries.Expr.t >
+    < user_id : (Queries.non_null, int Queries.number) Queries.expr;
+      user_name : (Queries.null, string) Queries.expr >
     Queries.scope Queries.select
 
 select from an OCaml value:
@@ -169,22 +169,20 @@ select from an OCaml value with JOIN:
       ~where:(fun ((u : _ Queries.scope), (p : _ Queries.nullable_scope)) ->
                 Queries.Expr.(=)
                   (Queries.Expr.coalesce (p#query (fun p -> p#user_id))
-                     (Queries.Expr.int 0)) (Queries.Expr.int 1))
+                     (Queries.int 0)) (Queries.int 1))
   let q = q Database.Public.profiles
   >>> RUNNING
   val q :
     (alias:string ->
-     < name : ('a, 'b) Queries.Expr.t;
-       user_id : (Queries.Expr.non_null, int Queries.Expr.number)
-                 Queries.Expr.t;
-       .. >
+     < name : ('a, 'b) Queries.expr;
+       user_id : (Queries.non_null, int Queries.number) Queries.expr; .. >
      Queries.scope Queries.from_one) ->
-    < user_id : (Queries.Expr.non_null, int Queries.Expr.number) Queries.Expr.t;
-      user_name : (Queries.Expr.null, 'b) Queries.Expr.t >
+    < user_id : (Queries.non_null, int Queries.number) Queries.expr;
+      user_name : (Queries.null, 'b) Queries.expr >
     Queries.scope Queries.select
   val q :
-    < user_id : (Queries.Expr.non_null, int Queries.Expr.number) Queries.Expr.t;
-      user_name : (Queries.Expr.null, string) Queries.Expr.t >
+    < user_id : (Queries.non_null, int Queries.number) Queries.expr;
+      user_name : (Queries.null, string) Queries.expr >
     Queries.scope Queries.select
 
 splicing ocaml values into WHERE:
@@ -201,12 +199,11 @@ splicing ocaml values into WHERE:
       ~where:(fun (users : _ Queries.scope) -> where_clause users)
   >>> RUNNING
   val users :
-    where_clause:(< id : (Queries.Expr.non_null, int Queries.Expr.number)
-                         Queries.Expr.t;
-                    is_active : (Queries.Expr.non_null, bool) Queries.Expr.t;
-                    x : (Queries.Expr.non_null, string) Queries.Expr.t >
-                  Queries.scope -> ('a, bool) Queries.Expr.t) ->
-    < x : (Queries.Expr.non_null, string) Queries.Expr.t > Queries.scope
+    where_clause:(< id : (Queries.non_null, int Queries.number) Queries.expr;
+                    is_active : (Queries.non_null, bool) Queries.expr;
+                    x : (Queries.non_null, string) Queries.expr >
+                  Queries.scope -> ('a, bool) Queries.expr) ->
+    < x : (Queries.non_null, string) Queries.expr > Queries.scope
     Queries.select
 
 splicing ocaml values into SELECT:
@@ -222,10 +219,9 @@ splicing ocaml values into SELECT:
                  object method field = what users end)
   >>> RUNNING
   val users :
-    what:(< id : (Queries.Expr.non_null, int Queries.Expr.number)
-                 Queries.Expr.t;
-            is_active : (Queries.Expr.non_null, bool) Queries.Expr.t;
-            x : (Queries.Expr.non_null, string) Queries.Expr.t >
+    what:(< id : (Queries.non_null, int Queries.number) Queries.expr;
+            is_active : (Queries.non_null, bool) Queries.expr;
+            x : (Queries.non_null, string) Queries.expr >
           Queries.scope -> 'a) ->
     < field : 'a > Queries.scope Queries.select
 
@@ -251,20 +247,19 @@ splicing ocaml values into JOIN-ON:
                ~on:(fun
                       (((u : _ Queries.scope), (p : _ Queries.nullable_scope)),
                        (p2 : _ Queries.scope))
-                      -> Queries.Expr.bool true))
+                      -> Queries.bool true))
       ~select:(fun
                  (((u : _ Queries.scope), (p : _ Queries.nullable_scope)),
                   (p2 : _ Queries.nullable_scope))
-                 -> object method one = Queries.Expr.int 1 end)
+                 -> object method one = Queries.int 1 end)
   >>> RUNNING
   val q :
-    (< id : (Queries.Expr.non_null, int Queries.Expr.number) Queries.Expr.t;
-       is_active : (Queries.Expr.non_null, bool) Queries.Expr.t;
-       x : (Queries.Expr.non_null, string) Queries.Expr.t >
+    (< id : (Queries.non_null, int Queries.number) Queries.expr;
+       is_active : (Queries.non_null, bool) Queries.expr;
+       x : (Queries.non_null, string) Queries.expr >
      Queries.scope *
-     < name : (Queries.Expr.non_null, string) Queries.Expr.t;
-       user_id : (Queries.Expr.non_null, int Queries.Expr.number)
-                 Queries.Expr.t >
-     Queries.scope -> ('a, bool) Queries.Expr.t) ->
-    < one : (Queries.Expr.non_null, int Queries.Expr.number) Queries.Expr.t >
-    Queries.scope Queries.select
+     < name : (Queries.non_null, string) Queries.expr;
+       user_id : (Queries.non_null, int Queries.number) Queries.expr >
+     Queries.scope -> ('a, bool) Queries.expr) ->
+    < one : (Queries.non_null, int Queries.number) Queries.expr > Queries.scope
+    Queries.select

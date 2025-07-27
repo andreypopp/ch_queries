@@ -58,11 +58,10 @@ let rec stage_expr ~from expr =
       [%expr
         [%e e'] (fun [%p p] ->
             [%e pexp_send ~loc e (Located.mk ~loc id.Queries.Loc.node)])]
-  | Queries.Syntax.E_lit (L_int n) -> [%expr Queries.Expr.int [%e eint ~loc n]]
-  | Queries.Syntax.E_lit (L_bool b) ->
-      [%expr Queries.Expr.bool [%e ebool ~loc b]]
+  | Queries.Syntax.E_lit (L_int n) -> [%expr Queries.int [%e eint ~loc n]]
+  | Queries.Syntax.E_lit (L_bool b) -> [%expr Queries.bool [%e ebool ~loc b]]
   | Queries.Syntax.E_lit (L_string s) ->
-      [%expr Queries.Expr.string [%e estring ~loc s]]
+      [%expr Queries.string [%e estring ~loc s]]
   | Queries.Syntax.E_call (name, args) -> (
       let args_expr = List.map (stage_expr ~from) args in
       match name.Queries.Loc.node with
@@ -178,7 +177,7 @@ and stage_from_one from_one =
   | F_select { select; alias } ->
       let select_expr = stage_query select in
       let alias_expr = estring ~loc alias.node in
-      [%expr Queries.Query.from_select [%e select_expr] ~alias:[%e alias_expr]]
+      [%expr Queries.from_select [%e select_expr] ~alias:[%e alias_expr]]
   | F_value { id; alias } ->
       let loc = loc_to_location id.loc in
       [%expr [%e evar ~loc id.node] ~alias:[%e estring ~loc alias.node]]
