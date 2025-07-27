@@ -17,6 +17,9 @@
 basic form:
   $ dotest '
   > let users = [%query "SELECT users.x AS x FROM public.users WHERE users.is_active"];;
+  > let () = Queries.Query.use users @@ fun users -> ignore [
+  >   [%expr "users.x"];
+  > ]
   > let () = print_endline (Queries.Query.to_sql users);;
   > '
   >>> PREPROCESSING
@@ -27,13 +30,19 @@ basic form:
                  object method x = users#query (fun users -> users#x) end)
       ~where:(fun (users : _ Queries.scope) ->
                 users#query (fun users -> users#is_active))
+  let () =
+    (Queries.Query.use users) @@
+      (fun users -> ignore [users#query (fun users -> users#x)])
   let () = print_endline (Queries.Query.to_sql users)
   >>> RUNNING
-  SELECT  FROM public.users AS users WHERE users.is_active
 
 select from a subquery:
   $ dotest '
-  > let users = [%query "SELECT q.x FROM (SELECT users.x AS x FROM public.users) AS q"]
+  > let users = [%query "SELECT q.x AS x FROM (SELECT users.x AS x, users.is_active AS is_active FROM public.users) AS q WHERE q.is_active"];;
+  > let () = Queries.Query.use users @@ fun users -> ignore [
+  >   [%expr "users.x"];
+  > ]
+  > let () = print_endline (Queries.Query.to_sql users);;
   > '
   >>> PREPROCESSING
   let users =
@@ -45,9 +54,16 @@ select from a subquery:
                      ~select:(fun (users : _ Queries.scope) ->
                                 object
                                   method x = users#query (fun users -> users#x)
+                                  method is_active =
+                                    users#query (fun users -> users#is_active)
                                 end)) ~alias:"q"))
       ~select:(fun (q : _ Queries.scope) ->
-                 object method _1 = q#query (fun q -> q#x) end)
+                 object method x = q#query (fun q -> q#x) end)
+      ~where:(fun (q : _ Queries.scope) -> q#query (fun q -> q#is_active))
+  let () =
+    (Queries.Query.use users) @@
+      (fun users -> ignore [users#query (fun users -> users#x)])
+  let () = print_endline (Queries.Query.to_sql users)
   >>> RUNNING
 
 select from a JOIN:

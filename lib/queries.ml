@@ -148,6 +148,7 @@ module Query : sig
 
   val to_syntax : _ select -> Syntax.query
   val to_sql : _ select -> string
+  val use : 'a scope select -> ('a scope -> 'b) -> 'b
 end = struct
   type 'a scope = < query : 'n 'e. ('a -> ('n, 'e) Expr.t) -> ('n, 'e) Expr.t >
 
@@ -208,22 +209,47 @@ end = struct
     let scope : _ scope =
       object
         method query : 'n 'e. (_ -> ('n, 'e) Expr.t) -> ('n, 'e) Expr.t =
-          fun f -> f scope
+          fun f ->
+            let e = f scope in
+            e
       end
     in
     From_table { db; table; alias; scope }
 
+  let rec add_field expr select =
+    match select with
+    | Select s ->
+        let alias = Printf.sprintf "_%d" (List.length s.fields + 1) in
+        let field = A_field (expr, alias) in
+        s.fields <- field :: s.fields;
+        alias
+    | Union u ->
+        let alias = add_field expr u.x in
+        let _alias = add_field expr u.y in
+        alias
+
   let select ~from ?where ~select () =
     let inner_scope = scope_from from in
-    let scope = select inner_scope in
-    let scope _name =
+    let scope' = select inner_scope in
+    let where = Option.map (fun where -> A_expr (where inner_scope)) where in
+    let rec select = Select { from = A_from from; scope; where; fields = [] }
+    and scope alias =
       object
         method query : 'n 'e. (_ -> ('n, 'e) Expr.t) -> ('n, 'e) Expr.t =
-          fun f -> f scope
+          fun f ->
+            let e = f scope' in
+            let c = add_field e select in
+            Expr.unsafe_id (Printf.sprintf "%s.%s" alias c)
       end
     in
-    let where = Option.map (fun where -> A_expr (where inner_scope)) where in
-    Select { from = A_from from; scope; where; fields = [] }
+    select
+
+  let use q f =
+    match q with
+    | Select { scope; _ } ->
+        let scope = scope "_" in
+        f scope
+    | Union _ -> failwith "TODO"
 
   let scope_from_one = function
     | From_table { scope; _ } -> scope
@@ -282,7 +308,7 @@ end = struct
     let rec select_to_syntax : type a. a select -> Syntax.querysyn = function
       | Select { from = A_from from; where; fields; scope = _ } ->
           let syntax_fields =
-            List.map
+            List.rev_map
               ~f:(fun (A_field (expr, alias)) ->
                 {
                   Syntax.expr = Expr.to_syntax expr;

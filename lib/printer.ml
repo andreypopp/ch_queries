@@ -55,12 +55,13 @@ let rec pp_from_one from_one =
   match from_one.Loc.node with
   | F_table { db; table; alias } ->
       group
-        (pp_id db ^^ string "." ^^ pp_id table ^/^ string "AS" ^/^ pp_id alias)
+        (pp_id db ^^ string "." ^^ pp_id table ^^ string " AS " ^^ pp_id alias)
   | F_select { select; alias } ->
       group
-        (string "(" ^^ pp_query select ^^ string ")" ^/^ string "AS"
-       ^/^ pp_id alias)
-  | F_value { id; alias } -> group (pp_id id ^/^ string "AS" ^/^ pp_id alias)
+        (string "("
+        ^^ nest 2 (break 0 ^^ pp_query select ^^ string ")")
+        ^^ group (string " AS" ^/^ pp_id alias))
+  | F_value { id; alias } -> group (pp_id id ^^ string " AS " ^^ pp_id alias)
 
 and pp_from from =
   match from.Loc.node with
@@ -77,16 +78,18 @@ and pp_from from =
 
 and pp_query { Loc.node = { Syntax.fields; from; where }; _ } =
   let pp_fields =
-    separate (string "," ^^ space) (List.map ~f:pp_field fields)
+    separate (string "," ^^ break 1) (List.map ~f:pp_field fields)
   in
-  let select_clause = group (string "SELECT" ^/^ pp_fields) in
-  let from_clause = group (string "FROM" ^/^ pp_from from) in
-  let where_clause_doc =
+  let select = group (string "SELECT" ^^ nest 2 (break 1 ^^ pp_fields)) in
+  let from = group (string "FROM " ^^ pp_from from) in
+  let where =
     match where with
-    | None -> empty
-    | Some expr -> group (string "WHERE" ^/^ pp_expr expr)
+    | None -> None
+    | Some expr -> Some (group (string "WHERE" ^/^ pp_expr expr))
   in
-  group (separate (break 1) [ select_clause; from_clause; where_clause_doc ])
+  group
+    (separate (break 1)
+       (List.filter_map ~f:Fun.id [ Some select; Some from; where ]))
 
 let print' pp v =
   let buffer = Buffer.create 256 in
