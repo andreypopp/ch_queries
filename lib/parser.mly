@@ -19,6 +19,7 @@
 %token AND OR
 %token INNER JOIN LEFT ON
 %token GROUP BY ORDER ASC DESC
+%token OVER PARTITION
 %token LIMIT OFFSET
 %token EOF
 
@@ -85,6 +86,13 @@ limit:
 offset:
     OFFSET e=expr { e }
 
+window_spec:
+    partition_by=partition_by? order_by=order_by?
+    { { partition_by; order_by } }
+
+partition_by:
+    PARTITION BY dimensions=separated_list(COMMA, dimension) { dimensions }
+
 from:
     f=from_one
     { with_loc $startpos $endpos (F f) }
@@ -132,5 +140,7 @@ expr:
     { with_loc $startpos $endpos (E_call (with_loc $startpos($2) $endpos($2) "=", [e1; e2])) }
   | fn=id LPAREN args=separated_list(COMMA, expr) RPAREN
     { with_loc $startpos $endpos (E_call (fn, args)) }
+  | fn=id LPAREN args=separated_list(COMMA, expr) RPAREN OVER LPAREN window_spec=window_spec RPAREN
+    { with_loc $startpos $endpos (E_window (fn, args, window_spec)) }
   | id=id
     { with_loc $startpos $endpos (E_value id) }

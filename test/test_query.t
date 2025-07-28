@@ -8,7 +8,7 @@
   > #use "test_queries.ml"
   > ' > test_query.ml
   > echo '>>> PREPROCESSING'
-  > echo "$1" | rg -v '^#' | ppx_queries -impl -
+  > echo "$1" | rg -v '^#' | ppx_queries -impl - | ocamlformat --enable-outside-detected-project --name test_query.ml --impl -
   > echo '>>> RUNNING'
   > echo "$1" >> test_query.ml
   > ocaml ./test_query.ml
@@ -25,12 +25,16 @@ basic form:
     Queries.select ()
       ~from:(Queries.from (Database.Public.users ~alias:"users"))
       ~select:(fun (users : _ Queries.scope) ->
-                 object method x = users#query (fun users -> users#x) end)
+        object
+          method x = users#query (fun users -> users#x)
+        end)
       ~where:(fun (users : _ Queries.scope) ->
-                users#query (fun users -> users#is_active))
-  let (sql, ()) =
-    (Queries.use users) @@
-      (fun users -> ignore [users#query (fun users -> users#x)])
+        users#query (fun users -> users#is_active))
+  
+  let sql, () =
+    Queries.use users @@ fun users ->
+    ignore [ users#query (fun users -> users#x) ]
+  
   let () = print_endline sql
   >>> RUNNING
   SELECT users.x AS _1 FROM public.users AS users WHERE users.is_active
@@ -46,22 +50,27 @@ select from a subquery:
   >>> PREPROCESSING
   let users =
     Queries.select ()
-      ~from:(Queries.from
-               (Queries.from_select
-                  (Queries.select ()
-                     ~from:(Queries.from (Database.Public.users ~alias:"users"))
-                     ~select:(fun (users : _ Queries.scope) ->
-                                object
-                                  method x = users#query (fun users -> users#x)
-                                  method is_active =
-                                    users#query (fun users -> users#is_active)
-                                end)) ~alias:"q"))
+      ~from:
+        (Queries.from
+           (Queries.from_select
+              (Queries.select ()
+                 ~from:(Queries.from (Database.Public.users ~alias:"users"))
+                 ~select:(fun (users : _ Queries.scope) ->
+                   object
+                     method x = users#query (fun users -> users#x)
+                     method is_active = users#query (fun users -> users#is_active)
+                   end))
+              ~alias:"q"))
       ~select:(fun (q : _ Queries.scope) ->
-                 object method x = q#query (fun q -> q#x) end)
+        object
+          method x = q#query (fun q -> q#x)
+        end)
       ~where:(fun (q : _ Queries.scope) -> q#query (fun q -> q#is_active))
-  let (sql, ()) =
-    (Queries.use users) @@
-      (fun users -> ignore [users#query (fun users -> users#x)])
+  
+  let sql, () =
+    Queries.use users @@ fun users ->
+    ignore [ users#query (fun users -> users#x) ]
+  
   let () = print_endline sql
   >>> RUNNING
   SELECT q._2 AS _1
@@ -76,18 +85,21 @@ select from a JOIN:
   >>> PREPROCESSING
   let q =
     Queries.select ()
-      ~from:(Queries.join (Queries.from (Database.Public.users ~alias:"u"))
-               (Database.Public.profiles ~alias:"p")
-               ~on:(fun ((u : _ Queries.scope), (p : _ Queries.scope)) ->
-                      Queries.Expr.(=) (u#query (fun u -> u#id))
-                        (p#query (fun p -> p#user_id))))
+      ~from:
+        (Queries.join
+           (Queries.from (Database.Public.users ~alias:"u"))
+           (Database.Public.profiles ~alias:"p")
+           ~on:(fun ((u : _ Queries.scope), (p : _ Queries.scope)) ->
+             Queries.Expr.( = )
+               (u#query (fun u -> u#id))
+               (p#query (fun p -> p#user_id))))
       ~select:(fun ((u : _ Queries.scope), (p : _ Queries.scope)) ->
-                 object
-                   method _1 = u#query (fun u -> u#id)
-                   method _2 = p#query (fun p -> p#name)
-                 end)
+        object
+          method _1 = u#query (fun u -> u#id)
+          method _2 = p#query (fun p -> p#name)
+        end)
       ~where:(fun ((u : _ Queries.scope), (p : _ Queries.scope)) ->
-                u#query (fun u -> u#is_active))
+        u#query (fun u -> u#is_active))
   >>> RUNNING
 
 select from a JOIN:
@@ -104,21 +116,23 @@ select from a JOIN:
   >>> PREPROCESSING
   let q =
     Queries.select ()
-      ~from:(Queries.left_join
-               (Queries.from (Database.Public.users ~alias:"u"))
-               (Database.Public.profiles ~alias:"p")
-               ~on:(fun ((u : _ Queries.scope), (p : _ Queries.scope)) ->
-                      Queries.Expr.(=) (u#query (fun u -> u#id))
-                        (p#query (fun p -> p#user_id))))
+      ~from:
+        (Queries.left_join
+           (Queries.from (Database.Public.users ~alias:"u"))
+           (Database.Public.profiles ~alias:"p")
+           ~on:(fun ((u : _ Queries.scope), (p : _ Queries.scope)) ->
+             Queries.Expr.( = )
+               (u#query (fun u -> u#id))
+               (p#query (fun p -> p#user_id))))
       ~select:(fun ((u : _ Queries.scope), (p : _ Queries.nullable_scope)) ->
-                 object
-                   method user_id = u#query (fun u -> u#id)
-                   method user_name = p#query (fun p -> p#name)
-                 end)
+        object
+          method user_id = u#query (fun u -> u#id)
+          method user_name = p#query (fun p -> p#name)
+        end)
       ~where:(fun ((u : _ Queries.scope), (p : _ Queries.nullable_scope)) ->
-                Queries.Expr.(=)
-                  (Queries.Expr.coalesce (p#query (fun p -> p#user_id))
-                     (Queries.int 0)) (Queries.int 1))
+        Queries.Expr.( = )
+          (Queries.Expr.coalesce (p#query (fun p -> p#user_id)) (Queries.int 0))
+          (Queries.int 1))
   >>> RUNNING
   val q :
     < user_id : (Queries.non_null, int Queries.number) Queries.expr;
@@ -132,10 +146,14 @@ select from an OCaml value:
   > '
   >>> PREPROCESSING
   let users t =
-    Queries.select () ~from:(Queries.from (t ~alias:"q"))
+    Queries.select ()
+      ~from:(Queries.from (t ~alias:"q"))
       ~select:(fun (q : _ Queries.scope) ->
-                 object method _1 = q#query (fun q -> q#x) end)
+        object
+          method _1 = q#query (fun q -> q#x)
+        end)
       ~where:(fun (q : _ Queries.scope) -> q#query (fun q -> q#is_active))
+  
   let (_ : _ Queries.select) = users Database.Public.users
   >>> RUNNING
 
@@ -155,21 +173,24 @@ select from an OCaml value with JOIN:
   >>> PREPROCESSING
   let q profiles =
     Queries.select ()
-      ~from:(Queries.left_join
-               (Queries.from (Database.Public.users ~alias:"u"))
-               (profiles ~alias:"p")
-               ~on:(fun ((u : _ Queries.scope), (p : _ Queries.scope)) ->
-                      Queries.Expr.(=) (u#query (fun u -> u#id))
-                        (p#query (fun p -> p#user_id))))
+      ~from:
+        (Queries.left_join
+           (Queries.from (Database.Public.users ~alias:"u"))
+           (profiles ~alias:"p")
+           ~on:(fun ((u : _ Queries.scope), (p : _ Queries.scope)) ->
+             Queries.Expr.( = )
+               (u#query (fun u -> u#id))
+               (p#query (fun p -> p#user_id))))
       ~select:(fun ((u : _ Queries.scope), (p : _ Queries.nullable_scope)) ->
-                 object
-                   method user_id = u#query (fun u -> u#id)
-                   method user_name = p#query (fun p -> p#name)
-                 end)
+        object
+          method user_id = u#query (fun u -> u#id)
+          method user_name = p#query (fun p -> p#name)
+        end)
       ~where:(fun ((u : _ Queries.scope), (p : _ Queries.nullable_scope)) ->
-                Queries.Expr.(=)
-                  (Queries.Expr.coalesce (p#query (fun p -> p#user_id))
-                     (Queries.int 0)) (Queries.int 1))
+        Queries.Expr.( = )
+          (Queries.Expr.coalesce (p#query (fun p -> p#user_id)) (Queries.int 0))
+          (Queries.int 1))
+  
   let q = q Database.Public.profiles
   >>> RUNNING
   val q :
@@ -195,7 +216,9 @@ splicing ocaml values into WHERE:
     Queries.select ()
       ~from:(Queries.from (Database.Public.users ~alias:"users"))
       ~select:(fun (users : _ Queries.scope) ->
-                 object method x = users#query (fun users -> users#x) end)
+        object
+          method x = users#query (fun users -> users#x)
+        end)
       ~where:(fun (users : _ Queries.scope) -> where_clause users)
   >>> RUNNING
   val users :
@@ -216,7 +239,9 @@ splicing ocaml values into SELECT:
     Queries.select ()
       ~from:(Queries.from (Database.Public.users ~alias:"users"))
       ~select:(fun (users : _ Queries.scope) ->
-                 object method field = what users end)
+        object
+          method field = what users
+        end)
   >>> RUNNING
   val users :
     what:(< id : (Queries.non_null, int Queries.number) Queries.expr;
@@ -238,20 +263,25 @@ splicing ocaml values into JOIN-ON:
   >>> PREPROCESSING
   let q cond =
     Queries.select ()
-      ~from:(Queries.left_join
-               (Queries.left_join
-                  (Queries.from (Database.Public.users ~alias:"u"))
-                  (Database.Public.profiles ~alias:"p")
-                  ~on:(fun ((u : _ Queries.scope), (p : _ Queries.scope)) ->
-                         cond (u, p))) (Database.Public.profiles ~alias:"p2")
-               ~on:(fun
-                      (((u : _ Queries.scope), (p : _ Queries.nullable_scope)),
-                       (p2 : _ Queries.scope))
-                      -> Queries.bool true))
+      ~from:
+        (Queries.left_join
+           (Queries.left_join
+              (Queries.from (Database.Public.users ~alias:"u"))
+              (Database.Public.profiles ~alias:"p")
+              ~on:(fun ((u : _ Queries.scope), (p : _ Queries.scope)) ->
+                cond (u, p)))
+           (Database.Public.profiles ~alias:"p2")
+           ~on:(fun
+               ( ((u : _ Queries.scope), (p : _ Queries.nullable_scope)),
+                 (p2 : _ Queries.scope) )
+             -> Queries.bool true))
       ~select:(fun
-                 (((u : _ Queries.scope), (p : _ Queries.nullable_scope)),
-                  (p2 : _ Queries.nullable_scope))
-                 -> object method one = Queries.int 1 end)
+          ( ((u : _ Queries.scope), (p : _ Queries.nullable_scope)),
+            (p2 : _ Queries.nullable_scope) )
+        ->
+        object
+          method one = Queries.int 1
+        end)
   >>> RUNNING
   val q :
     (< id : (Queries.non_null, int Queries.number) Queries.expr;
@@ -275,13 +305,16 @@ GROUP BY single column:
     Queries.select ()
       ~from:(Queries.from (Database.Public.users ~alias:"users"))
       ~select:(fun (users : _ Queries.scope) ->
-                 object method x = users#query (fun users -> users#x) end)
+        object
+          method x = users#query (fun users -> users#x)
+        end)
       ~group_by:(fun (users : _ Queries.scope) ->
-                   List.concat
-                     [[Queries.A_expr (users#query (fun users -> users#x))]])
-  let (sql, ()) =
-    (Queries.use users) @@
-      (fun users -> ignore [users#query (fun users -> users#x)])
+        List.concat [ [ Queries.A_expr (users#query (fun users -> users#x)) ] ])
+  
+  let sql, () =
+    Queries.use users @@ fun users ->
+    ignore [ users#query (fun users -> users#x) ]
+  
   let () = print_endline sql
   >>> RUNNING
   SELECT users.x AS _1 FROM public.users AS users GROUP BY users.x
@@ -297,14 +330,19 @@ GROUP BY multiple columns:
     Queries.select ()
       ~from:(Queries.from (Database.Public.users ~alias:"users"))
       ~select:(fun (users : _ Queries.scope) ->
-                 object method x = users#query (fun users -> users#x) end)
+        object
+          method x = users#query (fun users -> users#x)
+        end)
       ~group_by:(fun (users : _ Queries.scope) ->
-                   List.concat
-                     [[Queries.A_expr (users#query (fun users -> users#x))];
-                     [Queries.A_expr (users#query (fun users -> users#id))]])
-  let (sql, ()) =
-    (Queries.use users) @@
-      (fun users -> ignore (users#query (fun users -> users#x)))
+        List.concat
+          [
+            [ Queries.A_expr (users#query (fun users -> users#x)) ];
+            [ Queries.A_expr (users#query (fun users -> users#id)) ];
+          ])
+  
+  let sql, () =
+    Queries.use users @@ fun users -> ignore (users#query (fun users -> users#x))
+  
   let () = print_endline sql
   >>> RUNNING
   SELECT users.x AS _1 FROM public.users AS users GROUP BY users.x, users.id
@@ -319,11 +357,15 @@ GROUP BY with a parameter:
     Queries.select ()
       ~from:(Queries.from (Database.Public.users ~alias:"users"))
       ~select:(fun (users : _ Queries.scope) ->
-                 object method x = users#query (fun users -> users#x) end)
+        object
+          method x = users#query (fun users -> users#x)
+        end)
       ~group_by:(fun (users : _ Queries.scope) ->
-                   List.concat
-                     [[Queries.A_expr (users#query (fun users -> users#id))];
-                     dimension users])
+        List.concat
+          [
+            [ Queries.A_expr (users#query (fun users -> users#id)) ];
+            dimension users;
+          ])
   >>> RUNNING
   val users :
     dimension:(< id : (Queries.non_null, int Queries.number) Queries.expr;
@@ -344,14 +386,17 @@ ORDER BY single column (default ASC):
     Queries.select ()
       ~from:(Queries.from (Database.Public.users ~alias:"users"))
       ~select:(fun (users : _ Queries.scope) ->
-                 object method _1 = users#query (fun users -> users#x) end)
+        object
+          method _1 = users#query (fun users -> users#x)
+        end)
       ~order_by:(fun (users : _ Queries.scope) ->
-                   List.concat
-                     [[((Queries.A_expr (users#query (fun users -> users#x))),
-                         `ASC)]])
-  let (sql, ()) =
-    (Queries.use users) @@
-      (fun users -> ignore [users#query (fun users -> users#_1)])
+        List.concat
+          [ [ (Queries.A_expr (users#query (fun users -> users#x)), `ASC) ] ])
+  
+  let sql, () =
+    Queries.use users @@ fun users ->
+    ignore [ users#query (fun users -> users#_1) ]
+  
   let () = print_endline sql
   >>> RUNNING
   SELECT users.x AS _1 FROM public.users AS users ORDER BY users.x ASC
@@ -367,14 +412,17 @@ ORDER BY with DESC:
     Queries.select ()
       ~from:(Queries.from (Database.Public.users ~alias:"users"))
       ~select:(fun (users : _ Queries.scope) ->
-                 object method _1 = users#query (fun users -> users#x) end)
+        object
+          method _1 = users#query (fun users -> users#x)
+        end)
       ~order_by:(fun (users : _ Queries.scope) ->
-                   List.concat
-                     [[((Queries.A_expr (users#query (fun users -> users#x))),
-                         `DESC)]])
-  let (sql, ()) =
-    (Queries.use users) @@
-      (fun users -> ignore [users#query (fun users -> users#_1)])
+        List.concat
+          [ [ (Queries.A_expr (users#query (fun users -> users#x)), `DESC) ] ])
+  
+  let sql, () =
+    Queries.use users @@ fun users ->
+    ignore [ users#query (fun users -> users#_1) ]
+  
   let () = print_endline sql
   >>> RUNNING
   SELECT users.x AS _1 FROM public.users AS users ORDER BY users.x DESC
@@ -390,16 +438,20 @@ ORDER BY multiple columns:
     Queries.select ()
       ~from:(Queries.from (Database.Public.users ~alias:"users"))
       ~select:(fun (users : _ Queries.scope) ->
-                 object method _1 = users#query (fun users -> users#x) end)
+        object
+          method _1 = users#query (fun users -> users#x)
+        end)
       ~order_by:(fun (users : _ Queries.scope) ->
-                   List.concat
-                     [[((Queries.A_expr (users#query (fun users -> users#x))),
-                         `ASC)];
-                     [((Queries.A_expr (users#query (fun users -> users#id))),
-                        `DESC)]])
-  let (sql, ()) =
-    (Queries.use users) @@
-      (fun users -> ignore [users#query (fun users -> users#_1)])
+        List.concat
+          [
+            [ (Queries.A_expr (users#query (fun users -> users#x)), `ASC) ];
+            [ (Queries.A_expr (users#query (fun users -> users#id)), `DESC) ];
+          ])
+  
+  let sql, () =
+    Queries.use users @@ fun users ->
+    ignore [ users#query (fun users -> users#_1) ]
+  
   let () = print_endline sql
   >>> RUNNING
   SELECT users.x AS _1
@@ -416,8 +468,10 @@ ORDER BY with a parameter:
     Queries.select ()
       ~from:(Queries.from (Database.Public.users ~alias:"users"))
       ~select:(fun (users : _ Queries.scope) ->
-                 object method _1 = users#query (fun users -> users#x) end)
-      ~order_by:(fun (users : _ Queries.scope) -> List.concat [ord users])
+        object
+          method _1 = users#query (fun users -> users#x)
+        end)
+      ~order_by:(fun (users : _ Queries.scope) -> List.concat [ ord users ])
   >>> RUNNING
   val users :
     ord:(< id : (Queries.non_null, int Queries.number) Queries.expr;
@@ -438,11 +492,15 @@ LIMIT with literal value:
     Queries.select ()
       ~from:(Queries.from (Database.Public.users ~alias:"users"))
       ~select:(fun (users : _ Queries.scope) ->
-                 object method _1 = users#query (fun users -> users#x) end)
+        object
+          method _1 = users#query (fun users -> users#x)
+        end)
       ~limit:(fun (users : _ Queries.scope) -> Queries.int 1)
-  let (sql, ()) =
-    (Queries.use users) @@
-      (fun users -> ignore [users#query (fun users -> users#_1)])
+  
+  let sql, () =
+    Queries.use users @@ fun users ->
+    ignore [ users#query (fun users -> users#_1) ]
+  
   let () = print_endline sql
   >>> RUNNING
   SELECT users.x AS _1 FROM public.users AS users LIMIT 1
@@ -457,7 +515,9 @@ LIMIT with parameter:
     Queries.select ()
       ~from:(Queries.from (Database.Public.users ~alias:"users"))
       ~select:(fun (users : _ Queries.scope) ->
-                 object method _1 = users#query (fun users -> users#x) end)
+        object
+          method _1 = users#query (fun users -> users#x)
+        end)
       ~limit:(fun (users : _ Queries.scope) -> n users)
   >>> RUNNING
   val users :
@@ -479,11 +539,15 @@ OFFSET with literal value:
     Queries.select ()
       ~from:(Queries.from (Database.Public.users ~alias:"users"))
       ~select:(fun (users : _ Queries.scope) ->
-                 object method _1 = users#query (fun users -> users#x) end)
+        object
+          method _1 = users#query (fun users -> users#x)
+        end)
       ~offset:(fun (users : _ Queries.scope) -> Queries.int 1)
-  let (sql, ()) =
-    (Queries.use users) @@
-      (fun users -> ignore [users#query (fun users -> users#_1)])
+  
+  let sql, () =
+    Queries.use users @@ fun users ->
+    ignore [ users#query (fun users -> users#_1) ]
+  
   let () = print_endline sql
   >>> RUNNING
   SELECT users.x AS _1 FROM public.users AS users OFFSET 1
@@ -498,7 +562,9 @@ OFFSET with parameter:
     Queries.select ()
       ~from:(Queries.from (Database.Public.users ~alias:"users"))
       ~select:(fun (users : _ Queries.scope) ->
-                 object method _1 = users#query (fun users -> users#x) end)
+        object
+          method _1 = users#query (fun users -> users#x)
+        end)
       ~offset:(fun (users : _ Queries.scope) -> n users)
   >>> RUNNING
   val users :
@@ -507,4 +573,92 @@ OFFSET with parameter:
          x : (Queries.non_null, string) Queries.expr >
        Queries.scope -> ('a, int Queries.number) Queries.expr) ->
     < _1 : (Queries.non_null, string) Queries.expr > Queries.scope
+    Queries.select
+
+basic window functions:
+  $ dotest '
+  > let users = [%query "SELECT count(1)over(partition by users.x order by users.x) FROM public.users"];;
+  > #show users;;
+  > '
+  >>> PREPROCESSING
+  let users =
+    Queries.select ()
+      ~from:(Queries.from (Database.Public.users ~alias:"users"))
+      ~select:(fun (users : _ Queries.scope) ->
+        object
+          method _1 =
+            Queries.Expr.count
+              ~order_by:
+                (List.concat
+                   [
+                     [
+                       (Queries.A_expr (users#query (fun users -> users#x)), `ASC);
+                     ];
+                   ])
+              ~partition_by:
+                (List.concat
+                   [ [ Queries.A_expr (users#query (fun users -> users#x)) ] ])
+              (Queries.int 1)
+        end)
+  >>> RUNNING
+  val users :
+    < _1 : (Queries.non_null, int Queries.number) Queries.expr > Queries.scope
+    Queries.select
+
+window functions / param in PARTITION BY:
+  $ dotest '
+  > let users ~g = [%query "SELECT count(1)over(partition by g... order by users.x) FROM public.users"];;
+  > #show users;;
+  > '
+  >>> PREPROCESSING
+  let users ~g =
+    Queries.select ()
+      ~from:(Queries.from (Database.Public.users ~alias:"users"))
+      ~select:(fun (users : _ Queries.scope) ->
+        object
+          method _1 =
+            Queries.Expr.count
+              ~order_by:
+                (List.concat
+                   [
+                     [
+                       (Queries.A_expr (users#query (fun users -> users#x)), `ASC);
+                     ];
+                   ])
+              ~partition_by:(List.concat [ g users ])
+              (Queries.int 1)
+        end)
+  >>> RUNNING
+  val users :
+    g:(< id : (Queries.non_null, int Queries.number) Queries.expr;
+         is_active : (Queries.non_null, bool) Queries.expr;
+         x : (Queries.non_null, string) Queries.expr >
+       Queries.scope -> Queries.a_expr list) ->
+    < _1 : (Queries.non_null, int Queries.number) Queries.expr > Queries.scope
+    Queries.select
+
+window functions / param in ORDER BY:
+  $ dotest '
+  > let users ~o = [%query "SELECT count(1)over(partition by 1 order by o...) FROM public.users"];;
+  > #show users;;
+  > '
+  >>> PREPROCESSING
+  let users ~o =
+    Queries.select ()
+      ~from:(Queries.from (Database.Public.users ~alias:"users"))
+      ~select:(fun (users : _ Queries.scope) ->
+        object
+          method _1 =
+            Queries.Expr.count
+              ~order_by:(List.concat [ o users ])
+              ~partition_by:(List.concat [ [ Queries.A_expr (Queries.int 1) ] ])
+              (Queries.int 1)
+        end)
+  >>> RUNNING
+  val users :
+    o:(< id : (Queries.non_null, int Queries.number) Queries.expr;
+         is_active : (Queries.non_null, bool) Queries.expr;
+         x : (Queries.non_null, string) Queries.expr >
+       Queries.scope -> (Queries.a_expr * [ `ASC | `DESC ]) list) ->
+    < _1 : (Queries.non_null, int Queries.number) Queries.expr > Queries.scope
     Queries.select

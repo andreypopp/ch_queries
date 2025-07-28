@@ -50,49 +50,6 @@ and from_one_scope_expr from_one =
   | F_table { alias; _ } | F_select { alias; _ } | F_value { alias; _ } ->
       evar ~loc alias.node
 
-let rec stage_expr ~from expr =
-  let loc = to_location expr in
-  match expr.Loc.node with
-  | Syntax.E_col (scope, id) ->
-      let e = evar ~loc scope.Loc.node in
-      let e' = pexp_send ~loc e (Located.mk ~loc "query") in
-      let p = pvar ~loc scope.Loc.node in
-      [%expr
-        [%e e'] (fun [%p p] ->
-            [%e pexp_send ~loc e (Located.mk ~loc id.Loc.node)])]
-  | Syntax.E_lit (L_int n) -> [%expr Queries.int [%e eint ~loc n]]
-  | Syntax.E_lit (L_bool b) -> [%expr Queries.bool [%e ebool ~loc b]]
-  | Syntax.E_lit (L_string s) -> [%expr Queries.string [%e estring ~loc s]]
-  | Syntax.E_call (name, args) ->
-      let f =
-        let loc = to_location name in
-        match name.Loc.node with
-        | "OR" -> [%expr Queries.Expr.( || )]
-        | "AND" -> [%expr Queries.Expr.( && )]
-        | _ -> evar ~loc ("Queries.Expr." ^ name.Loc.node)
-      in
-      eapply ~loc f (List.map (stage_expr ~from) args)
-  | Syntax.E_value var -> (
-      let e = evar ~loc var.Loc.node in
-      match Option.map from_scope_expr from with
-      | None -> e
-      | Some arg -> [%expr [%e e] [%e arg]])
-
-let stage_field ~from idx { Syntax.expr; alias } =
-  let idx = idx + 1 in
-  let loc = to_location expr in
-  let name =
-    let name, loc =
-      match alias with
-      | Some name ->
-          let loc = to_location name in
-          (name.Loc.node, loc)
-      | None -> ("_" ^ string_of_int idx, loc)
-    in
-    Located.mk ~loc name
-  in
-  pcf_method ~loc (name, Public, Cfk_concrete (Fresh, stage_expr ~from expr))
-
 let rec from_scope_pattern ?kind from =
   let open Syntax in
   let loc = to_location from in
@@ -120,9 +77,106 @@ and from_one_scope_pattern from_one =
   | F_table { alias; _ } | F_select { alias; _ } | F_value { alias; _ } ->
       pvar ~loc alias.node
 
+let rec stage_expr ~from expr =
+  let loc = to_location expr in
+  match expr.Loc.node with
+  | Syntax.E_col (scope, id) ->
+      let e = evar ~loc scope.Loc.node in
+      let e' = pexp_send ~loc e (Located.mk ~loc "query") in
+      let p = pvar ~loc scope.Loc.node in
+      [%expr
+        [%e e'] (fun [%p p] ->
+            [%e pexp_send ~loc e (Located.mk ~loc id.Loc.node)])]
+  | Syntax.E_lit (L_int n) -> [%expr Queries.int [%e eint ~loc n]]
+  | Syntax.E_lit (L_bool b) -> [%expr Queries.bool [%e ebool ~loc b]]
+  | Syntax.E_lit (L_string s) -> [%expr Queries.string [%e estring ~loc s]]
+  | Syntax.E_window (name, args, { partition_by; order_by }) ->
+      let f =
+        let loc = to_location name in
+        evar ~loc ("Queries.Expr." ^ name.Loc.node)
+      in
+      let args = List.map (fun arg -> (Nolabel, stage_expr ~from arg)) args in
+      let args =
+        match partition_by with
+        | None -> args
+        | Some dimensions ->
+            (Labelled "partition_by", stage_dimensions ~loc ~from dimensions)
+            :: args
+      in
+      let args =
+        match order_by with
+        | None -> args
+        | Some order_by ->
+            (Labelled "order_by", stage_order_by ~loc ~from order_by) :: args
+      in
+      pexp_apply ~loc f args
+  | Syntax.E_call (name, args) ->
+      let f =
+        let loc = to_location name in
+        match name.Loc.node with
+        | "OR" -> [%expr Queries.Expr.( || )]
+        | "AND" -> [%expr Queries.Expr.( && )]
+        | _ -> evar ~loc ("Queries.Expr." ^ name.Loc.node)
+      in
+      eapply ~loc f (List.map (stage_expr ~from) args)
+  | Syntax.E_value var -> (
+      let e = evar ~loc var.Loc.node in
+      match Option.map from_scope_expr from with
+      | None -> e
+      | Some arg -> [%expr [%e e] [%e arg]])
+
+and stage_dimensions ~loc ~from dimensions =
+  let body =
+    List.map
+      (function
+        | Syntax.Dimension_splice id ->
+            let e = Syntax.E_value id in
+            stage_expr ~from { Loc.node = e; loc = id.loc }
+        | Syntax.Dimension_expr expr ->
+            let expr = stage_expr ~from expr in
+            [%expr [ Queries.A_expr [%e expr] ]])
+      dimensions
+  in
+  [%expr List.concat [%e elist ~loc body]]
+
+and stage_order_by ~loc ~from order_by =
+  let xs =
+    List.map
+      (function
+        | Syntax.Order_by_splice id ->
+            let e = Syntax.E_value id in
+            stage_expr ~from { Loc.node = e; loc = id.loc }
+        | Syntax.Order_by_expr (expr, dir) ->
+            let expr = stage_expr ~from expr in
+            let dir =
+              match dir with `ASC -> [%expr `ASC] | `DESC -> [%expr `DESC]
+            in
+            [%expr [ (Queries.A_expr [%e expr], [%e dir]) ]])
+      order_by
+  in
+  [%expr List.concat [%e elist ~loc xs]]
+
+let stage_field ~from idx { Syntax.expr; alias } =
+  let idx = idx + 1 in
+  let loc = to_location expr in
+  let name =
+    let name, loc =
+      match alias with
+      | Some name ->
+          let loc = to_location name in
+          (name.Loc.node, loc)
+      | None -> ("_" ^ string_of_int idx, loc)
+    in
+    Located.mk ~loc name
+  in
+  pcf_method ~loc (name, Public, Cfk_concrete (Fresh, stage_expr ~from expr))
+
 let rec stage_query
-    ({ Loc.node = { Syntax.fields; from; where; group_by; order_by; limit; offset }; _ } as q)
-    =
+    ({
+       Loc.node =
+         { Syntax.fields; from; where; group_by; order_by; limit; offset };
+       _;
+     } as q) =
   let loc = to_location q in
   let select =
     let select_methods = List.mapi (stage_field ~from:(Some from)) fields in
@@ -151,47 +205,20 @@ let rec stage_query
     | None -> args
     | Some dimensions ->
         let loc = to_location q in
+        let group_by = stage_dimensions ~loc ~from:(Some from) dimensions in
         let group_by =
-          let body =
-            List.map
-              (function
-                | Syntax.Dimension_splice id ->
-                    let e = Syntax.E_value id in
-                    stage_expr ~from:(Some from) { Loc.node = e; loc = id.loc }
-                | Syntax.Dimension_expr expr ->
-                    let expr = stage_expr ~from:(Some from) expr in
-                    [%expr [ Queries.A_expr [%e expr] ]])
-              dimensions
-          in
-          let body = [%expr List.concat [%e elist ~loc body]] in
-          pexp_fun ~loc Nolabel None (from_scope_pattern from) body
+          pexp_fun ~loc Nolabel None (from_scope_pattern from) group_by
         in
         (Labelled "group_by", group_by) :: args
   in
   let args =
     match order_by with
     | None -> args
-    | Some exprs ->
+    | Some order_by ->
         let loc = to_location q in
+        let order_by = stage_order_by ~loc ~from:(Some from) order_by in
         let order_by =
-          let body =
-            List.map
-              (function
-                | Syntax.Order_by_splice id ->
-                    let e = Syntax.E_value id in
-                    stage_expr ~from:(Some from) { Loc.node = e; loc = id.loc }
-                | Syntax.Order_by_expr (expr, dir) ->
-                    let expr = stage_expr ~from:(Some from) expr in
-                    let dir =
-                      match dir with
-                      | `ASC -> [%expr `ASC]
-                      | `DESC -> [%expr `DESC]
-                    in
-                    [%expr [ (Queries.A_expr [%e expr], [%e dir]) ]])
-              exprs
-          in
-          let body = [%expr List.concat [%e elist ~loc body]] in
-          pexp_fun ~loc Nolabel None (from_scope_pattern from) body
+          pexp_fun ~loc Nolabel None (from_scope_pattern from) order_by
         in
         (Labelled "order_by", order_by) :: args
   in

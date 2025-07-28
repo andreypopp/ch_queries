@@ -22,6 +22,48 @@ let rec pp_expr expr =
   | E_lit (L_string s) ->
       string (Printf.sprintf "'%s'" (escape_single_quoted s))
   | E_value v -> string v.node
+  | E_window (name, args, window_spec) ->
+      let pp_args =
+        match args with
+        | [] -> empty
+        | _ -> separate (string "," ^^ space) (List.map ~f:pp_expr args)
+      in
+      let pp_partition_by =
+        match window_spec.partition_by with
+        | None -> empty
+        | Some dimensions ->
+            string "PARTITION BY" ^^ space
+            ^^ separate
+                 (string "," ^^ space)
+                 (List.map ~f:pp_dimension dimensions)
+      in
+      let pp_order_by =
+        match window_spec.order_by with
+        | None -> empty
+        | Some orders ->
+            let pp_order = function
+              | Order_by_expr (expr, `ASC) ->
+                  pp_expr expr ^^ space ^^ string "ASC"
+              | Order_by_expr (expr, `DESC) ->
+                  pp_expr expr ^^ space ^^ string "DESC"
+              | Order_by_splice id -> pp_id id
+            in
+            string "ORDER BY" ^^ space
+            ^^ separate (string "," ^^ space) (List.map ~f:pp_order orders)
+      in
+      let pp_over_clause =
+        let content =
+          match (window_spec.partition_by, window_spec.order_by) with
+          | None, None -> empty
+          | Some _, None -> pp_partition_by
+          | None, Some _ -> pp_order_by
+          | Some _, Some _ -> pp_partition_by ^^ space ^^ pp_order_by
+        in
+        string "OVER" ^^ space ^^ string "(" ^^ content ^^ string ")"
+      in
+      group
+        (pp_id name ^^ string "(" ^^ pp_args ^^ string ")" ^^ space
+       ^^ pp_over_clause)
   | E_call (name, args) -> (
       match (name.Loc.node, args) with
       | "+", [ left; right ] ->
@@ -45,6 +87,10 @@ let rec pp_expr expr =
             | _ -> separate (string "," ^^ space) (List.map ~f:pp_expr args)
           in
           group (pp_id name ^^ string "(" ^^ pp_args ^^ string ")"))
+
+and pp_dimension = function
+  | Dimension_expr expr -> pp_expr expr
+  | Dimension_splice id -> pp_id id ^^ string "..."
 
 let pp_field { expr; alias } =
   match alias with
@@ -77,7 +123,11 @@ and pp_from from =
        ^/^ string "ON" ^/^ pp_expr on)
 
 and pp_query
-    { Loc.node = { Syntax.fields; from; where; group_by; order_by; limit; offset }; _ } =
+    {
+      Loc.node =
+        { Syntax.fields; from; where; group_by; order_by; limit; offset };
+      _;
+    } =
   let pp_fields =
     separate (string "," ^^ break 1) (List.map ~f:pp_field fields)
   in
@@ -92,10 +142,6 @@ and pp_query
     match group_by with
     | None -> None
     | Some dimensions ->
-        let pp_dimension = function
-          | Dimension_expr expr -> pp_expr expr
-          | Dimension_splice id -> pp_id id ^^ string "..."
-        in
         let dimensions =
           match dimensions with
           | [] -> string "()"

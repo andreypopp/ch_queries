@@ -22,8 +22,16 @@ type (+'null, +'typ) expr =
   | E_id : string -> _ expr
   | E_lit : lit -> _ expr
   | E_app : string * args -> _ expr
+  | E_window : string * args * window -> _ expr
 
 and args = [] : args | ( :: ) : _ expr * args -> args
+
+and window = {
+  partition_by : a_expr list option;
+  order_by : (a_expr * [ `ASC | `DESC ]) list option;
+}
+
+and a_expr = A_expr : _ expr -> a_expr
 
 let unsafe_expr x = E_id x
 let int x = E_lit (L_int x)
@@ -45,38 +53,29 @@ module Expr = struct
   let ( && ) x y = E_app ("and", [ x; y ])
   let ( || ) x y = E_app ("or", [ x; y ])
   let not_ x = E_app ("not", [ x ])
+
+  let make_window f ?partition_by ?order_by args =
+    match (partition_by, order_by) with
+    | None, None -> E_app (f, args)
+    | _ ->
+        let window = { partition_by; order_by } in
+        E_window (f, args, window)
+
+  let count ?partition_by ?order_by x =
+    make_window ?partition_by ?order_by "count" [ x ]
+
+  let sum ?partition_by ?order_by x =
+    make_window ?partition_by ?order_by "sum" [ x ]
+
+  let uniq ?partition_by ?order_by x =
+    make_window ?partition_by ?order_by "uniq" [ x ]
 end
-
-let rec expr_to_syntax : type n typ. (n, typ) expr -> Syntax.expr = function
-  | E_id name -> Loc.with_dummy_loc (Syntax.E_value (Loc.with_dummy_loc name))
-  | E_lit lit ->
-      let syntax_lit =
-        match lit with
-        | L_int x -> Syntax.L_int x
-        | L_bool x -> Syntax.L_bool x
-        | L_string x -> Syntax.L_string x
-        | L_float _ -> failwith "float literals not supported in syntax"
-        | L_null -> failwith "null literals not supported in syntax"
-      in
-      Loc.with_dummy_loc (Syntax.E_lit syntax_lit)
-  | E_app (name, args) ->
-      let rec convert_args : args -> Syntax.expr list = function
-        | [] -> []
-        | expr :: rest -> expr_to_syntax expr :: convert_args rest
-      in
-      let args = convert_args args in
-      Loc.with_dummy_loc (Syntax.E_call (Loc.with_dummy_loc name, args))
-
-let expr_to_sql e =
-  let syn = expr_to_syntax e in
-  Printer.print_expr syn
 
 type 'a scope = < query : 'n 'e. ('a -> ('n, 'e) expr) -> ('n, 'e) expr >
 
 type 'a nullable_scope =
   < query : 'n 'e. ('a -> ('n, 'e) expr) -> (null, 'e) expr >
 
-type a_expr = A_expr : _ expr -> a_expr
 type a_field = A_field : _ expr * string -> a_field [@@ocaml.warning "-37"]
 
 type 'scope select0 =
@@ -246,10 +245,64 @@ let left_join from (join : 'a scope from_one) ~on () =
 
 let union x y scope ~alias = Union { x = x ~alias; y = y ~alias; scope }
 
+let rec expr_to_syntax : type n typ. (n, typ) expr -> Syntax.expr = function
+  | E_id name -> Loc.with_dummy_loc (Syntax.E_value (Loc.with_dummy_loc name))
+  | E_lit lit ->
+      let syntax_lit =
+        match lit with
+        | L_int x -> Syntax.L_int x
+        | L_bool x -> Syntax.L_bool x
+        | L_string x -> Syntax.L_string x
+        | L_float _ -> failwith "float literals not supported in syntax"
+        | L_null -> failwith "null literals not supported in syntax"
+      in
+      Loc.with_dummy_loc (Syntax.E_lit syntax_lit)
+  | E_app (name, args) ->
+      let rec convert_args : args -> Syntax.expr list = function
+        | [] -> []
+        | expr :: rest -> expr_to_syntax expr :: convert_args rest
+      in
+      let args = convert_args args in
+      Loc.with_dummy_loc (Syntax.E_call (Loc.with_dummy_loc name, args))
+  | E_window (name, args, { partition_by; order_by }) ->
+      let rec convert_args : args -> Syntax.expr list = function
+        | [] -> []
+        | expr :: rest -> expr_to_syntax expr :: convert_args rest
+      in
+      let args = convert_args args in
+      let window =
+        let partition_by = Option.map group_by_to_syntax partition_by in
+        let order_by = Option.map order_by_to_syntax order_by in
+        { Syntax.partition_by; order_by }
+      in
+      Loc.with_dummy_loc
+        (Syntax.E_window (Loc.with_dummy_loc name, args, window))
+
+and group_by_to_syntax dimensions =
+  List.map dimensions ~f:(fun (A_expr expr) ->
+      Syntax.Dimension_expr (expr_to_syntax expr))
+
+and order_by_to_syntax order_by =
+  List.map order_by ~f:(fun (A_expr expr, dir) ->
+      Syntax.Order_by_expr (expr_to_syntax expr, dir))
+
+let expr_to_sql e =
+  let syn = expr_to_syntax e in
+  Printer.print_expr syn
+
 let to_syntax' q =
   let rec select_to_syntax : type a. a select0 -> Syntax.querysyn = function
     | Select
-        { from = A_from from; where; group_by; order_by; limit; offset; fields; scope = _ } ->
+        {
+          from = A_from from;
+          where;
+          group_by;
+          order_by;
+          limit;
+          offset;
+          fields;
+          scope = _;
+        } ->
         let fields =
           List.rev_map
             ~f:(fun (A_field (expr, alias)) ->
@@ -262,31 +315,13 @@ let to_syntax' q =
         let where =
           Option.map (fun (A_expr expr) -> expr_to_syntax expr) where
         in
-        let group_by =
-          Option.map
-            (fun exprs ->
-              List.map
-                ~f:(fun (A_expr expr) ->
-                  Syntax.Dimension_expr (expr_to_syntax expr))
-                exprs)
-            group_by
-        in
-        let order_by =
-          Option.map
-            (fun items ->
-              List.map items ~f:(fun (A_expr expr, dir) ->
-                  Syntax.Order_by_expr (expr_to_syntax expr, dir)))
-            order_by
-        in
+        let group_by = Option.map group_by_to_syntax group_by in
+        let order_by = Option.map order_by_to_syntax order_by in
         let limit =
-          Option.map
-            (fun (A_expr expr) -> expr_to_syntax expr)
-            limit
+          Option.map (fun (A_expr expr) -> expr_to_syntax expr) limit
         in
         let offset =
-          Option.map
-            (fun (A_expr expr) -> expr_to_syntax expr)
-            offset
+          Option.map (fun (A_expr expr) -> expr_to_syntax expr) offset
         in
         let from = from_to_syntax from in
         { Syntax.fields; from; where; group_by; order_by; limit; offset }

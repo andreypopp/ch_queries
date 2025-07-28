@@ -21,6 +21,8 @@
     ("ORDER", ORDER);
     ("ASC", ASC);
     ("DESC", DESC);
+    ("OVER", OVER);
+    ("PARTITION", PARTITION);
     ("LIMIT", LIMIT);
     ("OFFSET", OFFSET);
   ]
@@ -67,6 +69,8 @@
     | Parser.ORDER -> "ORDER"
     | Parser.ASC -> "ASC"
     | Parser.DESC -> "DESC"
+    | Parser.OVER -> "OVER"
+    | Parser.PARTITION -> "PARTITION"
     | Parser.LIMIT -> "LIMIT"
     | Parser.OFFSET -> "OFFSET"
     | Parser.EOF -> "EOF"
