@@ -58,3 +58,8 @@ For pretty printing we use `pprint` library.
 When adding a new opam package, we need to install it, then add package to the
 `dune-project`. Finall to use it, we need to add the lib (or ppx) to the `dune`
 file in the relevant directory.
+
+By default, as we use `containers`, the `=` operator has the type `int -> int
+-> bool`. To compare values we need type specific operators, like
+`String.equal` or `List.equal` and etc. Same holds for `compare` function (and
+`>`, `<`, `>=`, `<=` operators).
