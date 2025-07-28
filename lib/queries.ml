@@ -314,7 +314,7 @@ let to_syntax' q =
           fields;
           scope = _;
         } ->
-        let fields =
+        let select =
           List.rev_map
             ~f:(fun (A_field (expr, alias)) ->
               {
@@ -342,7 +342,7 @@ let to_syntax' q =
         in
         let from = from_to_syntax from in
         {
-          Syntax.fields;
+          Syntax.select = Select_fields select;
           from;
           where;
           qualify;

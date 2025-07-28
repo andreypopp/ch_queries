@@ -123,3 +123,21 @@ splicing ocaml values into SELECT:
             x : (Queries.non_null, string) Queries.expr >
           Queries.scope -> 'a) ->
     < field : 'a > Queries.scope Queries.select
+
+splicing ocaml values into SELECT as scope:
+  $ ./compile_and_run '
+  > let users ~what = [%query "SELECT what... FROM public.users"];;
+  > #show users
+  > '
+  >>> PREPROCESSING
+  let users ~what =
+    Queries.select ()
+      ~from:(Queries.from (Database.Public.users ~alias:"users"))
+      ~select:what
+  >>> RUNNING
+  val users :
+    what:(< id : (Queries.non_null, int Queries.number) Queries.expr;
+            is_active : (Queries.non_null, bool) Queries.expr;
+            x : (Queries.non_null, string) Queries.expr >
+          Queries.scope -> 'a) ->
+    'a Queries.scope Queries.select

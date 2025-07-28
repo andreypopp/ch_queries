@@ -126,7 +126,7 @@ and pp_query
     {
       Loc.node =
         {
-          Syntax.fields;
+          Syntax.select;
           from;
           where;
           qualify;
@@ -139,7 +139,10 @@ and pp_query
       _;
     } =
   let pp_fields =
-    separate (string "," ^^ break 1) (List.map ~f:pp_field fields)
+    match select with
+    | Select_fields fields ->
+        separate (string "," ^^ break 1) (List.map ~f:pp_field fields)
+    | Select_splice id -> pp_id id ^^ string "..."
   in
   let select = group (string "SELECT" ^^ nest 2 (break 1 ^^ pp_fields)) in
   let from = group (string "FROM " ^^ pp_from from) in

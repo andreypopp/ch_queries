@@ -175,7 +175,7 @@ let rec stage_query
     ({
        Loc.node =
          {
-           Syntax.fields;
+           Syntax.select;
            from;
            where;
            qualify;
@@ -189,12 +189,17 @@ let rec stage_query
      } as q) =
   let loc = to_location q in
   let select =
-    let select_methods = List.mapi (stage_field ~from:(Some from)) fields in
-    let select_obj =
-      pexp_object ~loc
-        { pcstr_self = ppat_any ~loc; pcstr_fields = select_methods }
-    in
-    pexp_fun ~loc Nolabel None (from_scope_pattern from) select_obj
+    match select with
+    | Syntax.Select_fields fields ->
+        let select_methods = List.mapi (stage_field ~from:(Some from)) fields in
+        let select_obj =
+          pexp_object ~loc
+            { pcstr_self = ppat_any ~loc; pcstr_fields = select_methods }
+        in
+        pexp_fun ~loc Nolabel None (from_scope_pattern from) select_obj
+    | Syntax.Select_splice id ->
+        let loc = to_location id in
+        evar ~loc id.Loc.node
   in
   let args =
     [ (Labelled "select", select); (Labelled "from", stage_from from) ]

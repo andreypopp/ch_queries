@@ -39,11 +39,17 @@ a_query:
     q=query EOF { q }
 
 query:
-    SELECT fields=fields FROM from=from where=where? qualify=qualify? group_by=group_by? having=having? order_by=order_by? limit=limit? offset=offset?
-    { with_loc $startpos $endpos { fields; from; where; qualify; group_by; having; order_by; limit; offset } }
+    SELECT select=select FROM from=from where=where? qualify=qualify? group_by=group_by? having=having? order_by=order_by? limit=limit? offset=offset?
+    { with_loc $startpos $endpos { select; from; where; qualify; group_by; having; order_by; limit; offset } }
 
 a_expr:
     e=expr EOF { e }
+
+select:
+    id=id_splice
+    { Select_splice id }
+  | fs=fields
+    { Select_fields fs }
 
 fields:
     separated_list(COMMA, field) { $1 }

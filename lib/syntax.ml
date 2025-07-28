@@ -33,7 +33,7 @@ type order_direction = ASC | DESC
 type query = querysyn Loc.with_loc
 
 and querysyn = {
-  fields : field list;
+  select : select;
   from : from;
   where : expr option;
   qualify : expr option;
@@ -44,6 +44,7 @@ and querysyn = {
   offset : expr option;
 }
 
+and select = Select_fields of field list | Select_splice of id
 and from_one = from_onesyn Loc.with_loc
 and from = fromsyn Loc.with_loc
 
