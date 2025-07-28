@@ -44,3 +44,14 @@ let x =
           LEFT JOIN public.profiles as p
           ON u.id = p.user_id
           WHERE p.name = toNullable('Alice') AND toNullable(false)|}
+
+let users_stats ~metric =
+  let select (users : _ Queries.scope) =
+    match metric with
+    | `COUNT -> {%expr|count(1)|}
+    | `SUM_ID -> {%expr|sum(users.id)|}
+    | `ONE ->
+        let one = {%expr|1|} in
+        {%expr|?one|}
+  in
+  {%query|SELECT ?select... FROM public.users|}
