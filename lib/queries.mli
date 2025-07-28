@@ -105,19 +105,19 @@ module Expr : sig
     ?partition_by:a_expr list ->
     ?order_by:(a_expr * [ `ASC | `DESC ]) list ->
     ('n, _) expr ->
-    ('n, int number) expr
+    (non_null, int number) expr
 
   val sum :
     ?partition_by:a_expr list ->
     ?order_by:(a_expr * [ `ASC | `DESC ]) list ->
     ('n, 't number) expr ->
-    ('n, 't number) expr
+    (non_null, 't number) expr
 
   val uniq :
     ?partition_by:a_expr list ->
     ?order_by:(a_expr * [ `ASC | `DESC ]) list ->
     ('n, _) expr ->
-    ('n, int number) expr
+    (non_null, int number) expr
 end
 
 module Parser : module type of Parser
