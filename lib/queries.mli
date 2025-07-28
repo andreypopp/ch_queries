@@ -47,15 +47,17 @@ val union :
   'a scope select
 
 val select :
-  from:'a from ->
-  ?where:('a -> ('n, bool) expr) ->
-  ?group_by:('a -> a_expr list) ->
-  ?order_by:('a -> (a_expr * [ `ASC | `DESC ]) list) ->
-  ?limit:('a -> ('n, int number) expr) ->
-  ?offset:('a -> ('n, int number) expr) ->
-  select:('a -> 'b) ->
+  from:'from from ->
+  ?where:('from -> (_, bool) expr) ->
+  ?qualify:('from -> (_, bool) expr) ->
+  ?group_by:('from -> a_expr list) ->
+  ?having:('from -> (_, bool) expr) ->
+  ?order_by:('from -> (a_expr * [ `ASC | `DESC ]) list) ->
+  ?limit:('from -> (_, int number) expr) ->
+  ?offset:('from -> (_, int number) expr) ->
+  select:('from -> 'select) ->
   unit ->
-  'b scope select
+  'select scope select
 
 val from : 'a from_one -> 'a from
 

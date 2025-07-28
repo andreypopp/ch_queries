@@ -174,7 +174,17 @@ let stage_field ~from idx { Syntax.expr; alias } =
 let rec stage_query
     ({
        Loc.node =
-         { Syntax.fields; from; where; group_by; order_by; limit; offset };
+         {
+           Syntax.fields;
+           from;
+           where;
+           qualify;
+           group_by;
+           having;
+           order_by;
+           limit;
+           offset;
+         };
        _;
      } as q) =
   let loc = to_location q in
@@ -201,6 +211,17 @@ let rec stage_query
         (Labelled "where", where) :: args
   in
   let args =
+    match qualify with
+    | None -> args
+    | Some qualify ->
+        let loc = to_location qualify in
+        let qualify =
+          pexp_fun ~loc Nolabel None (from_scope_pattern from)
+            (stage_expr ~from:(Some from) qualify)
+        in
+        (Labelled "qualify", qualify) :: args
+  in
+  let args =
     match group_by with
     | None -> args
     | Some dimensions ->
@@ -210,6 +231,17 @@ let rec stage_query
           pexp_fun ~loc Nolabel None (from_scope_pattern from) group_by
         in
         (Labelled "group_by", group_by) :: args
+  in
+  let args =
+    match having with
+    | None -> args
+    | Some having ->
+        let loc = to_location having in
+        let having =
+          pexp_fun ~loc Nolabel None (from_scope_pattern from)
+            (stage_expr ~from:(Some from) having)
+        in
+        (Labelled "having", having) :: args
   in
   let args =
     match order_by with

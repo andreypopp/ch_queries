@@ -125,7 +125,17 @@ and pp_from from =
 and pp_query
     {
       Loc.node =
-        { Syntax.fields; from; where; group_by; order_by; limit; offset };
+        {
+          Syntax.fields;
+          from;
+          where;
+          qualify;
+          group_by;
+          having;
+          order_by;
+          limit;
+          offset;
+        };
       _;
     } =
   let pp_fields =
@@ -138,6 +148,11 @@ and pp_query
     | None -> None
     | Some expr -> Some (group (string "WHERE" ^/^ pp_expr expr))
   in
+  let qualify =
+    match qualify with
+    | None -> None
+    | Some expr -> Some (group (string "QUALIFY" ^/^ pp_expr expr))
+  in
   let group_by =
     match group_by with
     | None -> None
@@ -149,6 +164,11 @@ and pp_query
               separate (string ", ") (List.map ~f:pp_dimension dimensions)
         in
         Some (group (string "GROUP BY " ^^ dimensions))
+  in
+  let having =
+    match having with
+    | None -> None
+    | Some expr -> Some (group (string "HAVING" ^/^ pp_expr expr))
   in
   let order_by =
     match order_by with
@@ -176,7 +196,17 @@ and pp_query
   group
     (separate (break 1)
        (List.filter_map ~f:Fun.id
-          [ Some select; Some from; where; group_by; order_by; limit; offset ]))
+          [
+            Some select;
+            Some from;
+            where;
+            qualify;
+            group_by;
+            having;
+            order_by;
+            limit;
+            offset;
+          ]))
 
 let print' pp v =
   let buffer = Buffer.create 256 in

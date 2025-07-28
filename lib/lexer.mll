@@ -7,6 +7,8 @@
     ("SELECT", SELECT);
     ("FROM", FROM);
     ("WHERE", WHERE);
+    ("QUALIFY", QUALIFY);
+    ("HAVING", HAVING);
     ("AS", AS);
     ("TRUE", TRUE);
     ("FALSE", FALSE);
@@ -66,11 +68,13 @@
     | Parser.ON -> "ON"
     | Parser.GROUP -> "GROUP"
     | Parser.BY -> "BY"
+    | Parser.HAVING -> "HAVING"
     | Parser.ORDER -> "ORDER"
     | Parser.ASC -> "ASC"
     | Parser.DESC -> "DESC"
     | Parser.OVER -> "OVER"
     | Parser.PARTITION -> "PARTITION"
+    | Parser.QUALIFY -> "QUALIFY"
     | Parser.LIMIT -> "LIMIT"
     | Parser.OFFSET -> "OFFSET"
     | Parser.EOF -> "EOF"

@@ -83,7 +83,9 @@ type 'scope select0 =
       from : a_from0;
       scope : 'scope;  (** scope of the query, once it is queried *)
       where : a_expr option;
+      qualify : a_expr option;
       group_by : a_expr list option;
+      having : a_expr option;
       order_by : (a_expr * [ `ASC | `DESC ]) list option;
       limit : a_expr option;
       offset : a_expr option;
@@ -155,12 +157,17 @@ let rec add_field expr select =
       let _alias = add_field expr u.y in
       alias
 
-let select ~from ?where ?group_by ?order_by ?limit ?offset ~select () ~alias =
+let select ~from ?where ?qualify ?group_by ?having ?order_by ?limit ?offset
+    ~select () ~alias =
   let from = from () in
   let inner_scope = scope_from from in
   let scope' = select inner_scope in
   let where = Option.map (fun where -> A_expr (where inner_scope)) where in
+  let qualify =
+    Option.map (fun qualify -> A_expr (qualify inner_scope)) qualify
+  in
   let group_by = Option.map (fun group_by -> group_by inner_scope) group_by in
+  let having = Option.map (fun having -> A_expr (having inner_scope)) having in
   let order_by = Option.map (fun order_by -> order_by inner_scope) order_by in
   let limit = Option.map (fun limit -> A_expr (limit inner_scope)) limit in
   let offset = Option.map (fun offset -> A_expr (offset inner_scope)) offset in
@@ -178,7 +185,9 @@ let select ~from ?where ?group_by ?order_by ?limit ?offset ~select () ~alias =
                    unsafe_expr (Printf.sprintf "%s.%s" alias c)
              end;
            where;
+           qualify;
            group_by;
+           having;
            order_by;
            limit;
            offset;
@@ -296,7 +305,9 @@ let to_syntax' q =
         {
           from = A_from from;
           where;
+          qualify;
           group_by;
+          having;
           order_by;
           limit;
           offset;
@@ -315,7 +326,13 @@ let to_syntax' q =
         let where =
           Option.map (fun (A_expr expr) -> expr_to_syntax expr) where
         in
+        let qualify =
+          Option.map (fun (A_expr expr) -> expr_to_syntax expr) qualify
+        in
         let group_by = Option.map group_by_to_syntax group_by in
+        let having =
+          Option.map (fun (A_expr expr) -> expr_to_syntax expr) having
+        in
         let order_by = Option.map order_by_to_syntax order_by in
         let limit =
           Option.map (fun (A_expr expr) -> expr_to_syntax expr) limit
@@ -324,7 +341,17 @@ let to_syntax' q =
           Option.map (fun (A_expr expr) -> expr_to_syntax expr) offset
         in
         let from = from_to_syntax from in
-        { Syntax.fields; from; where; group_by; order_by; limit; offset }
+        {
+          Syntax.fields;
+          from;
+          where;
+          qualify;
+          group_by;
+          having;
+          order_by;
+          limit;
+          offset;
+        }
     | Union { x = _; y = _; _ } ->
         failwith "TODO: union queries not yet supported"
   and from_one_to_syntax : type a. a from_one0 -> Syntax.from_one = function

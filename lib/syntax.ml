@@ -36,7 +36,9 @@ and querysyn = {
   fields : field list;
   from : from;
   where : expr option;
+  qualify : expr option;
   group_by : dimension list option;
+  having : expr option;
   order_by : order_by list option;
   limit : expr option;
   offset : expr option;

@@ -18,8 +18,8 @@
 %token PLUS MINUS STAR SLASH EQUALS
 %token AND OR
 %token INNER JOIN LEFT ON
-%token GROUP BY ORDER ASC DESC
-%token OVER PARTITION
+%token GROUP BY HAVING ORDER ASC DESC
+%token OVER PARTITION QUALIFY
 %token LIMIT OFFSET
 %token EOF
 
@@ -39,8 +39,8 @@ a_query:
     q=query EOF { q }
 
 query:
-    SELECT fields=fields FROM from=from where=where? group_by=group_by? order_by=order_by? limit=limit? offset=offset?
-    { with_loc $startpos $endpos { fields; from; where; group_by; order_by; limit; offset } }
+    SELECT fields=fields FROM from=from where=where? qualify=qualify? group_by=group_by? having=having? order_by=order_by? limit=limit? offset=offset?
+    { with_loc $startpos $endpos { fields; from; where; qualify; group_by; having; order_by; limit; offset } }
 
 a_expr:
     e=expr EOF { e }
@@ -63,6 +63,12 @@ alias:
 
 where:
     WHERE e=expr { e }
+
+qualify:
+    QUALIFY e=expr { e }
+
+having:
+    HAVING e=expr { e }
 
 group_by:
     GROUP BY dimensions=separated_list(COMMA, dimension) { dimensions }
