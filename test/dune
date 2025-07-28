@@ -7,4 +7,5 @@
 (cram
  (deps
   ./test_queries.ml
+  ./compile_and_run
   (package queries)))

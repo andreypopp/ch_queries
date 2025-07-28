@@ -1,21 +1,6 @@
 
-  $ dotest() {
-  > rm -f test_query.ml
-  > echo '
-  > #use "topfind"
-  > #require "queries"
-  > #require "queries.ppx"
-  > #use "test_queries.ml"
-  > ' > test_query.ml
-  > echo '>>> PREPROCESSING'
-  > echo "$1" | rg -v '^#' | ppx_queries -impl - | ocamlformat --enable-outside-detected-project --name test_query.ml --impl -
-  > echo '>>> RUNNING'
-  > echo "$1" >> test_query.ml
-  > ocaml ./test_query.ml
-  > }
-
 basic form:
-  $ dotest '
+  $ ./compile_and_run '
   > let users = [%query "SELECT users.x AS x FROM public.users WHERE users.is_active"];;
   > let sql, () = Queries.use users @@ fun users -> ignore [[%expr "users.x"]]
   > let () = print_endline sql;;
@@ -40,7 +25,7 @@ basic form:
   SELECT users.x AS _1 FROM public.users AS users WHERE users.is_active
 
 select from a subquery:
-  $ dotest '
+  $ ./compile_and_run '
   > let users = [%query "SELECT q.x AS x FROM (SELECT users.x AS x, users.is_active AS is_active FROM public.users) AS q WHERE q.is_active"];;
   > let sql, () = Queries.use users @@ fun users -> ignore [
   >   [%expr "users.x"];
@@ -79,7 +64,7 @@ select from a subquery:
   WHERE q._1
 
 select from a JOIN:
-  $ dotest '
+  $ ./compile_and_run '
   > let q = [%query "SELECT u.id, p.name FROM public.users AS u JOIN public.profiles AS p ON u.id = p.user_id WHERE u.is_active"]
   > '
   >>> PREPROCESSING
@@ -103,7 +88,7 @@ select from a JOIN:
   >>> RUNNING
 
 select from a JOIN:
-  $ dotest '
+  $ ./compile_and_run '
   > let q = [%query "
   >   SELECT u.id AS user_id, p.name AS user_name
   >   FROM public.users AS u
@@ -140,7 +125,7 @@ select from a JOIN:
     Queries.scope Queries.select
 
 select from an OCaml value:
-  $ dotest '
+  $ ./compile_and_run '
   > let users t = [%query "SELECT q.x FROM t AS q WHERE q.is_active"]
   > let (_ : _ Queries.select) = users Database.Public.users
   > '
@@ -158,7 +143,7 @@ select from an OCaml value:
   >>> RUNNING
 
 select from an OCaml value with JOIN:
-  $ dotest '
+  $ ./compile_and_run '
   > let q profiles = [%query "
   >   SELECT u.id AS user_id, p.name AS user_name
   >   FROM public.users AS u
@@ -207,7 +192,7 @@ select from an OCaml value with JOIN:
     Queries.scope Queries.select
 
 splicing ocaml values into WHERE:
-  $ dotest '
+  $ ./compile_and_run '
   > let users ~where_clause = [%query "SELECT users.x AS x FROM public.users WHERE where_clause"];;
   > #show users
   > '
@@ -230,7 +215,7 @@ splicing ocaml values into WHERE:
     Queries.select
 
 splicing ocaml values into SELECT:
-  $ dotest '
+  $ ./compile_and_run '
   > let users ~what = [%query "SELECT what AS field FROM public.users"];;
   > #show users
   > '
@@ -251,7 +236,7 @@ splicing ocaml values into SELECT:
     < field : 'a > Queries.scope Queries.select
 
 splicing ocaml values into JOIN-ON:
-  $ dotest '
+  $ ./compile_and_run '
   > let q cond = [%query "
   >   SELECT 1 as one
   >   FROM public.users AS u
@@ -295,7 +280,7 @@ splicing ocaml values into JOIN-ON:
     Queries.select
 
 GROUP BY single column:
-  $ dotest '
+  $ ./compile_and_run '
   > let users = [%query "SELECT users.x AS x FROM public.users GROUP BY users.x"];;
   > let sql, () = Queries.use users @@ fun users -> ignore [[%expr "users.x"]]
   > let () = print_endline sql;;
@@ -320,7 +305,7 @@ GROUP BY single column:
   SELECT users.x AS _1 FROM public.users AS users GROUP BY users.x
 
 GROUP BY multiple columns:
-  $ dotest '
+  $ ./compile_and_run '
   > let users = [%query "SELECT users.x AS x FROM public.users GROUP BY users.x, users.id"];;
   > let sql, () = Queries.use users @@ fun users -> ignore [%expr "users.x"];;
   > let () = print_endline sql;;
@@ -348,7 +333,7 @@ GROUP BY multiple columns:
   SELECT users.x AS _1 FROM public.users AS users GROUP BY users.x, users.id
 
 GROUP BY with a parameter:
-  $ dotest '
+  $ ./compile_and_run '
   > let users ~dimension = [%query "SELECT users.x AS x FROM public.users GROUP BY users.id, dimension..."];;
   > #show users;;
   > '
@@ -376,7 +361,7 @@ GROUP BY with a parameter:
     Queries.select
 
 ORDER BY single column (default ASC):
-  $ dotest '
+  $ ./compile_and_run '
   > let users = [%query "SELECT users.x FROM public.users ORDER BY users.x"];;
   > let sql, () = Queries.use users @@ fun users -> ignore [[%expr "users._1"]]
   > let () = print_endline sql;;
@@ -402,7 +387,7 @@ ORDER BY single column (default ASC):
   SELECT users.x AS _1 FROM public.users AS users ORDER BY users.x ASC
 
 ORDER BY with DESC:
-  $ dotest '
+  $ ./compile_and_run '
   > let users = [%query "SELECT users.x FROM public.users ORDER BY users.x DESC"];;
   > let sql, () = Queries.use users @@ fun users -> ignore [[%expr "users._1"]]
   > let () = print_endline sql;;
@@ -428,7 +413,7 @@ ORDER BY with DESC:
   SELECT users.x AS _1 FROM public.users AS users ORDER BY users.x DESC
 
 ORDER BY multiple columns:
-  $ dotest '
+  $ ./compile_and_run '
   > let users = [%query "SELECT users.x FROM public.users ORDER BY users.x, users.id DESC"];;
   > let sql, () = Queries.use users @@ fun users -> ignore [[%expr "users._1"]]
   > let () = print_endline sql;;
@@ -459,7 +444,7 @@ ORDER BY multiple columns:
   ORDER BY users.x ASC, users.id DESC
 
 ORDER BY with a parameter:
-  $ dotest '
+  $ ./compile_and_run '
   > let users ~ord = [%query "SELECT users.x FROM public.users ORDER BY ord..."];;
   > #show users;;
   > '
@@ -482,7 +467,7 @@ ORDER BY with a parameter:
     Queries.select
 
 LIMIT with literal value:
-  $ dotest '
+  $ ./compile_and_run '
   > let users = [%query "SELECT users.x FROM public.users LIMIT 1"];;
   > let sql, () = Queries.use users @@ fun users -> ignore [[%expr "users._1"]]
   > let () = print_endline sql;;
@@ -506,7 +491,7 @@ LIMIT with literal value:
   SELECT users.x AS _1 FROM public.users AS users LIMIT 1
 
 LIMIT with parameter:
-  $ dotest '
+  $ ./compile_and_run '
   > let users ~n = [%query "SELECT users.x FROM public.users LIMIT n"];;
   > #show users;;
   > '
@@ -529,7 +514,7 @@ LIMIT with parameter:
     Queries.select
 
 OFFSET with literal value:
-  $ dotest '
+  $ ./compile_and_run '
   > let users = [%query "SELECT users.x FROM public.users OFFSET 1"];;
   > let sql, () = Queries.use users @@ fun users -> ignore [[%expr "users._1"]]
   > let () = print_endline sql;;
@@ -553,7 +538,7 @@ OFFSET with literal value:
   SELECT users.x AS _1 FROM public.users AS users OFFSET 1
 
 OFFSET with parameter:
-  $ dotest '
+  $ ./compile_and_run '
   > let users ~n = [%query "SELECT users.x FROM public.users OFFSET n"];;
   > #show users;;
   > '
@@ -576,7 +561,7 @@ OFFSET with parameter:
     Queries.select
 
 basic window functions:
-  $ dotest '
+  $ ./compile_and_run '
   > let users = [%query "SELECT count(1)over(partition by users.x order by users.x) FROM public.users"];;
   > #show users;;
   > '
@@ -606,7 +591,7 @@ basic window functions:
     Queries.select
 
 window functions / param in PARTITION BY:
-  $ dotest '
+  $ ./compile_and_run '
   > let users ~g = [%query "SELECT count(1)over(partition by g... order by users.x) FROM public.users"];;
   > #show users;;
   > '
@@ -638,7 +623,7 @@ window functions / param in PARTITION BY:
     Queries.select
 
 window functions / param in ORDER BY:
-  $ dotest '
+  $ ./compile_and_run '
   > let users ~o = [%query "SELECT count(1)over(partition by 1 order by o...) FROM public.users"];;
   > #show users;;
   > '
