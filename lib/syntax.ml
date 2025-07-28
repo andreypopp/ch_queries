@@ -12,9 +12,19 @@ and exprsyn =
 and lit = L_int of int | L_bool of bool | L_string of string
 
 type field = { expr : expr; alias : id option }
+type order_direction = ASC | DESC
+type order_by_item = { expr : expr; direction : order_direction }
 
 type query = querysyn Loc.with_loc
-and querysyn = { fields : field list; from : from; where : expr option }
+
+and querysyn = {
+  fields : field list;
+  from : from;
+  where : expr option;
+  group_by : expr list option;
+  order_by : order_by_item list option;
+}
+
 and from_one = from_onesyn Loc.with_loc
 and from = fromsyn Loc.with_loc
 

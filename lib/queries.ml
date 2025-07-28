@@ -254,6 +254,8 @@ let to_syntax' q =
           Syntax.fields = syntax_fields;
           from = syntax_from;
           where = syntax_where;
+          group_by = None;
+          order_by = None;
         }
     | Union { x = _; y = _; _ } ->
         failwith "TODO: union queries not yet supported"

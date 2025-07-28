@@ -76,7 +76,8 @@ and pp_from from =
         (pp_from from ^/^ string join_kind_str ^/^ pp_from_one join
        ^/^ string "ON" ^/^ pp_expr on)
 
-and pp_query { Loc.node = { Syntax.fields; from; where }; _ } =
+and pp_query
+    { Loc.node = { Syntax.fields; from; where; group_by; order_by }; _ } =
   let pp_fields =
     separate (string "," ^^ break 1) (List.map ~f:pp_field fields)
   in
@@ -87,9 +88,30 @@ and pp_query { Loc.node = { Syntax.fields; from; where }; _ } =
     | None -> None
     | Some expr -> Some (group (string "WHERE" ^/^ pp_expr expr))
   in
+  let group_by =
+    match group_by with
+    | None -> None
+    | Some exprs ->
+        let pp_exprs = separate (string ", ") (List.map ~f:pp_expr exprs) in
+        Some (group (string "GROUP BY " ^^ pp_exprs))
+  in
+  let order_by =
+    match order_by with
+    | None -> None
+    | Some items ->
+        let pp_item { Syntax.expr; direction } =
+          let dir_str =
+            match direction with Syntax.ASC -> "ASC" | Syntax.DESC -> "DESC"
+          in
+          group (pp_expr expr ^^ string " " ^^ string dir_str)
+        in
+        let pp_items = separate (string ", ") (List.map ~f:pp_item items) in
+        Some (group (string "ORDER BY " ^^ pp_items))
+  in
   group
     (separate (break 1)
-       (List.filter_map ~f:Fun.id [ Some select; Some from; where ]))
+       (List.filter_map ~f:Fun.id
+          [ Some select; Some from; where; group_by; order_by ]))
 
 let print' pp v =
   let buffer = Buffer.create 256 in

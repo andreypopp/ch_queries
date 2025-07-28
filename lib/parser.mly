@@ -17,6 +17,7 @@
 %token PLUS MINUS STAR SLASH EQUALS
 %token AND OR
 %token INNER JOIN LEFT ON
+%token GROUP BY ORDER ASC DESC
 %token EOF
 
 %left OR
@@ -35,8 +36,8 @@ a_query:
     q=query EOF { q }
 
 query:
-    SELECT fields=fields FROM from=from where=where?
-    { with_loc $startpos $endpos { fields; from; where } }
+    SELECT fields=fields FROM from=from where=where? group_by=group_by? order_by=order_by?
+    { with_loc $startpos $endpos { fields; from; where; group_by; order_by } }
 
 a_expr:
     e=expr EOF { e }
@@ -56,6 +57,17 @@ alias:
 
 where:
     WHERE e=expr { e }
+
+group_by:
+    GROUP BY exprs=separated_list(COMMA, expr) { exprs }
+
+order_by:
+    ORDER BY items=separated_list(COMMA, order_by_item) { items }
+
+order_by_item:
+    e=expr { { Syntax.expr = e; direction = Syntax.ASC } }
+  | e=expr ASC { { Syntax.expr = e; direction = Syntax.ASC } }
+  | e=expr DESC { { Syntax.expr = e; direction = Syntax.DESC } }
 
 from:
     f=from_one

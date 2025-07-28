@@ -16,6 +16,11 @@
     ("INNER", INNER);
     ("LEFT", LEFT);
     ("ON", ON);
+    ("GROUP", GROUP);
+    ("BY", BY);
+    ("ORDER", ORDER);
+    ("ASC", ASC);
+    ("DESC", DESC);
   ]
 
   let keyword_table = Hashtbl.create 16
@@ -54,6 +59,11 @@
     | Parser.JOIN -> "JOIN"
     | Parser.LEFT -> "LEFT"
     | Parser.ON -> "ON"
+    | Parser.GROUP -> "GROUP"
+    | Parser.BY -> "BY"
+    | Parser.ORDER -> "ORDER"
+    | Parser.ASC -> "ASC"
+    | Parser.DESC -> "DESC"
     | Parser.EOF -> "EOF"
 
 }

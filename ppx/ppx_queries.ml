@@ -118,7 +118,7 @@ and from_one_scope_pattern from_one =
       pvar ~loc alias.node
 
 let rec stage_query
-    ({ Queries.Loc.node = { Queries.Syntax.fields; from; where }; _ } as q) =
+    ({ Queries.Loc.node = { Queries.Syntax.fields; from; where; _ }; _ } as q) =
   let loc = to_location q in
   let select =
     let select_methods = List.mapi (stage_field ~from:(Some from)) fields in
