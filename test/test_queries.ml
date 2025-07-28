@@ -29,6 +29,8 @@ end
 
 [@@@ocaml.warning "-27"]
 
+let ( && ) x y = {%expr|?x AND ?y|}
+
 let users ~condition =
   {%query|SELECT u.x AS x, u.id AS id FROM public.users as u WHERE ?condition|}
 
