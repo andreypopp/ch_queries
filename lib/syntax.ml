@@ -31,6 +31,8 @@ and querysyn = {
   where : expr option;
   group_by : dimension list option;
   order_by : order_by list option;
+  limit : expr option;
+  offset : expr option;
 }
 
 and from_one = from_onesyn Loc.with_loc

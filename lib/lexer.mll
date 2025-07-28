@@ -21,6 +21,8 @@
     ("ORDER", ORDER);
     ("ASC", ASC);
     ("DESC", DESC);
+    ("LIMIT", LIMIT);
+    ("OFFSET", OFFSET);
   ]
 
   let keyword_table = Hashtbl.create 16
@@ -65,6 +67,8 @@
     | Parser.ORDER -> "ORDER"
     | Parser.ASC -> "ASC"
     | Parser.DESC -> "DESC"
+    | Parser.LIMIT -> "LIMIT"
+    | Parser.OFFSET -> "OFFSET"
     | Parser.EOF -> "EOF"
 
 }

@@ -51,6 +51,8 @@ val select :
   ?where:('a -> ('n, bool) expr) ->
   ?group_by:('a -> a_expr list) ->
   ?order_by:('a -> (a_expr * [ `ASC | `DESC ]) list) ->
+  ?limit:('a -> ('n, int number) expr) ->
+  ?offset:('a -> ('n, int number) expr) ->
   select:('a -> 'b) ->
   unit ->
   'b scope select

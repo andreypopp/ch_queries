@@ -77,7 +77,7 @@ and pp_from from =
        ^/^ string "ON" ^/^ pp_expr on)
 
 and pp_query
-    { Loc.node = { Syntax.fields; from; where; group_by; order_by }; _ } =
+    { Loc.node = { Syntax.fields; from; where; group_by; order_by; limit; offset }; _ } =
   let pp_fields =
     separate (string "," ^^ break 1) (List.map ~f:pp_field fields)
   in
@@ -117,10 +117,20 @@ and pp_query
         let pp_items = separate (string ", ") (List.map ~f:pp_item items) in
         Some (group (string "ORDER BY " ^^ pp_items))
   in
+  let limit =
+    match limit with
+    | None -> None
+    | Some expr -> Some (group (string "LIMIT" ^/^ pp_expr expr))
+  in
+  let offset =
+    match offset with
+    | None -> None
+    | Some expr -> Some (group (string "OFFSET" ^/^ pp_expr expr))
+  in
   group
     (separate (break 1)
        (List.filter_map ~f:Fun.id
-          [ Some select; Some from; where; group_by; order_by ]))
+          [ Some select; Some from; where; group_by; order_by; limit; offset ]))
 
 let print' pp v =
   let buffer = Buffer.create 256 in

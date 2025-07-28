@@ -86,6 +86,8 @@ type 'scope select0 =
       where : a_expr option;
       group_by : a_expr list option;
       order_by : (a_expr * [ `ASC | `DESC ]) list option;
+      limit : a_expr option;
+      offset : a_expr option;
       mutable fields : a_field list;
           (** list of fields build within the SELECT *)
     }
@@ -154,13 +156,15 @@ let rec add_field expr select =
       let _alias = add_field expr u.y in
       alias
 
-let select ~from ?where ?group_by ?order_by ~select () ~alias =
+let select ~from ?where ?group_by ?order_by ?limit ?offset ~select () ~alias =
   let from = from () in
   let inner_scope = scope_from from in
   let scope' = select inner_scope in
   let where = Option.map (fun where -> A_expr (where inner_scope)) where in
   let group_by = Option.map (fun group_by -> group_by inner_scope) group_by in
   let order_by = Option.map (fun order_by -> order_by inner_scope) order_by in
+  let limit = Option.map (fun limit -> A_expr (limit inner_scope)) limit in
+  let offset = Option.map (fun offset -> A_expr (offset inner_scope)) offset in
   let rec select =
     lazy
       (Select
@@ -177,6 +181,8 @@ let select ~from ?where ?group_by ?order_by ~select () ~alias =
            where;
            group_by;
            order_by;
+           limit;
+           offset;
            fields = [];
          })
   in
@@ -243,7 +249,7 @@ let union x y scope ~alias = Union { x = x ~alias; y = y ~alias; scope }
 let to_syntax' q =
   let rec select_to_syntax : type a. a select0 -> Syntax.querysyn = function
     | Select
-        { from = A_from from; where; group_by; order_by; fields; scope = _ } ->
+        { from = A_from from; where; group_by; order_by; limit; offset; fields; scope = _ } ->
         let fields =
           List.rev_map
             ~f:(fun (A_field (expr, alias)) ->
@@ -272,8 +278,18 @@ let to_syntax' q =
                   Syntax.Order_by_expr (expr_to_syntax expr, dir)))
             order_by
         in
+        let limit =
+          Option.map
+            (fun (A_expr expr) -> expr_to_syntax expr)
+            limit
+        in
+        let offset =
+          Option.map
+            (fun (A_expr expr) -> expr_to_syntax expr)
+            offset
+        in
         let from = from_to_syntax from in
-        { Syntax.fields; from; where; group_by; order_by }
+        { Syntax.fields; from; where; group_by; order_by; limit; offset }
     | Union { x = _; y = _; _ } ->
         failwith "TODO: union queries not yet supported"
   and from_one_to_syntax : type a. a from_one0 -> Syntax.from_one = function

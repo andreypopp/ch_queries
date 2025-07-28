@@ -19,6 +19,7 @@
 %token AND OR
 %token INNER JOIN LEFT ON
 %token GROUP BY ORDER ASC DESC
+%token LIMIT OFFSET
 %token EOF
 
 %left OR
@@ -37,8 +38,8 @@ a_query:
     q=query EOF { q }
 
 query:
-    SELECT fields=fields FROM from=from where=where? group_by=group_by? order_by=order_by?
-    { with_loc $startpos $endpos { fields; from; where; group_by; order_by } }
+    SELECT fields=fields FROM from=from where=where? group_by=group_by? order_by=order_by? limit=limit? offset=offset?
+    { with_loc $startpos $endpos { fields; from; where; group_by; order_by; limit; offset } }
 
 a_expr:
     e=expr EOF { e }
@@ -77,6 +78,12 @@ order_by_item:
   | e=expr { Order_by_expr (e, `ASC) }
   | e=expr ASC { Order_by_expr (e, `ASC) }
   | e=expr DESC { Order_by_expr (e, `DESC) }
+
+limit:
+    LIMIT e=expr { e }
+
+offset:
+    OFFSET e=expr { e }
 
 from:
     f=from_one

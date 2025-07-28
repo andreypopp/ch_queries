@@ -121,7 +121,7 @@ and from_one_scope_pattern from_one =
       pvar ~loc alias.node
 
 let rec stage_query
-    ({ Loc.node = { Syntax.fields; from; where; group_by; order_by }; _ } as q)
+    ({ Loc.node = { Syntax.fields; from; where; group_by; order_by; limit; offset }; _ } as q)
     =
   let loc = to_location q in
   let select =
@@ -194,6 +194,26 @@ let rec stage_query
           pexp_fun ~loc Nolabel None (from_scope_pattern from) body
         in
         (Labelled "order_by", order_by) :: args
+  in
+  let args =
+    match limit with
+    | None -> args
+    | Some expr ->
+        let limit =
+          pexp_fun ~loc Nolabel None (from_scope_pattern from)
+            (stage_expr ~from:(Some from) expr)
+        in
+        (Labelled "limit", limit) :: args
+  in
+  let args =
+    match offset with
+    | None -> args
+    | Some expr ->
+        let offset =
+          pexp_fun ~loc Nolabel None (from_scope_pattern from)
+            (stage_expr ~from:(Some from) expr)
+        in
+        (Labelled "offset", offset) :: args
   in
   pexp_apply ~loc [%expr Queries.select] ((Nolabel, [%expr ()]) :: List.rev args)
 
