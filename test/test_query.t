@@ -64,7 +64,7 @@ select from a subquery:
 
 select from an OCaml value:
   $ ./compile_and_run '
-  > let users t = [%query "SELECT q.x FROM t AS q WHERE q.is_active"]
+  > let users t = [%query "SELECT q.x FROM ?t AS q WHERE q.is_active"]
   > let (_ : _ Queries.select) = users Database.Public.users
   > '
   >>> PREPROCESSING
@@ -82,30 +82,30 @@ select from an OCaml value:
 
 splicing ocaml values into WHERE:
   $ ./compile_and_run '
-  > let users ~where_clause = [%query "SELECT users.x AS x FROM public.users WHERE where_clause"];;
+  > let users ~where = [%query "SELECT users.x AS x FROM public.users WHERE ?where"];;
   > #show users
   > '
   >>> PREPROCESSING
-  let users ~where_clause =
+  let users ~where =
     Queries.select ()
       ~from:(Queries.from (Database.Public.users ~alias:"users"))
       ~select:(fun (users : _ Queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
         end)
-      ~where:(fun (users : _ Queries.scope) -> where_clause users)
+      ~where:(fun (users : _ Queries.scope) -> where users)
   >>> RUNNING
   val users :
-    where_clause:(< id : (Queries.non_null, int Queries.number) Queries.expr;
-                    is_active : (Queries.non_null, bool) Queries.expr;
-                    x : (Queries.non_null, string) Queries.expr >
-                  Queries.scope -> ('a, bool) Queries.expr) ->
+    where:(< id : (Queries.non_null, int Queries.number) Queries.expr;
+             is_active : (Queries.non_null, bool) Queries.expr;
+             x : (Queries.non_null, string) Queries.expr >
+           Queries.scope -> ('a, bool) Queries.expr) ->
     < x : (Queries.non_null, string) Queries.expr > Queries.scope
     Queries.select
 
 splicing ocaml values into SELECT:
   $ ./compile_and_run '
-  > let users ~what = [%query "SELECT what AS field FROM public.users"];;
+  > let users ~what = [%query "SELECT ?what AS field FROM public.users"];;
   > #show users
   > '
   >>> PREPROCESSING
@@ -126,7 +126,7 @@ splicing ocaml values into SELECT:
 
 splicing ocaml values into SELECT as scope:
   $ ./compile_and_run '
-  > let users ~what = [%query "SELECT what... FROM public.users"];;
+  > let users ~what = [%query "SELECT ?what... FROM public.users"];;
   > #show users
   > '
   >>> PREPROCESSING

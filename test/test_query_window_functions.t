@@ -30,7 +30,7 @@ basic window functions:
 
 window functions / param in PARTITION BY:
   $ ./compile_and_run '
-  > let users ~g = [%query "SELECT count(1)over(partition by g... order by users.x) FROM public.users"];;
+  > let users ~g = [%query "SELECT count(1)over(partition by ?g... order by users.x) FROM public.users"];;
   > #show users;;
   > '
   >>> PREPROCESSING
@@ -62,7 +62,7 @@ window functions / param in PARTITION BY:
 
 window functions / param in ORDER BY:
   $ ./compile_and_run '
-  > let users ~o = [%query "SELECT count(1)over(partition by 1 order by o...) FROM public.users"];;
+  > let users ~o = [%query "SELECT count(1)over(partition by 1 order by ?o...) FROM public.users"];;
   > #show users;;
   > '
   >>> PREPROCESSING

@@ -24,7 +24,7 @@ LIMIT with literal value:
 
 LIMIT with parameter:
   $ ./compile_and_run '
-  > let users ~n = [%query "SELECT users.x FROM public.users LIMIT n"];;
+  > let users ~n = [%query "SELECT users.x FROM public.users LIMIT ?n"];;
   > #show users;;
   > '
   >>> PREPROCESSING
@@ -71,7 +71,7 @@ OFFSET with literal value:
 
 OFFSET with parameter:
   $ ./compile_and_run '
-  > let users ~n = [%query "SELECT users.x FROM public.users OFFSET n"];;
+  > let users ~n = [%query "SELECT users.x FROM public.users OFFSET ?n"];;
   > #show users;;
   > '
   >>> PREPROCESSING

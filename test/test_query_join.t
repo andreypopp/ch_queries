@@ -59,7 +59,7 @@ select from an OCaml value with JOIN:
   > let q profiles = [%query "
   >   SELECT u.id AS user_id, p.name AS user_name
   >   FROM public.users AS u
-  >   LEFT JOIN profiles AS p
+  >   LEFT JOIN ?profiles AS p
   >   ON u.id = p.user_id
   > "];;
   > #show q
@@ -103,7 +103,7 @@ splicing ocaml values into JOIN-ON:
   > let q cond = [%query "
   >   SELECT 1 as one
   >   FROM public.users AS u
-  >   LEFT JOIN public.profiles AS p ON cond
+  >   LEFT JOIN public.profiles AS p ON ?cond
   >   LEFT JOIN public.profiles AS p2 ON true
   > "];;
   > #show q

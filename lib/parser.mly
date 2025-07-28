@@ -9,7 +9,8 @@
 %}
 
 %token <string> ID
-%token <string> ID_SPLICE
+%token <string> PARAM
+%token <string> PARAM_SPLICE
 %token <string> STRING
 %token <int> NUMBER
 %token TRUE FALSE
@@ -46,7 +47,7 @@ a_expr:
     e=expr EOF { e }
 
 select:
-    id=id_splice
+    id=param_splice
     { Select_splice id }
   | fs=fields
     { Select_fields fs }
@@ -61,8 +62,11 @@ field:
 id:
     id=ID { with_loc $startpos $endpos id }
 
-id_splice:
-    id=ID_SPLICE { with_loc $startpos $endpos id }
+param:
+    id=PARAM { with_loc $startpos $endpos id }
+
+param_splice:
+    id=PARAM_SPLICE { with_loc $startpos $endpos id }
 
 alias:
     AS id=id { id }
@@ -80,14 +84,14 @@ group_by:
     GROUP BY dimensions=separated_list(COMMA, dimension) { dimensions }
 
 dimension:
-    e=id_splice { Dimension_splice e }
+    e=param_splice { Dimension_splice e }
   | e=expr { Dimension_expr e }
 
 order_by:
     ORDER BY items=separated_list(COMMA, order_by_item) { items }
 
 order_by_item:
-    e=id_splice { Order_by_splice e }
+    e=param_splice { Order_by_splice e }
   | e=expr { Order_by_expr (e, `ASC) }
   | e=expr ASC { Order_by_expr (e, `ASC) }
   | e=expr DESC { Order_by_expr (e, `DESC) }
@@ -112,7 +116,7 @@ from:
     { with_loc $startpos $endpos (F_join { kind; from; join; on }) }
 
 from_one:
-    id=id alias=alias? { with_loc $startpos $endpos (F_value {id; alias = Option.value alias ~default:id}) }
+    id=param alias=alias? { with_loc $startpos $endpos (F_value {id; alias = Option.value alias ~default:id}) }
   | db=id DOT table=id alias=alias?
     { with_loc $startpos $endpos (F_table { db; table; alias = Option.value alias ~default:table }) }
   | LPAREN q=query RPAREN alias=alias
@@ -154,5 +158,5 @@ expr:
     { with_loc $startpos $endpos (E_call (fn, args)) }
   | fn=id LPAREN args=separated_list(COMMA, expr) RPAREN OVER LPAREN window_spec=window_spec RPAREN
     { with_loc $startpos $endpos (E_window (fn, args, window_spec)) }
-  | id=id
-    { with_loc $startpos $endpos (E_value id) }
+  | param=param
+    { with_loc $startpos $endpos (E_value param) }

@@ -53,7 +53,7 @@ GROUP BY multiple columns:
 
 GROUP BY with a parameter:
   $ ./compile_and_run '
-  > let users ~dimension = [%query "SELECT users.x AS x FROM public.users GROUP BY users.id, dimension..."];;
+  > let users ~dimension = [%query "SELECT users.x AS x FROM public.users GROUP BY users.id, ?dimension..."];;
   > #show users;;
   > '
   >>> PREPROCESSING
