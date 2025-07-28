@@ -9,6 +9,7 @@
 %}
 
 %token <string> ID
+%token <string> ID_SPLICE
 %token <string> STRING
 %token <int> NUMBER
 %token TRUE FALSE
@@ -52,6 +53,9 @@ field:
 id:
     id=ID { with_loc $startpos $endpos id }
 
+id_splice:
+    id=ID_SPLICE { with_loc $startpos $endpos id }
+
 alias:
     AS id=id { id }
 
@@ -59,15 +63,20 @@ where:
     WHERE e=expr { e }
 
 group_by:
-    GROUP BY exprs=separated_list(COMMA, expr) { exprs }
+    GROUP BY dimensions=separated_list(COMMA, dimension) { dimensions }
+
+dimension:
+    e=id_splice { Dimension_splice e }
+  | e=expr { Dimension_expr e }
 
 order_by:
     ORDER BY items=separated_list(COMMA, order_by_item) { items }
 
 order_by_item:
-    e=expr { { Syntax.expr = e; direction = Syntax.ASC } }
-  | e=expr ASC { { Syntax.expr = e; direction = Syntax.ASC } }
-  | e=expr DESC { { Syntax.expr = e; direction = Syntax.DESC } }
+    e=id_splice { Order_by_splice e }
+  | e=expr { Order_by_expr (e, `ASC) }
+  | e=expr ASC { Order_by_expr (e, `ASC) }
+  | e=expr DESC { Order_by_expr (e, `DESC) }
 
 from:
     f=from_one

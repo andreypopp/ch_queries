@@ -91,19 +91,28 @@ and pp_query
   let group_by =
     match group_by with
     | None -> None
-    | Some exprs ->
-        let pp_exprs = separate (string ", ") (List.map ~f:pp_expr exprs) in
-        Some (group (string "GROUP BY " ^^ pp_exprs))
+    | Some dimensions ->
+        let pp_dimension = function
+          | Dimension_expr expr -> pp_expr expr
+          | Dimension_splice id -> pp_id id ^^ string "..."
+        in
+        let dimensions =
+          match dimensions with
+          | [] -> string "()"
+          | dimensions ->
+              separate (string ", ") (List.map ~f:pp_dimension dimensions)
+        in
+        Some (group (string "GROUP BY " ^^ dimensions))
   in
   let order_by =
     match order_by with
     | None -> None
     | Some items ->
-        let pp_item { Syntax.expr; direction } =
-          let dir_str =
-            match direction with Syntax.ASC -> "ASC" | Syntax.DESC -> "DESC"
-          in
-          group (pp_expr expr ^^ string " " ^^ string dir_str)
+        let pp_item = function
+          | Syntax.Order_by_splice id -> pp_id id ^^ string "..."
+          | Syntax.Order_by_expr (expr, dir) ->
+              let dir = match dir with `ASC -> "ASC" | `DESC -> "DESC" in
+              group (pp_expr expr ^^ string " " ^^ string dir)
         in
         let pp_items = separate (string ", ") (List.map ~f:pp_item items) in
         Some (group (string "ORDER BY " ^^ pp_items))

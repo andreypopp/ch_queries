@@ -36,6 +36,7 @@
 
   let string_of_token : Parser.token -> string = function
     | Parser.ID s -> Printf.sprintf "ID(%s)" s
+    | Parser.ID_SPLICE s -> Printf.sprintf "ID_SPLICE(%s)" s
     | Parser.STRING s -> Printf.sprintf "STRING(%s)" s
     | Parser.NUMBER n -> Printf.sprintf "NUMBER(%d)" n
     | Parser.TRUE -> "TRUE"
@@ -86,6 +87,7 @@ rule token = parse
     let s = string_literal (Buffer.create 16) lexbuf in
     lexbuf.Lexing.lex_start_p <- lex_start_p;
     STRING s }
+  | id as s '.' '.' '.' { ID_SPLICE s }
   | id as s             { get_keyword_or_id s }
   | '('                 { LPAREN }
   | ')'                 { RPAREN }

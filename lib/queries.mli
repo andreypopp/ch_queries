@@ -38,6 +38,8 @@ type 'a from
 (** Represents the FROM clause of a query, which can contain multiple tables or
     subqueries. *)
 
+type a_expr = A_expr : _ expr -> a_expr
+
 val union :
   'a scope select ->
   'a scope select ->
@@ -47,6 +49,8 @@ val union :
 val select :
   from:'a from ->
   ?where:('a -> ('n, bool) expr) ->
+  ?group_by:('a -> a_expr list) ->
+  ?order_by:('a -> (a_expr * [ `ASC | `DESC ]) list) ->
   select:('a -> 'b) ->
   unit ->
   'b scope select
