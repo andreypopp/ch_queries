@@ -38,13 +38,9 @@ type 'a from
 (** Represents the FROM clause of a query, which can contain multiple tables or
     subqueries. *)
 
+(** Used in cases where we don't care about the type of the expression (GROUP
+    BY, ORDER BY, etc.). *)
 type a_expr = A_expr : _ expr -> a_expr
-
-val union :
-  'a scope select ->
-  'a scope select ->
-  ('a scope -> 'a scope -> 'a scope) ->
-  'a scope select
 
 val select :
   from:'from from ->
@@ -58,6 +54,12 @@ val select :
   select:('from -> 'select) ->
   unit ->
   'select scope select
+
+val union :
+  'a scope select ->
+  'a scope select ->
+  ('a scope -> 'a scope -> 'a scope) ->
+  'a scope select
 
 val from : 'a from_one -> 'a from
 
@@ -127,6 +129,7 @@ type json =
 
 module Row : sig
   type 'a t
+  (** Represents a row parser. *)
 
   val string : (non_null, string) expr -> string t
   val string_opt : ([< null ], string) expr -> string option t
