@@ -1,7 +1,7 @@
 ORDER BY single column (default ASC):
   $ ./compile_and_run '
   > let users = [%query "SELECT users.x FROM public.users ORDER BY users.x"];;
-  > let sql, () = Queries.use users @@ fun users -> ignore [[%expr "users._1"]]
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%expr "users._1"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -16,18 +16,19 @@ ORDER BY single column (default ASC):
         List.concat
           [ [ (Queries.A_expr (users#query (fun users -> users#x)), `ASC) ] ])
   
-  let sql, () =
-    Queries.use users @@ fun users ->
-    ignore [ users#query (fun users -> users#_1) ]
+  let sql, _parse_row =
+    Queries.query users @@ fun users ->
+    Queries.Row.string (users#query (fun users -> users#_1))
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT users.x AS _1 FROM public.users AS users ORDER BY users.x ASC
+  SELECT q._1
+  FROM (SELECT users.x AS _1 FROM public.users AS users ORDER BY users.x ASC) AS q
 
 ORDER BY with DESC:
   $ ./compile_and_run '
   > let users = [%query "SELECT users.x FROM public.users ORDER BY users.x DESC"];;
-  > let sql, () = Queries.use users @@ fun users -> ignore [[%expr "users._1"]]
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%expr "users._1"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -42,18 +43,20 @@ ORDER BY with DESC:
         List.concat
           [ [ (Queries.A_expr (users#query (fun users -> users#x)), `DESC) ] ])
   
-  let sql, () =
-    Queries.use users @@ fun users ->
-    ignore [ users#query (fun users -> users#_1) ]
+  let sql, _parse_row =
+    Queries.query users @@ fun users ->
+    Queries.Row.string (users#query (fun users -> users#_1))
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT users.x AS _1 FROM public.users AS users ORDER BY users.x DESC
+  SELECT q._1
+  FROM (
+    SELECT users.x AS _1 FROM public.users AS users ORDER BY users.x DESC) AS q
 
 ORDER BY multiple columns:
   $ ./compile_and_run '
   > let users = [%query "SELECT users.x FROM public.users ORDER BY users.x, users.id DESC"];;
-  > let sql, () = Queries.use users @@ fun users -> ignore [[%expr "users._1"]]
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%expr "users._1"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -71,15 +74,17 @@ ORDER BY multiple columns:
             [ (Queries.A_expr (users#query (fun users -> users#id)), `DESC) ];
           ])
   
-  let sql, () =
-    Queries.use users @@ fun users ->
-    ignore [ users#query (fun users -> users#_1) ]
+  let sql, _parse_row =
+    Queries.query users @@ fun users ->
+    Queries.Row.string (users#query (fun users -> users#_1))
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT users.x AS _1
-  FROM public.users AS users
-  ORDER BY users.x ASC, users.id DESC
+  SELECT q._1
+  FROM (
+    SELECT users.x AS _1
+    FROM public.users AS users
+    ORDER BY users.x ASC, users.id DESC) AS q
 
 ORDER BY with a parameter:
   $ ./compile_and_run '

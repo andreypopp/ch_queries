@@ -1,7 +1,7 @@
 basic form:
   $ ./compile_and_run '
   > let users = [%query "SELECT users.x AS x FROM public.users WHERE users.is_active"];;
-  > let sql, () = Queries.use users @@ fun users -> ignore [[%expr "users.x"]]
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%expr "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -15,20 +15,20 @@ basic form:
       ~where:(fun (users : _ Queries.scope) ->
         users#query (fun users -> users#is_active))
   
-  let sql, () =
-    Queries.use users @@ fun users ->
-    ignore [ users#query (fun users -> users#x) ]
+  let sql, _parse_row =
+    Queries.query users @@ fun users ->
+    Queries.Row.string (users#query (fun users -> users#x))
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT users.x AS _1 FROM public.users AS users WHERE users.is_active
+  SELECT q._1
+  FROM (
+    SELECT users.x AS _1 FROM public.users AS users WHERE users.is_active) AS q
 
 select from a subquery:
   $ ./compile_and_run '
   > let users = [%query "SELECT q.x AS x FROM (SELECT users.x AS x, users.is_active AS is_active FROM public.users) AS q WHERE q.is_active"];;
-  > let sql, () = Queries.use users @@ fun users -> ignore [
-  >   [%expr "users.x"];
-  > ]
+  > let sql, _parse_row = Queries.(query users @@ fun users -> Row.string [%expr "users.x"])
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -51,16 +51,18 @@ select from a subquery:
         end)
       ~where:(fun (q : _ Queries.scope) -> q#query (fun q -> q#is_active))
   
-  let sql, () =
-    Queries.use users @@ fun users ->
-    ignore [ users#query (fun users -> users#x) ]
+  let sql, _parse_row =
+    let open Queries in
+    query users @@ fun users -> Row.string (users#query (fun users -> users#x))
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q._2 AS _1
+  SELECT q._1
   FROM (
-    SELECT users.is_active AS _1, users.x AS _2 FROM public.users AS users) AS q
-  WHERE q._1
+    SELECT q._2 AS _1
+    FROM (
+      SELECT users.is_active AS _1, users.x AS _2 FROM public.users AS users) AS q
+    WHERE q._1) AS q
 
 select from an OCaml value:
   $ ./compile_and_run '

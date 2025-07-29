@@ -394,9 +394,127 @@ let to_sql' q =
 let to_syntax q = to_syntax' (q ~alias:"_")
 let to_sql q = to_sql' (q ~alias:"_")
 
-let use q f =
-  match q ~alias:"_" with
+type json =
+  [ `Assoc of (string * json) list
+  | `Bool of bool
+  | `Float of float
+  | `Int of int
+  | `List of json list
+  | `Null
+  | `String of string ]
+(** JSON value (compatible with Yojson.Basic.t) *)
+
+module Row = struct
+  exception Parse_error of string
+
+  let parse_error msg = raise (Parse_error msg)
+
+  let string_of_json = function
+    | `String s -> s
+    | _ -> parse_error "expected a string"
+
+  let int_of_json = function
+    | `Int i -> i
+    | _ -> parse_error "expected an integer"
+
+  let float_of_json = function
+    | `Float f -> f
+    | _ -> parse_error "expected a float"
+
+  let bool_of_json = function
+    | `Bool b -> b
+    | _ -> parse_error "expected a boolean"
+
+  type _ t =
+    | Row_col : (non_null, 'a) expr * (json -> 'a) -> 'a t
+    | Row_col_opt : (_ nullable, 'a) expr * (json -> 'a) -> 'a option t
+    | Row_col_number : (non_null, 'a number) expr * (json -> 'a) -> 'a t
+    | Row_col_number_opt :
+        (_ nullable, 'a number) expr * (json -> 'a)
+        -> 'a option t
+    | Row_both : 'a t * 'b t -> ('a * 'b) t
+    | Row_map : ('a -> 'b) * 'a t -> 'b t
+
+  let ( let+ ) x f = Row_map (f, x)
+  let ( and+ ) x y = Row_both (x, y)
+  let string expr = Row_col (expr, string_of_json)
+  let string_opt expr = Row_col_opt (expr, string_of_json)
+  let bool expr = Row_col (expr, bool_of_json)
+  let bool_opt expr = Row_col_opt (expr, bool_of_json)
+  let int expr = Row_col_number (expr, int_of_json)
+  let int_opt expr = Row_col_number_opt (expr, int_of_json)
+  let float expr = Row_col_number (expr, float_of_json)
+  let float_opt expr = Row_col_number_opt (expr, float_of_json)
+
+  let parse : type a. a t -> json list -> a =
+    let rec aux : type a. a t -> json list -> a * json list =
+     fun rowspec row ->
+      match (rowspec, row) with
+      | Row_col (_, _parse), [] -> parse_error "missing a column"
+      | Row_col (_, parse), col :: row -> (parse col, row)
+      | Row_col_opt (_, _parse), `Null :: row -> (None, row)
+      | Row_col_opt (_, _parse), [] -> parse_error "missing a column"
+      | Row_col_opt (_, parse), col :: row -> (Some (parse col), row)
+      | Row_col_number (_, _parse), [] -> parse_error "missing a column"
+      | Row_col_number (_, parse), col :: row -> (parse col, row)
+      | Row_col_number_opt (_, _parse), `Null :: row -> (None, row)
+      | Row_col_number_opt (_, _parse), [] -> parse_error "missing a column"
+      | Row_col_number_opt (_, parse), col :: row -> (Some (parse col), row)
+      | Row_both (x, y), row ->
+          let x, row = aux x row in
+          let y, row = aux y row in
+          ((x, y), row)
+      | Row_map (f, x), row ->
+          let x, row = aux x row in
+          (f x, row)
+    in
+    fun rowspec row ->
+      match aux rowspec row with
+      | x, [] -> x
+      | _, _ -> parse_error "extra columns in row"
+
+  let fields : type a. a t -> a_expr list =
+    let rec aux : type a. a t -> a_expr list -> a_expr list =
+     fun rowspec acc ->
+      match rowspec with
+      | Row_col (expr, _) -> A_expr expr :: acc
+      | Row_col_opt (expr, _) -> A_expr expr :: acc
+      | Row_col_number (expr, _) -> A_expr expr :: acc
+      | Row_col_number_opt (expr, _) -> A_expr expr :: acc
+      | Row_both (x, y) -> aux y (aux x acc)
+      | Row_map (_, x) -> aux x acc
+    in
+    fun row -> List.rev (aux row [])
+end
+
+let query q f =
+  match q ~alias:"q" with
   | Select { scope; _ } as q ->
-      let v = f scope in
-      (to_sql' q, v)
+      let row = f scope in
+      let fields = Row.fields row in
+      let fields =
+        List.map fields ~f:(fun (A_expr e) ->
+            { Syntax.expr = expr_to_syntax e; alias = None })
+      in
+      let select = to_syntax' q in
+      let select =
+        {
+          Syntax.from =
+            Loc.with_dummy_loc
+              (Syntax.F
+                 (Loc.with_dummy_loc
+                    (Syntax.F_select { select; alias = Loc.with_dummy_loc "q" })));
+          select = Select_fields fields;
+          where = None;
+          qualify = None;
+          group_by = None;
+          having = None;
+          order_by = None;
+          limit = None;
+          offset = None;
+        }
+      in
+      let sql = Printer.print_query (Loc.with_dummy_loc select) in
+      let parse_row = Row.parse row in
+      (sql, parse_row)
   | Union _ -> failwith "TODO"

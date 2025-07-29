@@ -85,10 +85,6 @@ val from_table :
 val to_syntax : _ select -> Syntax.query
 val to_sql : _ select -> string
 
-val use : 'a scope select -> ('a scope -> 'b) -> string * 'b
-(** Use the SELECT query, selecting needed values form it, it generates the SQL
-    and returns the data. *)
-
 module Expr : sig
   val assumeNotNull : ([< null ] nullable, 'b) expr -> (non_null, 'a) expr
   val toNullable : (_, 'a) expr -> (null nullable, 'a) expr
@@ -121,6 +117,44 @@ module Expr : sig
     ('n, _) expr ->
     (non_null, int number) expr
 end
+
+type json =
+  [ `Assoc of (string * json) list
+  | `Bool of bool
+  | `Float of float
+  | `Int of int
+  | `List of json list
+  | `Null
+  | `String of string ]
+(** JSON value (compatible with Yojson.Basic.t) *)
+
+module Row : sig
+  type 'a t
+
+  val string : (non_null, string) expr -> string t
+  val string_opt : ([< null ], string) expr -> string option t
+  val bool : (non_null, bool) expr -> bool t
+  val bool_opt : ([< null ], bool) expr -> bool option t
+  val int : (non_null, int number) expr -> int t
+  val int_opt : ([< null ], int number) expr -> int option t
+  val float : (non_null, float number) expr -> float t
+  val float_opt : ([< null ], float number) expr -> float option t
+  val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
+  val ( and+ ) : 'a t -> 'b t -> ('a * 'b) t
+
+  exception Parse_error of string
+
+  val parse : 'a t -> json list -> 'a
+end
+
+val query :
+  'a scope select -> ('a scope -> 'row Row.t) -> string * (json list -> 'row)
+(** [query select f] queries the SELECT query by defining a set of columns of
+    interest (along with the parser).
+
+    The result is the SQL string and a function to parse a single result row.
+    The parse function raises [Row.Parse_error] in case of incorrect row being
+    supplied. *)
 
 module Parser : module type of Parser
 module Lexer : module type of Lexer
