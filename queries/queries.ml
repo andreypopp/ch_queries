@@ -269,7 +269,8 @@ module To_syntax = struct
           | expr :: rest -> expr_to_syntax expr :: convert_args rest
         in
         let args = convert_args args in
-        Loc.with_dummy_loc (Syntax.E_call (Loc.with_dummy_loc name, args))
+        Loc.with_dummy_loc
+          (Syntax.E_call (Syntax.Func (Loc.with_dummy_loc name), args))
     | E_window (name, args, { partition_by; order_by }) ->
         let rec convert_args : args -> Syntax.expr list = function
           | [] -> []

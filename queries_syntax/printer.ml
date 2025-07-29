@@ -64,29 +64,40 @@ let rec pp_expr expr =
       group
         (pp_id name ^^ string "(" ^^ pp_args ^^ string ")" ^^ space
        ^^ pp_over_clause)
-  | E_call (name, args) -> (
-      match (name.Loc.node, args) with
-      | "+", [ left; right ] ->
-          group (pp_expr left ^/^ string "+" ^/^ pp_expr right)
-      | "-", [ left; right ] ->
-          group (pp_expr left ^/^ string "-" ^/^ pp_expr right)
-      | "*", [ left; right ] ->
-          group (pp_expr left ^/^ string "*" ^/^ pp_expr right)
-      | "/", [ left; right ] ->
-          group (pp_expr left ^/^ string "/" ^/^ pp_expr right)
-      | "AND", [ left; right ] ->
-          group (pp_expr left ^/^ string "AND" ^/^ pp_expr right)
-      | "OR", [ left; right ] ->
-          group (pp_expr left ^/^ string "OR" ^/^ pp_expr right)
-      | "=", [ left; right ] ->
-          group (pp_expr left ^/^ string "=" ^/^ pp_expr right)
-      | _, _ ->
+  | E_call (func, args) -> (
+      match func with
+      | Func name -> (
+          match (name.Loc.node, args) with
+          | "+", [ left; right ] ->
+              group (pp_expr left ^/^ string "+" ^/^ pp_expr right)
+          | "-", [ left; right ] ->
+              group (pp_expr left ^/^ string "-" ^/^ pp_expr right)
+          | "*", [ left; right ] ->
+              group (pp_expr left ^/^ string "*" ^/^ pp_expr right)
+          | "/", [ left; right ] ->
+              group (pp_expr left ^/^ string "/" ^/^ pp_expr right)
+          | "AND", [ left; right ] ->
+              group (pp_expr left ^/^ string "AND" ^/^ pp_expr right)
+          | "OR", [ left; right ] ->
+              group (pp_expr left ^/^ string "OR" ^/^ pp_expr right)
+          | "=", [ left; right ] ->
+              group (pp_expr left ^/^ string "=" ^/^ pp_expr right)
+          | _, _ ->
+              let pp_args =
+                match args with
+                | [] -> empty
+                | _ -> separate (string "," ^^ space) (List.map ~f:pp_expr args)
+              in
+              group (pp_id name ^^ string "(" ^^ pp_args ^^ string ")"))
+      | Func_method (table, method_name) ->
           let pp_args =
             match args with
             | [] -> empty
             | _ -> separate (string "," ^^ space) (List.map ~f:pp_expr args)
           in
-          group (pp_id name ^^ string "(" ^^ pp_args ^^ string ")"))
+          group
+            (pp_id table ^^ string "." ^^ pp_id method_name ^^ string "("
+           ^^ pp_args ^^ string ")"))
   | E_ocaml_expr s -> string ("?{" ^ s ^ "}")
 
 and pp_dimension = function

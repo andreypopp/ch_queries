@@ -142,21 +142,23 @@ expr:
   | LPAREN e=expr RPAREN
     { e }
   | e1=expr PLUS e2=expr
-    { with_loc $startpos $endpos (E_call (with_loc $startpos($2) $endpos($2) "+", [e1; e2])) }
+    { with_loc $startpos $endpos (E_call (Func (with_loc $startpos($2) $endpos($2) "+"), [e1; e2])) }
   | e1=expr MINUS e2=expr
-    { with_loc $startpos $endpos (E_call (with_loc $startpos($2) $endpos($2) "-", [e1; e2])) }
+    { with_loc $startpos $endpos (E_call (Func (with_loc $startpos($2) $endpos($2) "-"), [e1; e2])) }
   | e1=expr STAR e2=expr
-    { with_loc $startpos $endpos (E_call (with_loc $startpos($2) $endpos($2) "*", [e1; e2])) }
+    { with_loc $startpos $endpos (E_call (Func (with_loc $startpos($2) $endpos($2) "*"), [e1; e2])) }
   | e1=expr SLASH e2=expr
-    { with_loc $startpos $endpos (E_call (with_loc $startpos($2) $endpos($2) "/", [e1; e2])) }
+    { with_loc $startpos $endpos (E_call (Func (with_loc $startpos($2) $endpos($2) "/"), [e1; e2])) }
   | e1=expr AND e2=expr
-    { with_loc $startpos $endpos (E_call (with_loc $startpos($2) $endpos($2) "AND", [e1; e2])) }
+    { with_loc $startpos $endpos (E_call (Func (with_loc $startpos($2) $endpos($2) "AND"), [e1; e2])) }
   | e1=expr OR e2=expr
-    { with_loc $startpos $endpos (E_call (with_loc $startpos($2) $endpos($2) "OR", [e1; e2])) }
+    { with_loc $startpos $endpos (E_call (Func (with_loc $startpos($2) $endpos($2) "OR"), [e1; e2])) }
   | e1=expr EQUALS e2=expr
-    { with_loc $startpos $endpos (E_call (with_loc $startpos($2) $endpos($2) "=", [e1; e2])) }
+    { with_loc $startpos $endpos (E_call (Func (with_loc $startpos($2) $endpos($2) "="), [e1; e2])) }
   | fn=id LPAREN args=separated_list(COMMA, expr) RPAREN
-    { with_loc $startpos $endpos (E_call (fn, args)) }
+    { with_loc $startpos $endpos (E_call (Func fn, args)) }
+  | table=id DOT method_name=id LPAREN args=separated_list(COMMA, expr) RPAREN
+    { with_loc $startpos $endpos (E_call (Func_method (table, method_name), args)) }
   | fn=id LPAREN args=separated_list(COMMA, expr) RPAREN OVER LPAREN window_spec=window_spec RPAREN
     { with_loc $startpos $endpos (E_window (fn, args, window_spec)) }
   | param=param

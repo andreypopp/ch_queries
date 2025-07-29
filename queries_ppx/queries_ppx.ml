@@ -122,15 +122,34 @@ let rec stage_expr ~from expr =
             (Labelled "order_by", stage_order_by ~loc ~from order_by) :: args
       in
       pexp_apply ~loc f args
-  | Syntax.E_call (name, args) ->
-      let f =
-        let loc = to_location name in
-        match name.Loc.node with
-        | "OR" -> [%expr Queries.Expr.( || )]
-        | "AND" -> [%expr Queries.Expr.( && )]
-        | _ -> evar ~loc ("Queries.Expr." ^ name.Loc.node)
-      in
-      eapply ~loc f (List.map (stage_expr ~from) args)
+  | Syntax.E_call (func, args) -> (
+      match func with
+      | Func name ->
+          let f =
+            let loc = to_location name in
+            match name.Loc.node with
+            | "OR" -> [%expr Queries.Expr.( || )]
+            | "AND" -> [%expr Queries.Expr.( && )]
+            | _ -> evar ~loc ("Queries.Expr." ^ name.Loc.node)
+          in
+          eapply ~loc f (List.map (stage_expr ~from) args)
+      | Func_method (table, method_name) ->
+          let table_loc = to_location table in
+          let method_loc = to_location method_name in
+          let e = evar ~loc:table_loc table.Loc.node in
+          let e' =
+            pexp_send ~loc:table_loc e (Located.mk ~loc:table_loc "query")
+          in
+          let p = pvar ~loc:table_loc table.Loc.node in
+          let method_call =
+            pexp_send ~loc:method_loc e
+              (Located.mk ~loc:method_loc method_name.Loc.node)
+          in
+          let staged_args = List.map (stage_expr ~from) args in
+          let method_call_with_args =
+            eapply ~loc:method_loc method_call staged_args
+          in
+          [%expr [%e e'] (fun [%p p] -> [%e method_call_with_args])])
   | Syntax.E_value var -> (
       let e = evar ~loc var.Loc.node in
       match Option.map from_scope_expr from with
@@ -138,11 +157,13 @@ let rec stage_expr ~from expr =
       | Some arg -> [%expr [%e e] [%e arg]])
   | Syntax.E_ocaml_expr ocaml_code -> (
       (* Parse the OCaml expression and adjust location for error reporting *)
-      let adjusted_loc = 
+      let adjusted_loc =
         let open Location in
         let start_pos = loc.loc_start in
         (* Offset by 2 characters to account for '?{' prefix *)
-        let adjusted_start = { start_pos with pos_cnum = start_pos.pos_cnum + 2 } in
+        let adjusted_start =
+          { start_pos with pos_cnum = start_pos.pos_cnum + 2 }
+        in
         { loc with loc_start = adjusted_start }
       in
       try
@@ -158,7 +179,7 @@ let rec stage_expr ~from expr =
           (* Re-raise with adjusted location *)
           raise e
       | exn ->
-          Location.raise_errorf ~loc:adjusted_loc 
+          Location.raise_errorf ~loc:adjusted_loc
             "Error parsing OCaml expression: %s" (Printexc.to_string exn))
 
 and stage_dimensions ~loc ~from dimensions =

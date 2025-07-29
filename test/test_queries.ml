@@ -72,14 +72,14 @@ let select_metric : type t sqlt.
 (** this function merges metric state into final metric value. *)
 let merge_metric : type a sqlt.
     _ stats Queries.scope -> (a, sqlt) metric -> (_, sqlt) Queries.expr =
- fun stats m -> stats#query (fun stats -> stats#metric m)
+ fun stats m -> {%expr|stats.metric(?m)|}
 
 (** this function defines how to query/parse a metric from a query. *)
 let query_metric : type t sqlt.
     _ stats Queries.scope -> (t, sqlt) metric -> t Queries.Row.t =
  fun stats m ->
   let open Queries.Row in
-  let metric m = stats#query (fun stats -> stats#metric m) in
+  let metric m = {%expr|stats.metric(?m)|} in
   match m with
   | Metric_count -> int (metric m)
   | Metric_sum_id -> int (metric m)
@@ -116,5 +116,6 @@ let sql, parse_row =
       let+ x = query_metric stats Metric_count
       and+ y = query_metric stats Metric_true
       and+ z = query_metric stats Metric_sum_id
+      and+ z' = bool @@ {%expr|stats.metric(?{Metric_true})|}
       and+ s = string_opt {%expr|stats.oops|} in
       (x, y, z, s))

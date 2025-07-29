@@ -5,13 +5,14 @@ type expr = exprsyn Loc.with_loc
 and exprsyn =
   | E_col of id * id
   | E_lit of lit
-  | E_call of id * expr list
+  | E_call of func * expr list
       (** encodes function calls and operators as well *)
   | E_window of id * expr list * window_spec
       (** window function with OVER clause *)
   | E_value of id  (** variable_name for splicing OCaml values *)
   | E_ocaml_expr of string  (** OCaml expression for splicing *)
 
+and func = Func of id | Func_method of id * id
 and lit = L_int of int | L_bool of bool | L_string of string
 
 and window_spec = {

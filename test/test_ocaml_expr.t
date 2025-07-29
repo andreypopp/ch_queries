@@ -21,9 +21,16 @@ OCaml expression with function call:
 OCaml expression in query:
   $ ./compile_and_run '
   > let x = 42
-  > let result = [%query "SELECT ?{x + 1} AS x FROM users"]
+  > let q users = [%query "SELECT ?{x + 1} AS x FROM ?users"]
   > '
   >>> PREPROCESSING
   let x = 42
-  let result = x + 1
+  
+  let q users =
+    Queries.select ()
+      ~from:(Queries.from (users ~alias:"users"))
+      ~select:(fun (users : _ Queries.scope) ->
+        object
+          method x = x + 1
+        end)
   >>> RUNNING
