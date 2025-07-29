@@ -66,13 +66,13 @@ val from : 'a from_one -> 'a from
 val join :
   'a from ->
   'b scope from_one ->
-  on:('a * 'b scope -> ('c, bool) expr) ->
+  on:('a * 'b scope -> (_, bool) expr) ->
   ('a * 'b scope) from
 
 val left_join :
   'a from ->
   'b scope from_one ->
-  on:('a * 'b scope -> ('c, bool) expr) ->
+  on:('a * 'b scope -> (_, bool) expr) ->
   ('a * 'b nullable_scope) from
 
 val from_select : alias:string -> 'a scope select -> 'a scope from_one
@@ -129,7 +129,19 @@ type json =
 
 module Row : sig
   type 'a t
-  (** Represents a row parser. *)
+  (** Represents a row to query (both expressions and parser). *)
+
+  val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
+  (** Map result of a row.
+
+      [let+ x = P in E] parses with [P] and then makes result [x] available in
+      an expression [E]. *)
+
+  val ( and+ ) : 'a t -> 'b t -> ('a * 'b) t
+  (** Combine two rows.
+
+      [let+ x = P1 and+ y = P2 in E] parses with [P1] and [P2] and makes results
+      available as a tuple [x] and [y] in an expression [E]. *)
 
   val string : (non_null, string) expr -> string t
   val string_opt : ([< null ], string) expr -> string option t
@@ -139,12 +151,13 @@ module Row : sig
   val int_opt : ([< null ], int number) expr -> int option t
   val float : (non_null, float number) expr -> float t
   val float_opt : ([< null ], float number) expr -> float option t
-  val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
-  val ( and+ ) : 'a t -> 'b t -> ('a * 'b) t
 
   exception Parse_error of string
 
   val parse : 'a t -> json list -> 'a
+  (** Parse a row from a JSON list.
+
+      Raises [Parse_error] if the row is not compatible with the parser. *)
 end
 
 val query :
