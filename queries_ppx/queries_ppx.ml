@@ -339,38 +339,10 @@ let expr_extension =
     Ast_pattern.(single_expr_payload __)
     expand_expr
 
-let expr_structure_extension =
-  Extension.V3.declare "expr" Extension.Context.structure_item
-    Ast_pattern.(pstr (pstr_value __ (__ ^:: nil) ^:: nil))
-    (fun ~ctxt rec_flag vb ->
-      let loc = Expansion_context.Extension.extension_point_loc ctxt in
-      (* Transform the expression recursively to find string literals *)
-      let rec transform_expr expr =
-        match expr.pexp_desc with
-        | Pexp_constant (Pconst_string (s, loc, _q)) ->
-            let expr = parse_expr ~loc s in
-            stage_expr ~from:None expr
-        | Pexp_function ([ param ], constraint_opt, Pfunction_body expr) ->
-            {
-              expr with
-              pexp_desc =
-                Pexp_function
-                  ( [ param ],
-                    constraint_opt,
-                    Pfunction_body (transform_expr expr) );
-            }
-        | _ ->
-            Location.raise_errorf
-              "expected a string literal or a function with a single argument"
-      in
-      let transformed_vb = { vb with pvb_expr = transform_expr vb.pvb_expr } in
-      pstr_value ~loc rec_flag [ transformed_vb ])
-
 let rules =
   [
     Context_free.Rule.extension select_extension;
     Context_free.Rule.extension expr_extension;
-    Context_free.Rule.extension expr_structure_extension;
   ]
 
-let () = Driver.register_transformation ~rules "ppx_queries"
+let () = Driver.register_transformation ~rules "queries_ppx"

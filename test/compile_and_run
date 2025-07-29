@@ -7,7 +7,7 @@ echo '
 #use "test_queries.ml"
 ' > test_query.ml
 echo '>>> PREPROCESSING'
-echo "$1" | rg -v '^#' | ppx_queries -impl - | ocamlformat --enable-outside-detected-project --name test_query.ml --impl -
+echo "$1" | rg -v '^#' | queries_ppx -impl - | ocamlformat --enable-outside-detected-project --name test_query.ml --impl -
 echo '>>> RUNNING'
 echo "$1" >> test_query.ml
 ocaml ./test_query.ml
