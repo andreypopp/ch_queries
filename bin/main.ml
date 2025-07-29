@@ -20,7 +20,7 @@ let parse_cmd =
       let pretty_printed = Queries_syntax.Printer.print_query query in
       print_endline pretty_printed
     with
-    | Queries_syntax.Lexer.Lexical_error msg ->
+    | Queries_syntax.Lexer.Error msg ->
         Printf.eprintf "Lexical error: %s\n" msg;
         exit 1
     | Queries_syntax.Parser.Error ->

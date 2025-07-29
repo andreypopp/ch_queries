@@ -6,25 +6,40 @@ let set_position lexbuf loc =
   Lexing.set_position lexbuf
     { loc.Location.loc_start with pos_cnum = loc.Location.loc_start.pos_cnum }
 
+let raise_parse_errorf ?msg lexbuf =
+  let loc_start = Lexing.lexeme_start_p lexbuf in
+  let loc_end = Lexing.lexeme_end_p lexbuf in
+  let loc = { Location.loc_start; loc_end; loc_ghost = false } in
+  match msg with
+  | None -> Location.raise_errorf ~loc "%%query: Parse error"
+  | Some msg -> Location.raise_errorf ~loc "%%query: Parse error: %s" msg
+
 let parse_query ~loc s =
   let lexbuf = Lexing.from_string s in
   set_position lexbuf loc;
-  try Parser.a_query Lexer.token lexbuf
-  with exn ->
-    let msg =
-      Printf.sprintf "Failed to parse query: %s" (Printexc.to_string exn)
-    in
-    Location.Error.raise (Location.Error.make ~loc:Location.none ~sub:[] msg)
+  try Parser.a_query Lexer.token lexbuf with
+  | Parser.Error -> raise_parse_errorf lexbuf
+  | Lexer.Error msg -> raise_parse_errorf ~msg lexbuf
 
 let parse_expr ~loc s =
   let lexbuf = Lexing.from_string s in
   set_position lexbuf loc;
   try Parser.a_expr Lexer.token lexbuf
   with exn ->
+    let error_loc =
+      let offset = lexbuf.lex_curr_pos in
+      let start =
+        {
+          loc.Location.loc_start with
+          pos_cnum = loc.Location.loc_start.pos_cnum + offset;
+        }
+      in
+      { Location.loc_start = start; loc_end = start; loc_ghost = false }
+    in
     let msg =
       Printf.sprintf "Failed to parse expression: %s" (Printexc.to_string exn)
     in
-    Location.Error.raise (Location.Error.make ~loc:Location.none ~sub:[] msg)
+    Location.Error.raise (Location.Error.make ~loc:error_loc ~sub:[] msg)
 
 let to_location ({ loc = { start_pos; end_pos }; _ } : _ Loc.with_loc) :
     location =

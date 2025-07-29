@@ -1,7 +1,7 @@
 {
   open Parser
 
-  exception Lexical_error of string
+  exception Error of string
 
   let keywords = [
     ("SELECT", SELECT);
@@ -113,7 +113,7 @@ rule token = parse
   | '/'                 { SLASH }
   | '='                 { EQUALS }
   | eof                 { EOF }
-  | _ as c              { raise (Lexical_error ("Unexpected character: " ^ String.make 1 c)) }
+  | _ as c              { raise (Error ("Unexpected character: " ^ String.make 1 c)) }
 
 and string_literal buf = parse
   | '\''                { Buffer.contents buf }
@@ -125,7 +125,7 @@ and string_literal buf = parse
   | '\\' (_ as c)       { Buffer.add_char buf '\\'; Buffer.add_char buf c; string_literal buf lexbuf }
   | newline             { Lexing.new_line lexbuf; Buffer.add_char buf '\n'; string_literal buf lexbuf }
   | _ as c              { Buffer.add_char buf c; string_literal buf lexbuf }
-  | eof                 { raise (Lexical_error "Unterminated string literal") }
+  | eof                 { raise (Error "Unterminated string literal") }
 
 {
   let tokenize_debug q =
@@ -144,5 +144,5 @@ and string_literal buf = parse
         match token with Parser.EOF -> () | _ -> loop ()
       in
       loop ()
-    with Lexical_error msg -> failwith ("Lexical error: " ^ msg)
+    with Error msg -> failwith ("Lexical error: " ^ msg)
 }
