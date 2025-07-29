@@ -18,7 +18,7 @@ are function which accept query scope as argument:
 ```ocaml
 let users ~where = {%query|
     SELECT users.id AS id, users.name AS name
-    FROM users
+    FROM public.users
     WHERE users.is_active AND ?where
 |}
 ```
@@ -26,7 +26,7 @@ let users ~where = {%query|
 There's also expressions syntax:
 
 ```ocaml
-let ok users = [%expr "users.is_active"]
+let ok users = {%expr|users.is_active|}
 
-let using_functions users = [%expr "farmHash(users.name)"]
+let using_functions users = {%expr|farmHash(users.name)|}
 ```
