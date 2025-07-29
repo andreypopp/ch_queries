@@ -11,6 +11,7 @@
 %token <string> ID
 %token <string> PARAM
 %token <string> PARAM_SPLICE
+%token <string> OCAML_EXPR
 %token <string> STRING
 %token <int> NUMBER
 %token TRUE FALSE
@@ -160,3 +161,5 @@ expr:
     { with_loc $startpos $endpos (E_window (fn, args, window_spec)) }
   | param=param
     { with_loc $startpos $endpos (E_value param) }
+  | ocaml_expr=OCAML_EXPR
+    { with_loc $startpos $endpos (E_ocaml_expr ocaml_expr) }

@@ -10,6 +10,7 @@ and exprsyn =
   | E_window of id * expr list * window_spec
       (** window function with OVER clause *)
   | E_value of id  (** variable_name for splicing OCaml values *)
+  | E_ocaml_expr of string  (** OCaml expression for splicing *)
 
 and lit = L_int of int | L_bool of bool | L_string of string
 

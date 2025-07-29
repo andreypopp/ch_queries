@@ -87,6 +87,7 @@ let rec pp_expr expr =
             | _ -> separate (string "," ^^ space) (List.map ~f:pp_expr args)
           in
           group (pp_id name ^^ string "(" ^^ pp_args ^^ string ")"))
+  | E_ocaml_expr s -> string ("?{" ^ s ^ "}")
 
 and pp_dimension = function
   | Dimension_expr expr -> pp_expr expr

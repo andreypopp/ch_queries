@@ -44,6 +44,7 @@
     | Parser.ID s -> Printf.sprintf "ID(%s)" s
     | Parser.PARAM s -> Printf.sprintf "PARAM(%s)" s
     | Parser.PARAM_SPLICE s -> Printf.sprintf "PARAM_SPLICE(%s)" s
+  | Parser.OCAML_EXPR s -> Printf.sprintf "OCAML_EXPR(%s)" s
     | Parser.STRING s -> Printf.sprintf "STRING(%s)" s
     | Parser.NUMBER n -> Printf.sprintf "NUMBER(%d)" n
     | Parser.TRUE -> "TRUE"
@@ -101,6 +102,12 @@ rule token = parse
     lexbuf.Lexing.lex_start_p <- lex_start_p;
     STRING s }
   | '?' (id as s) '.' '.' '.' { PARAM_SPLICE s }
+  | '?' '{'             { 
+    (* remember start position to restore later *)
+    let lex_start_p = Lexing.lexeme_start_p lexbuf in
+    let s = ocaml_expr (Buffer.create 32) 0 lexbuf in
+    lexbuf.Lexing.lex_start_p <- lex_start_p;
+    OCAML_EXPR s }
   | '?' (id as s)       { PARAM s }
   | id as s             { get_keyword_or_id s }
   | '('                 { LPAREN }
@@ -126,6 +133,19 @@ and string_literal buf = parse
   | newline             { Lexing.new_line lexbuf; Buffer.add_char buf '\n'; string_literal buf lexbuf }
   | _ as c              { Buffer.add_char buf c; string_literal buf lexbuf }
   | eof                 { raise (Error "Unterminated string literal") }
+
+and ocaml_expr buf brace_count = parse
+  | '{'                 { Buffer.add_char buf '{'; ocaml_expr buf (brace_count + 1) lexbuf }
+  | '}'                 { 
+    if brace_count = 0 then
+      Buffer.contents buf
+    else (
+      Buffer.add_char buf '}'; 
+      ocaml_expr buf (brace_count - 1) lexbuf
+    ) }
+  | newline             { Lexing.new_line lexbuf; Buffer.add_char buf '\n'; ocaml_expr buf brace_count lexbuf }
+  | _ as c              { Buffer.add_char buf c; ocaml_expr buf brace_count lexbuf }
+  | eof                 { raise (Error "Unterminated OCaml expression: missing closing '}'") }
 
 {
   let tokenize_debug q =

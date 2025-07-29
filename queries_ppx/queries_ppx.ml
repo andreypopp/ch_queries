@@ -136,6 +136,30 @@ let rec stage_expr ~from expr =
       match Option.map from_scope_expr from with
       | None -> e
       | Some arg -> [%expr [%e e] [%e arg]])
+  | Syntax.E_ocaml_expr ocaml_code -> (
+      (* Parse the OCaml expression and adjust location for error reporting *)
+      let adjusted_loc = 
+        let open Location in
+        let start_pos = loc.loc_start in
+        (* Offset by 2 characters to account for '?{' prefix *)
+        let adjusted_start = { start_pos with pos_cnum = start_pos.pos_cnum + 2 } in
+        { loc with loc_start = adjusted_start }
+      in
+      try
+        let lexbuf = Lexing.from_string ocaml_code in
+        (* Set the lexbuf position to match our adjusted location *)
+        lexbuf.lex_start_p <- adjusted_loc.loc_start;
+        lexbuf.lex_curr_p <- adjusted_loc.loc_start;
+        let parsed_expr = Ppxlib.Parse.expression lexbuf in
+        (* Update the location of the parsed expression *)
+        { parsed_expr with pexp_loc = adjusted_loc }
+      with
+      | Syntaxerr.Error _ as e ->
+          (* Re-raise with adjusted location *)
+          raise e
+      | exn ->
+          Location.raise_errorf ~loc:adjusted_loc 
+            "Error parsing OCaml expression: %s" (Printexc.to_string exn))
 
 and stage_dimensions ~loc ~from dimensions =
   let body =
