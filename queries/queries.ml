@@ -1,9 +1,3 @@
-module Parser = Parser
-module Lexer = Lexer
-module Syntax = Syntax
-module Printer = Printer
-module Loc = Loc
-
 type null = [ `null | `not_null ]
 (** Expression syntax *)
 
@@ -254,145 +248,143 @@ let left_join from (join : 'a scope from_one) ~on () =
 
 let union x y scope ~alias = Union { x = x ~alias; y = y ~alias; scope }
 
-let rec expr_to_syntax : type n typ. (n, typ) expr -> Syntax.expr = function
-  | E_id name -> Loc.with_dummy_loc (Syntax.E_value (Loc.with_dummy_loc name))
-  | E_lit lit ->
-      let syntax_lit =
-        match lit with
-        | L_int x -> Syntax.L_int x
-        | L_bool x -> Syntax.L_bool x
-        | L_string x -> Syntax.L_string x
-        | L_float _ -> failwith "float literals not supported in syntax"
-        | L_null -> failwith "null literals not supported in syntax"
-      in
-      Loc.with_dummy_loc (Syntax.E_lit syntax_lit)
-  | E_app (name, args) ->
-      let rec convert_args : args -> Syntax.expr list = function
-        | [] -> []
-        | expr :: rest -> expr_to_syntax expr :: convert_args rest
-      in
-      let args = convert_args args in
-      Loc.with_dummy_loc (Syntax.E_call (Loc.with_dummy_loc name, args))
-  | E_window (name, args, { partition_by; order_by }) ->
-      let rec convert_args : args -> Syntax.expr list = function
-        | [] -> []
-        | expr :: rest -> expr_to_syntax expr :: convert_args rest
-      in
-      let args = convert_args args in
-      let window =
-        let partition_by = Option.map group_by_to_syntax partition_by in
-        let order_by = Option.map order_by_to_syntax order_by in
-        { Syntax.partition_by; order_by }
-      in
-      Loc.with_dummy_loc
-        (Syntax.E_window (Loc.with_dummy_loc name, args, window))
+module To_syntax = struct
+  open Queries_syntax
 
-and group_by_to_syntax dimensions =
-  List.map dimensions ~f:(fun (A_expr expr) ->
-      Syntax.Dimension_expr (expr_to_syntax expr))
-
-and order_by_to_syntax order_by =
-  List.map order_by ~f:(fun (A_expr expr, dir) ->
-      Syntax.Order_by_expr (expr_to_syntax expr, dir))
-
-let expr_to_sql e =
-  let syn = expr_to_syntax e in
-  Printer.print_expr syn
-
-let to_syntax' q =
-  let rec select_to_syntax : type a. a select0 -> Syntax.querysyn = function
-    | Select
-        {
-          from = A_from from;
-          where;
-          qualify;
-          group_by;
-          having;
-          order_by;
-          limit;
-          offset;
-          fields;
-          scope = _;
-        } ->
-        let select =
-          List.rev_map
-            ~f:(fun (A_field (expr, alias)) ->
-              {
-                Syntax.expr = expr_to_syntax expr;
-                alias = Some (Loc.with_dummy_loc alias);
-              })
-            fields
+  let rec expr_to_syntax : type n typ. (n, typ) expr -> Syntax.expr = function
+    | E_id name -> Loc.with_dummy_loc (Syntax.E_value (Loc.with_dummy_loc name))
+    | E_lit lit ->
+        let syntax_lit =
+          match lit with
+          | L_int x -> Syntax.L_int x
+          | L_bool x -> Syntax.L_bool x
+          | L_string x -> Syntax.L_string x
+          | L_float _ -> failwith "float literals not supported in syntax"
+          | L_null -> failwith "null literals not supported in syntax"
         in
-        let where =
-          Option.map (fun (A_expr expr) -> expr_to_syntax expr) where
+        Loc.with_dummy_loc (Syntax.E_lit syntax_lit)
+    | E_app (name, args) ->
+        let rec convert_args : args -> Syntax.expr list = function
+          | [] -> []
+          | expr :: rest -> expr_to_syntax expr :: convert_args rest
         in
-        let qualify =
-          Option.map (fun (A_expr expr) -> expr_to_syntax expr) qualify
+        let args = convert_args args in
+        Loc.with_dummy_loc (Syntax.E_call (Loc.with_dummy_loc name, args))
+    | E_window (name, args, { partition_by; order_by }) ->
+        let rec convert_args : args -> Syntax.expr list = function
+          | [] -> []
+          | expr :: rest -> expr_to_syntax expr :: convert_args rest
         in
-        let group_by = Option.map group_by_to_syntax group_by in
-        let having =
-          Option.map (fun (A_expr expr) -> expr_to_syntax expr) having
+        let args = convert_args args in
+        let window =
+          let partition_by = Option.map group_by_to_syntax partition_by in
+          let order_by = Option.map order_by_to_syntax order_by in
+          { Syntax.partition_by; order_by }
         in
-        let order_by = Option.map order_by_to_syntax order_by in
-        let limit =
-          Option.map (fun (A_expr expr) -> expr_to_syntax expr) limit
-        in
-        let offset =
-          Option.map (fun (A_expr expr) -> expr_to_syntax expr) offset
-        in
-        let from = from_to_syntax from in
-        {
-          Syntax.select = Select_fields select;
-          from;
-          where;
-          qualify;
-          group_by;
-          having;
-          order_by;
-          limit;
-          offset;
-        }
-    | Union { x = _; y = _; _ } ->
-        failwith "TODO: union queries not yet supported"
-  and from_one_to_syntax : type a. a from_one0 -> Syntax.from_one = function
-    | From_table { db; table; alias; _ } ->
         Loc.with_dummy_loc
-          (Syntax.F_table
-             {
-               db = Loc.with_dummy_loc db;
-               table = Loc.with_dummy_loc table;
-               alias = Loc.with_dummy_loc alias;
-             })
-    | From_select { select; alias } ->
-        Loc.with_dummy_loc
-          (Syntax.F_select
-             {
-               select = Loc.with_dummy_loc (select_to_syntax select);
-               alias = Loc.with_dummy_loc alias;
-             })
-  and from_to_syntax : type a. a from0 -> Syntax.from = function
-    | From { from = A_from_one from; _ } ->
-        Loc.with_dummy_loc (Syntax.F (from_one_to_syntax from))
-    | From_join
-        { kind; from = A_from from; join = A_from_one join; on = A_expr on; _ }
-      ->
-        Loc.with_dummy_loc
-          (Syntax.F_join
-             {
-               kind;
-               from = from_to_syntax from;
-               join = from_one_to_syntax join;
-               on = expr_to_syntax on;
-             })
-  in
-  Loc.with_dummy_loc (select_to_syntax q)
+          (Syntax.E_window (Loc.with_dummy_loc name, args, window))
 
-let to_sql' q =
-  let syn = to_syntax' q in
-  Printer.print_query syn
+  and group_by_to_syntax dimensions =
+    List.map dimensions ~f:(fun (A_expr expr) ->
+        Syntax.Dimension_expr (expr_to_syntax expr))
 
-let to_syntax q = to_syntax' (q ~alias:"_")
-let to_sql q = to_sql' (q ~alias:"_")
+  and order_by_to_syntax order_by =
+    List.map order_by ~f:(fun (A_expr expr, dir) ->
+        Syntax.Order_by_expr (expr_to_syntax expr, dir))
+
+  let to_syntax q =
+    let rec select_to_syntax : type a. a select0 -> Syntax.querysyn = function
+      | Select
+          {
+            from = A_from from;
+            where;
+            qualify;
+            group_by;
+            having;
+            order_by;
+            limit;
+            offset;
+            fields;
+            scope = _;
+          } ->
+          let select =
+            List.rev_map
+              ~f:(fun (A_field (expr, alias)) ->
+                {
+                  Syntax.expr = expr_to_syntax expr;
+                  alias = Some (Loc.with_dummy_loc alias);
+                })
+              fields
+          in
+          let where =
+            Option.map (fun (A_expr expr) -> expr_to_syntax expr) where
+          in
+          let qualify =
+            Option.map (fun (A_expr expr) -> expr_to_syntax expr) qualify
+          in
+          let group_by = Option.map group_by_to_syntax group_by in
+          let having =
+            Option.map (fun (A_expr expr) -> expr_to_syntax expr) having
+          in
+          let order_by = Option.map order_by_to_syntax order_by in
+          let limit =
+            Option.map (fun (A_expr expr) -> expr_to_syntax expr) limit
+          in
+          let offset =
+            Option.map (fun (A_expr expr) -> expr_to_syntax expr) offset
+          in
+          let from = from_to_syntax from in
+          {
+            Syntax.select = Select_fields select;
+            from;
+            where;
+            qualify;
+            group_by;
+            having;
+            order_by;
+            limit;
+            offset;
+          }
+      | Union { x = _; y = _; _ } ->
+          failwith "TODO: union queries not yet supported"
+    and from_one_to_syntax : type a. a from_one0 -> Syntax.from_one = function
+      | From_table { db; table; alias; _ } ->
+          Loc.with_dummy_loc
+            (Syntax.F_table
+               {
+                 db = Loc.with_dummy_loc db;
+                 table = Loc.with_dummy_loc table;
+                 alias = Loc.with_dummy_loc alias;
+               })
+      | From_select { select; alias } ->
+          Loc.with_dummy_loc
+            (Syntax.F_select
+               {
+                 select = Loc.with_dummy_loc (select_to_syntax select);
+                 alias = Loc.with_dummy_loc alias;
+               })
+    and from_to_syntax : type a. a from0 -> Syntax.from = function
+      | From { from = A_from_one from; _ } ->
+          Loc.with_dummy_loc (Syntax.F (from_one_to_syntax from))
+      | From_join
+          {
+            kind;
+            from = A_from from;
+            join = A_from_one join;
+            on = A_expr on;
+            _;
+          } ->
+          Loc.with_dummy_loc
+            (Syntax.F_join
+               {
+                 kind;
+                 from = from_to_syntax from;
+                 join = from_one_to_syntax join;
+                 on = expr_to_syntax on;
+               })
+    in
+    Loc.with_dummy_loc (select_to_syntax q)
+end
 
 type json =
   [ `Assoc of (string * json) list
@@ -494,16 +486,20 @@ let query q f =
       let fields = Row.fields row in
       let fields =
         List.map fields ~f:(fun (A_expr e) ->
-            { Syntax.expr = expr_to_syntax e; alias = None })
+            {
+              Queries_syntax.Syntax.expr = To_syntax.expr_to_syntax e;
+              alias = None;
+            })
       in
-      let select = to_syntax' q in
+      let select = To_syntax.to_syntax q in
       let select =
         {
-          Syntax.from =
-            Loc.with_dummy_loc
-              (Syntax.F
-                 (Loc.with_dummy_loc
-                    (Syntax.F_select { select; alias = Loc.with_dummy_loc "q" })));
+          Queries_syntax.Syntax.from =
+            Queries_syntax.Loc.with_dummy_loc
+              (Queries_syntax.Syntax.F
+                 (Queries_syntax.Loc.with_dummy_loc
+                    (Queries_syntax.Syntax.F_select
+                       { select; alias = Queries_syntax.Loc.with_dummy_loc "q" })));
           select = Select_fields fields;
           where = None;
           qualify = None;
@@ -514,7 +510,10 @@ let query q f =
           offset = None;
         }
       in
-      let sql = Printer.print_query (Loc.with_dummy_loc select) in
+      let sql =
+        Queries_syntax.Printer.print_query
+          (Queries_syntax.Loc.with_dummy_loc select)
+      in
       let parse_row = Row.parse row in
       (sql, parse_row)
   | Union _ -> failwith "TODO"

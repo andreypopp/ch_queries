@@ -14,14 +14,16 @@ let parse_cmd =
   let parse_query query_str =
     try
       let lexbuf = Lexing.from_string query_str in
-      let query = Queries.Parser.a_query Queries.Lexer.token lexbuf in
-      let pretty_printed = Queries.Printer.print_query query in
+      let query =
+        Queries_syntax.Parser.a_query Queries_syntax.Lexer.token lexbuf
+      in
+      let pretty_printed = Queries_syntax.Printer.print_query query in
       print_endline pretty_printed
     with
-    | Queries.Lexer.Lexical_error msg ->
+    | Queries_syntax.Lexer.Lexical_error msg ->
         Printf.eprintf "Lexical error: %s\n" msg;
         exit 1
-    | Queries.Parser.Error ->
+    | Queries_syntax.Parser.Error ->
         Printf.eprintf "Parse error\n";
         exit 1
   in
@@ -34,7 +36,7 @@ let tokenize_cmd =
     Arg.(required & pos 0 (some string) None & info [] ~docv:"QUERY" ~doc)
   in
   let debug_query q =
-    try Queries.Lexer.tokenize_debug q
+    try Queries_syntax.Lexer.tokenize_debug q
     with Failure msg ->
       Printf.eprintf "%s\n" msg;
       exit 1

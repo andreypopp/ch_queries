@@ -1,10 +1,13 @@
+(** DSL for SQL queries generation. *)
+
 type null = [ `not_null | `null ]
 type non_null = [ `not_null ]
 type 'a nullable = 'a constraint 'a = [< null ]
 
 type (+'null, +'typ) expr
-(** SQL expression DSL. *)
+(** An SQL expression. *)
 
+(** Used for "subtyping" of numeric types. *)
 type 'a number = private A_number
 
 val int : int -> (non_null, int number) expr
@@ -12,13 +15,10 @@ val string : string -> (non_null, string) expr
 val bool : bool -> (non_null, bool) expr
 val float : float -> (non_null, float number) expr
 val null : (null, 'a) expr
+
 val unsafe_expr : string -> _ expr
-
-val expr_to_syntax : _ expr -> Syntax.expr
-(** Convert the expression to an untyped syntax representation. *)
-
-val expr_to_sql : _ expr -> string
-(** Convert the expression to a SQL string. *)
+(** Inject a string into an expression without any checks. This is unsafe to do,
+    if string comes from user input (= SQL injection). *)
 
 type 'a scope = < query : 'n 'e. ('a -> ('n, 'e) expr) -> ('n, 'e) expr >
 (** Represents a table's or a subquery's scope. *)
@@ -81,9 +81,6 @@ val from_table :
   (alias:string -> 'a) ->
   alias:string ->
   'a scope from_one
-
-val to_syntax : _ select -> Syntax.query
-val to_sql : _ select -> string
 
 module Expr : sig
   val assumeNotNull : ([< null ] nullable, 'b) expr -> (non_null, 'a) expr
@@ -155,9 +152,3 @@ val query :
     The result is the SQL string and a function to parse a single result row.
     The parse function raises [Row.Parse_error] in case of incorrect row being
     supplied. *)
-
-module Parser : module type of Parser
-module Lexer : module type of Lexer
-module Syntax : module type of Syntax
-module Printer : module type of Printer
-module Loc : module type of Loc

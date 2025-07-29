@@ -1,9 +1,6 @@
 open Ppxlib
 open Ast_builder.Default
-module Lexer = Queries.Lexer
-module Parser = Queries.Parser
-module Loc = Queries.Loc
-module Syntax = Queries.Syntax
+open Queries_syntax
 
 let set_position lexbuf loc =
   Lexing.set_position lexbuf

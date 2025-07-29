@@ -1,7 +1,7 @@
 (library
  (public_name queries.ppx)
  (name ppx_queries)
- (libraries ppxlib queries)
+ (libraries ppxlib queries.syntax)
  (kind ppx_rewriter)
  (modules :standard \ ppx_queries_exe)
  (preprocess

@@ -4,8 +4,8 @@
  (modules parser))
 
 (library
- (name queries)
- (public_name queries)
+ (name queries_syntax)
+ (public_name queries.syntax)
  (flags
   (:standard -open ContainersLabels))
  (libraries containers pprint))
