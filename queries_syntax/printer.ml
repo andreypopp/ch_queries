@@ -157,6 +157,7 @@ and pp_from from =
 and pp_query { node; loc = _ } =
   match node with
   | Q_union (q1, q2) -> group (pp_query q1 ^/^ string "UNION" ^/^ pp_query q2)
+  | Q_param id -> string "?" ^^ pp_id id
   | Q_select
       {
         select;

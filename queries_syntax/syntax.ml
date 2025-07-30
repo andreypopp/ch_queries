@@ -49,6 +49,7 @@ and querysyn =
       offset : expr option;
     }
   | Q_union of query * query
+  | Q_param of id
 
 and select = Select_fields of field list | Select_splice of id
 and from_one = from_onesyn Loc.with_loc

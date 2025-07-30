@@ -45,11 +45,15 @@
 a_query:
     q=query EOF { q }
 
-query:
+query_no_param:
     SELECT select=select FROM from=from prewhere=prewhere? where=where? qualify=qualify? group_by=group_by? having=having? order_by=order_by? limit=limit? offset=offset?
     { with_loc $startpos $endpos (Syntax.Q_select { select; from; prewhere; where; qualify; group_by; having; order_by; limit; offset }) }
   | q1=query UNION q2=query
     { with_loc $startpos $endpos (Syntax.Q_union (q1, q2)) }
+
+query:
+    q=query_no_param { q }
+  | param=param { with_loc $startpos $endpos (Syntax.Q_param param) }
 
 a_expr:
     e=expr EOF { e }
@@ -186,7 +190,7 @@ expr:
     { with_loc $startpos $endpos (E_value param) }
   | ocaml_expr=OCAML_EXPR
     { with_loc $startpos $endpos (E_ocaml_expr ocaml_expr) }
-  | e=expr IN LPAREN q=query RPAREN
+  | e=expr IN LPAREN q=query_no_param RPAREN
     { with_loc $startpos $endpos (E_in (e, In_query q)) }
   | e=expr IN e_rhs=expr
     { with_loc $startpos $endpos (E_in (e, In_expr e_rhs)) }

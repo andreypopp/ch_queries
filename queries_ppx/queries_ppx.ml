@@ -253,6 +253,9 @@ and stage_query ({ node; _ } as q) =
       let q1 = stage_query q1 in
       let q2 = stage_query q2 in
       pexp_apply ~loc [%expr Queries.union] [ (Nolabel, q1); (Nolabel, q2) ]
+  | Q_param id ->
+      let loc = to_location id in
+      evar ~loc id.node
   | Q_select
       {
         select;

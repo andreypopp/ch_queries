@@ -2,7 +2,7 @@ Programmatic union
   $ ./compile_and_run '
   > let users1 = [%query "SELECT 1 AS x FROM public.users"];;
   > let users2 = [%query "SELECT 2 AS x FROM public.users"];;
-  > let users = Queries.union users1 users2;;
+  > let users = [%query "?users1 UNION ?users2"];;
   > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.int [%expr "users.x"]
   > let () = print_endline sql;;
   > '
