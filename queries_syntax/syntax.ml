@@ -35,18 +35,20 @@ and field = { expr : expr; alias : id option }
 
 and query = querysyn Loc.with_loc
 
-and querysyn = {
-  select : select;
-  from : from;
-  prewhere : expr option;
-  where : expr option;
-  qualify : expr option;
-  group_by : dimension list option;
-  having : expr option;
-  order_by : order_by list option;
-  limit : expr option;
-  offset : expr option;
-}
+and querysyn =
+  | Q_select of {
+      select : select;
+      from : from;
+      prewhere : expr option;
+      where : expr option;
+      qualify : expr option;
+      group_by : dimension list option;
+      having : expr option;
+      order_by : order_by list option;
+      limit : expr option;
+      offset : expr option;
+    }
+  | Q_union of query * query
 
 and select = Select_fields of field list | Select_splice of id
 and from_one = from_onesyn Loc.with_loc

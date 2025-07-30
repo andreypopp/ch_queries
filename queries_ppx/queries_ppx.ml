@@ -246,127 +246,133 @@ and stage_field ~from idx { Syntax.expr; alias } =
   in
   pcf_method ~loc (name, Public, Cfk_concrete (Fresh, stage_expr ~from expr))
 
-and stage_query
-    ({
-       Loc.node =
-         {
-           Syntax.select;
-           from;
-           prewhere;
-           where;
-           qualify;
-           group_by;
-           having;
-           order_by;
-           limit;
-           offset;
-         };
-       _;
-     } as q) =
-  let loc = to_location q in
-  let select =
-    match select with
-    | Syntax.Select_fields fields ->
-        let select_methods = List.mapi (stage_field ~from:(Some from)) fields in
-        let select_obj =
-          pexp_object ~loc
-            { pcstr_self = ppat_any ~loc; pcstr_fields = select_methods }
-        in
-        pexp_fun ~loc Nolabel None (from_scope_pattern from) select_obj
-    | Syntax.Select_splice id ->
-        let loc = to_location id in
-        evar ~loc id.Loc.node
-  in
-  let args =
-    [ (Labelled "select", select); (Labelled "from", stage_from from) ]
-  in
-  let args =
-    match prewhere with
-    | None -> args
-    | Some prewhere ->
-        let loc = to_location prewhere in
-        let prewhere =
-          pexp_fun ~loc Nolabel None (from_scope_pattern from)
-            (stage_expr ~from:(Some from) prewhere)
-        in
-        (Labelled "prewhere", prewhere) :: args
-  in
-  let args =
-    match where with
-    | None -> args
-    | Some where ->
-        let loc = to_location where in
-        let where =
-          pexp_fun ~loc Nolabel None (from_scope_pattern from)
-            (stage_expr ~from:(Some from) where)
-        in
-        (Labelled "where", where) :: args
-  in
-  let args =
-    match qualify with
-    | None -> args
-    | Some qualify ->
-        let loc = to_location qualify in
-        let qualify =
-          pexp_fun ~loc Nolabel None (from_scope_pattern from)
-            (stage_expr ~from:(Some from) qualify)
-        in
-        (Labelled "qualify", qualify) :: args
-  in
-  let args =
-    match group_by with
-    | None -> args
-    | Some dimensions ->
-        let loc = to_location q in
-        let group_by = stage_dimensions ~loc ~from:(Some from) dimensions in
-        let group_by =
-          pexp_fun ~loc Nolabel None (from_scope_pattern from) group_by
-        in
-        (Labelled "group_by", group_by) :: args
-  in
-  let args =
-    match having with
-    | None -> args
-    | Some having ->
-        let loc = to_location having in
-        let having =
-          pexp_fun ~loc Nolabel None (from_scope_pattern from)
-            (stage_expr ~from:(Some from) having)
-        in
-        (Labelled "having", having) :: args
-  in
-  let args =
-    match order_by with
-    | None -> args
-    | Some order_by ->
-        let loc = to_location q in
-        let order_by = stage_order_by ~loc ~from:(Some from) order_by in
-        let order_by =
-          pexp_fun ~loc Nolabel None (from_scope_pattern from) order_by
-        in
-        (Labelled "order_by", order_by) :: args
-  in
-  let args =
-    match limit with
-    | None -> args
-    | Some expr ->
-        let limit =
-          pexp_fun ~loc Nolabel None (from_scope_pattern from)
-            (stage_expr ~from:(Some from) expr)
-        in
-        (Labelled "limit", limit) :: args
-  in
-  let args =
-    match offset with
-    | None -> args
-    | Some expr ->
-        let offset =
-          pexp_fun ~loc Nolabel None (from_scope_pattern from)
-            (stage_expr ~from:(Some from) expr)
-        in
-        (Labelled "offset", offset) :: args
-  in
-  pexp_apply ~loc [%expr Queries.select] ((Nolabel, [%expr ()]) :: List.rev args)
+and stage_query ({ node; _ } as q) =
+  match node with
+  | Q_union (q1, q2) ->
+      let loc = to_location q in
+      let q1 = stage_query q1 in
+      let q2 = stage_query q2 in
+      pexp_apply ~loc [%expr Queries.union] [ (Nolabel, q1); (Nolabel, q2) ]
+  | Q_select
+      {
+        select;
+        from;
+        prewhere;
+        where;
+        qualify;
+        group_by;
+        having;
+        order_by;
+        limit;
+        offset;
+      } ->
+      let loc = to_location q in
+      let select =
+        match select with
+        | Syntax.Select_fields fields ->
+            let select_methods =
+              List.mapi (stage_field ~from:(Some from)) fields
+            in
+            let select_obj =
+              pexp_object ~loc
+                { pcstr_self = ppat_any ~loc; pcstr_fields = select_methods }
+            in
+            pexp_fun ~loc Nolabel None (from_scope_pattern from) select_obj
+        | Syntax.Select_splice id ->
+            let loc = to_location id in
+            evar ~loc id.Loc.node
+      in
+      let args =
+        [ (Labelled "select", select); (Labelled "from", stage_from from) ]
+      in
+      let args =
+        match prewhere with
+        | None -> args
+        | Some prewhere ->
+            let loc = to_location prewhere in
+            let prewhere =
+              pexp_fun ~loc Nolabel None (from_scope_pattern from)
+                (stage_expr ~from:(Some from) prewhere)
+            in
+            (Labelled "prewhere", prewhere) :: args
+      in
+      let args =
+        match where with
+        | None -> args
+        | Some where ->
+            let loc = to_location where in
+            let where =
+              pexp_fun ~loc Nolabel None (from_scope_pattern from)
+                (stage_expr ~from:(Some from) where)
+            in
+            (Labelled "where", where) :: args
+      in
+      let args =
+        match qualify with
+        | None -> args
+        | Some qualify ->
+            let loc = to_location qualify in
+            let qualify =
+              pexp_fun ~loc Nolabel None (from_scope_pattern from)
+                (stage_expr ~from:(Some from) qualify)
+            in
+            (Labelled "qualify", qualify) :: args
+      in
+      let args =
+        match group_by with
+        | None -> args
+        | Some dimensions ->
+            let loc = to_location q in
+            let group_by = stage_dimensions ~loc ~from:(Some from) dimensions in
+            let group_by =
+              pexp_fun ~loc Nolabel None (from_scope_pattern from) group_by
+            in
+            (Labelled "group_by", group_by) :: args
+      in
+      let args =
+        match having with
+        | None -> args
+        | Some having ->
+            let loc = to_location having in
+            let having =
+              pexp_fun ~loc Nolabel None (from_scope_pattern from)
+                (stage_expr ~from:(Some from) having)
+            in
+            (Labelled "having", having) :: args
+      in
+      let args =
+        match order_by with
+        | None -> args
+        | Some order_by ->
+            let loc = to_location q in
+            let order_by = stage_order_by ~loc ~from:(Some from) order_by in
+            let order_by =
+              pexp_fun ~loc Nolabel None (from_scope_pattern from) order_by
+            in
+            (Labelled "order_by", order_by) :: args
+      in
+      let args =
+        match limit with
+        | None -> args
+        | Some expr ->
+            let limit =
+              pexp_fun ~loc Nolabel None (from_scope_pattern from)
+                (stage_expr ~from:(Some from) expr)
+            in
+            (Labelled "limit", limit) :: args
+      in
+      let args =
+        match offset with
+        | None -> args
+        | Some expr ->
+            let offset =
+              pexp_fun ~loc Nolabel None (from_scope_pattern from)
+                (stage_expr ~from:(Some from) expr)
+            in
+            (Labelled "offset", offset) :: args
+      in
+      pexp_apply ~loc [%expr Queries.select]
+        ((Nolabel, [%expr ()]) :: List.rev args)
 
 and stage_from from =
   let open Syntax in

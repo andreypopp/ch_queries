@@ -154,101 +154,100 @@ and pp_from from =
         (pp_from from ^/^ string join_kind_str ^/^ pp_from_one join
        ^/^ string "ON" ^/^ pp_expr on)
 
-and pp_query
-    {
-      Loc.node =
-        {
-          Syntax.select;
-          from;
-          prewhere;
-          where;
-          qualify;
-          group_by;
-          having;
-          order_by;
-          limit;
-          offset;
-        };
-      _;
-    } =
-  let pp_fields =
-    match select with
-    | Select_fields fields ->
-        separate (string "," ^^ break 1) (List.map ~f:pp_field fields)
-    | Select_splice id -> pp_id id ^^ string "..."
-  in
-  let select = group (string "SELECT" ^^ nest 2 (break 1 ^^ pp_fields)) in
-  let from = group (string "FROM " ^^ pp_from from) in
-  let prewhere =
-    match prewhere with
-    | None -> None
-    | Some expr -> Some (group (string "PREWHERE" ^/^ pp_expr expr))
-  in
-  let where =
-    match where with
-    | None -> None
-    | Some expr -> Some (group (string "WHERE" ^/^ pp_expr expr))
-  in
-  let qualify =
-    match qualify with
-    | None -> None
-    | Some expr -> Some (group (string "QUALIFY" ^/^ pp_expr expr))
-  in
-  let group_by =
-    match group_by with
-    | None -> None
-    | Some dimensions ->
-        let dimensions =
-          match dimensions with
-          | [] -> string "()"
-          | dimensions ->
-              separate (string ", ") (List.map ~f:pp_dimension dimensions)
-        in
-        Some (group (string "GROUP BY " ^^ dimensions))
-  in
-  let having =
-    match having with
-    | None -> None
-    | Some expr -> Some (group (string "HAVING" ^/^ pp_expr expr))
-  in
-  let order_by =
-    match order_by with
-    | None -> None
-    | Some items ->
-        let pp_item = function
-          | Syntax.Order_by_splice id -> pp_id id ^^ string "..."
-          | Syntax.Order_by_expr (expr, dir) ->
-              let dir = match dir with `ASC -> "ASC" | `DESC -> "DESC" in
-              group (pp_expr expr ^^ string " " ^^ string dir)
-        in
-        let pp_items = separate (string ", ") (List.map ~f:pp_item items) in
-        Some (group (string "ORDER BY " ^^ pp_items))
-  in
-  let limit =
-    match limit with
-    | None -> None
-    | Some expr -> Some (group (string "LIMIT" ^/^ pp_expr expr))
-  in
-  let offset =
-    match offset with
-    | None -> None
-    | Some expr -> Some (group (string "OFFSET" ^/^ pp_expr expr))
-  in
-  group
-    (separate (break 1)
-       (List.filter_map ~f:Fun.id
-          [
-            Some select;
-            Some from;
-            prewhere;
-            where;
-            qualify;
-            group_by;
-            having;
-            order_by;
-            limit;
-            offset;
-          ]))
+and pp_query { node; loc = _ } =
+  match node with
+  | Q_union (q1, q2) -> group (pp_query q1 ^/^ string "UNION" ^/^ pp_query q2)
+  | Q_select
+      {
+        select;
+        from;
+        prewhere;
+        where;
+        qualify;
+        group_by;
+        having;
+        order_by;
+        limit;
+        offset;
+      } ->
+      let pp_fields =
+        match select with
+        | Select_fields fields ->
+            separate (string "," ^^ break 1) (List.map ~f:pp_field fields)
+        | Select_splice id -> pp_id id ^^ string "..."
+      in
+      let select = group (string "SELECT" ^^ nest 2 (break 1 ^^ pp_fields)) in
+      let from = group (string "FROM " ^^ pp_from from) in
+      let prewhere =
+        match prewhere with
+        | None -> None
+        | Some expr -> Some (group (string "PREWHERE" ^/^ pp_expr expr))
+      in
+      let where =
+        match where with
+        | None -> None
+        | Some expr -> Some (group (string "WHERE" ^/^ pp_expr expr))
+      in
+      let qualify =
+        match qualify with
+        | None -> None
+        | Some expr -> Some (group (string "QUALIFY" ^/^ pp_expr expr))
+      in
+      let group_by =
+        match group_by with
+        | None -> None
+        | Some dimensions ->
+            let dimensions =
+              match dimensions with
+              | [] -> string "()"
+              | dimensions ->
+                  separate (string ", ") (List.map ~f:pp_dimension dimensions)
+            in
+            Some (group (string "GROUP BY " ^^ dimensions))
+      in
+      let having =
+        match having with
+        | None -> None
+        | Some expr -> Some (group (string "HAVING" ^/^ pp_expr expr))
+      in
+      let order_by =
+        match order_by with
+        | None -> None
+        | Some items ->
+            let pp_item = function
+              | Syntax.Order_by_splice id -> pp_id id ^^ string "..."
+              | Syntax.Order_by_expr (expr, dir) ->
+                  let dir = match dir with `ASC -> "ASC" | `DESC -> "DESC" in
+                  group (pp_expr expr ^^ string " " ^^ string dir)
+            in
+            let pp_items = separate (string ", ") (List.map ~f:pp_item items) in
+            Some (group (string "ORDER BY " ^^ pp_items))
+      in
+      let limit =
+        match limit with
+        | None -> None
+        | Some expr -> Some (group (string "LIMIT" ^/^ pp_expr expr))
+      in
+      let offset =
+        match offset with
+        | None -> None
+        | Some expr -> Some (group (string "OFFSET" ^/^ pp_expr expr))
+      in
+      group
+        (separate (break 1)
+           (List.filter_map ~f:Fun.id
+              [
+                Some select;
+                Some from;
+                prewhere;
+                where;
+                qualify;
+                group_by;
+                having;
+                order_by;
+                limit;
+                offset;
+              ]))
 
 let print' pp v =
   let buffer = Buffer.create 256 in

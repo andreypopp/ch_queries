@@ -54,11 +54,7 @@ and 'scope select0 =
       mutable fields : a_field list;
           (** list of fields build within the SELECT *)
     }
-  | Union of {
-      x : 'scope select0;
-      y : 'scope select0;
-      scope : 'scope -> 'scope -> 'scope;
-    }
+  | Union of { x : 'scope select0; y : 'scope select0 }
 
 and 'scope select = alias:string -> 'scope select0
 
@@ -216,10 +212,19 @@ let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit
   in
   Lazy.force select
 
-let rec scope_from_select select =
+let rec scope_from_select select : _ scope =
   match select with
   | Select { scope; _ } -> scope
-  | Union { x; y; scope } -> scope (scope_from_select x) (scope_from_select y)
+  | Union { x; y } ->
+      let scope_x = scope_from_select x in
+      let scope_y = scope_from_select y in
+      object
+        method query : 'n 'e. (_ -> ('n, 'e) expr) -> ('n, 'e) expr =
+          fun f ->
+            let e_x = scope_x#query f in
+            let _e_y : _ expr = scope_y#query f in
+            e_x
+      end
 
 let scope_from_one = function
   | From_table { scope; _ } -> scope
@@ -272,7 +277,7 @@ let left_join from (join : 'a scope from_one) ~on () =
       on = A_expr on;
     }
 
-let union x y scope ~alias = Union { x = x ~alias; y = y ~alias; scope }
+let union x y ~alias = Union { x = x ~alias; y = y ~alias }
 
 module To_syntax = struct
   open Queries_syntax
@@ -381,20 +386,20 @@ module To_syntax = struct
             Option.map (fun (A_expr expr) -> expr_to_syntax expr) offset
           in
           let from = from_to_syntax from in
-          {
-            Syntax.select = Select_fields select;
-            from;
-            prewhere;
-            where;
-            qualify;
-            group_by;
-            having;
-            order_by;
-            limit;
-            offset;
-          }
-      | Union { x = _; y = _; _ } ->
-          failwith "TODO: union queries not yet supported"
+          Q_select
+            {
+              select = Select_fields select;
+              from;
+              prewhere;
+              where;
+              qualify;
+              group_by;
+              having;
+              order_by;
+              limit;
+              offset;
+            }
+      | Union { x; y } -> Q_union (to_syntax x, to_syntax y)
     and from_one_to_syntax : type a. a from_one0 -> Syntax.from_one = function
       | From_table { db; table; alias; final; _ } ->
           Loc.with_dummy_loc
@@ -535,45 +540,45 @@ module Row = struct
 end
 
 let query q f =
-  match q ~alias:"q" with
-  | Select { scope; _ } as q ->
-      let row = f scope in
-      let fields = Row.fields row in
-      let fields =
-        List.map fields ~f:(fun (A_expr e) ->
-            {
-              Queries_syntax.Syntax.expr = To_syntax.expr_to_syntax e;
-              alias = None;
-            })
-      in
-      let select = To_syntax.to_syntax q in
-      let select =
+  let q = q ~alias:"q" in
+  let scope = scope_from_select q in
+  let row = f scope in
+  let fields = Row.fields row in
+  let fields =
+    List.map fields ~f:(fun (A_expr e) ->
         {
-          Queries_syntax.Syntax.from =
-            Queries_syntax.Loc.with_dummy_loc
-              (Queries_syntax.Syntax.F
-                 (Queries_syntax.Loc.with_dummy_loc
-                    (Queries_syntax.Syntax.F_select
-                       {
-                         select;
-                         alias = Queries_syntax.Loc.with_dummy_loc "q";
-                         cluster_name = None;
-                       })));
-          select = Select_fields fields;
-          prewhere = None;
-          where = None;
-          qualify = None;
-          group_by = None;
-          having = None;
-          order_by = None;
-          limit = None;
-          offset = None;
-        }
-      in
-      let sql =
-        Queries_syntax.Printer.print_query
-          (Queries_syntax.Loc.with_dummy_loc select)
-      in
-      let parse_row = Row.parse row in
-      (sql, parse_row)
-  | Union _ -> failwith "TODO"
+          Queries_syntax.Syntax.expr = To_syntax.expr_to_syntax e;
+          alias = None;
+        })
+  in
+  let select = To_syntax.to_syntax q in
+  let select =
+    Queries_syntax.Syntax.Q_select
+      {
+        from =
+          Queries_syntax.Loc.with_dummy_loc
+            (Queries_syntax.Syntax.F
+               (Queries_syntax.Loc.with_dummy_loc
+                  (Queries_syntax.Syntax.F_select
+                     {
+                       select;
+                       alias = Queries_syntax.Loc.with_dummy_loc "q";
+                       cluster_name = None;
+                     })));
+        select = Select_fields fields;
+        prewhere = None;
+        where = None;
+        qualify = None;
+        group_by = None;
+        having = None;
+        order_by = None;
+        limit = None;
+        offset = None;
+      }
+  in
+  let sql =
+    Queries_syntax.Printer.print_query
+      (Queries_syntax.Loc.with_dummy_loc select)
+  in
+  let parse_row = Row.parse row in
+  (sql, parse_row)

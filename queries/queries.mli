@@ -65,13 +65,10 @@ val select :
   unit ->
   'select scope select
 
-val union :
-  'a scope select ->
-  'a scope select ->
-  ('a scope -> 'a scope -> 'a scope) ->
-  'a scope select
+val union : 'a scope select -> 'a scope select -> 'a scope select
+(** UNION of two SELECT queries. *)
 
-val from : 'a from_one -> 'a from
+val from : 'a scope from_one -> 'a scope from
 
 val join :
   'a from ->

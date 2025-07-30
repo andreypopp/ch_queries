@@ -25,8 +25,10 @@
 %token LIMIT OFFSET
 %token CLUSTER VIEW FINAL
 %token IN
+%token UNION
 %token EOF
 
+%left UNION
 %left OR
 %left AND
 %left EQUALS
@@ -45,7 +47,9 @@ a_query:
 
 query:
     SELECT select=select FROM from=from prewhere=prewhere? where=where? qualify=qualify? group_by=group_by? having=having? order_by=order_by? limit=limit? offset=offset?
-    { with_loc $startpos $endpos { select; from; prewhere; where; qualify; group_by; having; order_by; limit; offset } }
+    { with_loc $startpos $endpos (Syntax.Q_select { select; from; prewhere; where; qualify; group_by; having; order_by; limit; offset }) }
+  | q1=query UNION q2=query
+    { with_loc $startpos $endpos (Syntax.Q_union (q1, q2)) }
 
 a_expr:
     e=expr EOF { e }
