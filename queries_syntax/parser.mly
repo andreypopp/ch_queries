@@ -24,6 +24,7 @@
 %token OVER PARTITION QUALIFY
 %token LIMIT OFFSET
 %token CLUSTER VIEW FINAL
+%token IN
 %token EOF
 
 %left OR
@@ -31,6 +32,7 @@
 %left EQUALS
 %left PLUS MINUS
 %left STAR SLASH
+%left IN
 
 %start a_query a_expr
 %type <Syntax.query> a_query
@@ -178,3 +180,7 @@ expr:
     { with_loc $startpos $endpos (E_value param) }
   | ocaml_expr=OCAML_EXPR
     { with_loc $startpos $endpos (E_ocaml_expr ocaml_expr) }
+  | e=expr IN LPAREN q=query RPAREN
+    { with_loc $startpos $endpos (E_in (e, In_query q)) }
+  | e=expr IN param=param
+    { with_loc $startpos $endpos (E_in (e, In_query_param param)) }

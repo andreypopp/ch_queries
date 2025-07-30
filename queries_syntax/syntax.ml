@@ -1,4 +1,5 @@
 type id = string Loc.with_loc
+type order_direction = ASC | DESC
 
 type expr = exprsyn Loc.with_loc
 
@@ -11,9 +12,11 @@ and exprsyn =
       (** window function with OVER clause *)
   | E_value of id  (** variable_name for splicing OCaml values *)
   | E_ocaml_expr of string  (** OCaml expression for splicing *)
+  | E_in of expr * in_query
 
 and func = Func of id | Func_method of id * id
 and lit = L_int of int | L_bool of bool | L_string of string
+and in_query = In_query of query | In_query_param of id
 
 and window_spec = {
   partition_by : dimension list option;
@@ -27,12 +30,10 @@ and order_by =
 (** used for GROUP BY *)
 and dimension = Dimension_expr of expr | Dimension_splice of id
 
-type field = { expr : expr; alias : id option }
+and field = { expr : expr; alias : id option }
 (** used for SELECT *)
 
-type order_direction = ASC | DESC
-
-type query = querysyn Loc.with_loc
+and query = querysyn Loc.with_loc
 
 and querysyn = {
   select : select;

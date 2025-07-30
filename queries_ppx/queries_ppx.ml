@@ -181,6 +181,17 @@ let rec stage_expr ~from expr =
       | exn ->
           Location.raise_errorf ~loc:adjusted_loc
             "Error parsing OCaml expression: %s" (Printexc.to_string exn))
+  | Syntax.E_in (expr, in_query) -> (
+      let expr = stage_expr ~from expr in
+      match in_query with
+      | Syntax.In_query query ->
+          let query = stage_query query in
+          [%expr Queries.in_ [%e expr] [%e query]]
+      | Syntax.In_query_param param ->
+          let loc = to_location param in
+          let param = param.Loc.node in
+          let param = evar ~loc param in
+          [%expr Queries.in_ [%e expr] [%e param]])
 
 and stage_dimensions ~loc ~from dimensions =
   let body =
@@ -213,7 +224,7 @@ and stage_order_by ~loc ~from order_by =
   in
   [%expr List.concat [%e elist ~loc xs]]
 
-let stage_field ~from idx { Syntax.expr; alias } =
+and stage_field ~from idx { Syntax.expr; alias } =
   let idx = idx + 1 in
   let loc = to_location expr in
   let name =
@@ -228,7 +239,7 @@ let stage_field ~from idx { Syntax.expr; alias } =
   in
   pcf_method ~loc (name, Public, Cfk_concrete (Fresh, stage_expr ~from expr))
 
-let rec stage_query
+and stage_query
     ({
        Loc.node =
          {

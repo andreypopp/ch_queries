@@ -99,17 +99,25 @@ let rec pp_expr expr =
             (pp_id table ^^ string "." ^^ pp_id method_name ^^ string "("
            ^^ pp_args ^^ string ")"))
   | E_ocaml_expr s -> string ("?{" ^ s ^ "}")
+  | E_in (expr, in_query) -> (
+      match in_query with
+      | In_query query ->
+          group
+            (pp_expr expr ^/^ string "IN" ^/^ lparen
+            ^^ nest 2 (break 0 ^^ pp_query query ^^ rparen))
+      | In_query_param param ->
+          group (pp_expr expr ^/^ string "IN" ^/^ string "?" ^^ pp_id param))
 
 and pp_dimension = function
   | Dimension_expr expr -> pp_expr expr
   | Dimension_splice id -> pp_id id ^^ string "..."
 
-let pp_field { expr; alias } =
+and pp_field { expr; alias } =
   match alias with
   | None -> pp_expr expr
   | Some alias_name -> group (pp_expr expr ^/^ string "AS" ^/^ pp_id alias_name)
 
-let rec pp_from_one from_one =
+and pp_from_one from_one =
   match from_one.Loc.node with
   | F_table { db; table; alias; final } ->
       let base = pp_id db ^^ string "." ^^ pp_id table in

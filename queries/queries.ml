@@ -17,6 +17,7 @@ type (+'null, +'typ) expr =
   | E_lit : lit -> _ expr
   | E_app : string * args -> _ expr
   | E_window : string * args * window -> _ expr
+  | E_in : _ expr * < _1 : _ expr > scope select -> _ expr
 
 and args = [] : args | ( :: ) : _ expr * args -> args
 
@@ -26,53 +27,14 @@ and window = {
 }
 
 and a_expr = A_expr : _ expr -> a_expr
+and 'a scope = < query : 'n 'e. ('a -> ('n, 'e) expr) -> ('n, 'e) expr >
 
-let unsafe_expr x = E_id x
-let int x = E_lit (L_int x)
-let string x = E_lit (L_string x)
-let bool x = E_lit (L_bool x)
-let float x = E_lit (L_float x)
-let null = E_lit L_null
-
-module Expr = struct
-  let assumeNotNull x = E_app ("assumeNotNull", [ x ])
-  let toNullable x = E_app ("toNullable", [ x ])
-  let coalesce x y = E_app ("coalesce", [ x; y ])
-  let eq x y = E_app ("=", [ x; y ])
-  let ( = ) = eq
-  let add x y = E_app ("+", [ x; y ])
-  let sub x y = E_app ("-", [ x; y ])
-  let mul x y = E_app ("*", [ x; y ])
-  let div x y = E_app ("/", [ x; y ])
-  let ( && ) x y = E_app ("and", [ x; y ])
-  let ( || ) x y = E_app ("or", [ x; y ])
-  let not_ x = E_app ("not", [ x ])
-
-  let make_window f ?partition_by ?order_by args =
-    match (partition_by, order_by) with
-    | None, None -> E_app (f, args)
-    | _ ->
-        let window = { partition_by; order_by } in
-        E_window (f, args, window)
-
-  let count ?partition_by ?order_by x =
-    make_window ?partition_by ?order_by "count" [ x ]
-
-  let sum ?partition_by ?order_by x =
-    make_window ?partition_by ?order_by "sum" [ x ]
-
-  let uniq ?partition_by ?order_by x =
-    make_window ?partition_by ?order_by "uniq" [ x ]
-end
-
-type 'a scope = < query : 'n 'e. ('a -> ('n, 'e) expr) -> ('n, 'e) expr >
-
-type 'a nullable_scope =
+and 'a nullable_scope =
   < query : 'n 'e. ('a -> ('n, 'e) expr) -> (null, 'e) expr >
 
-type a_field = A_field : _ expr * string -> a_field [@@ocaml.warning "-37"]
+and a_field = A_field : _ expr * string -> a_field [@@ocaml.warning "-37"]
 
-type 'scope select0 =
+and 'scope select0 =
   | Select of {
       from : a_from0;
       scope : 'scope;  (** scope of the query, once it is queried *)
@@ -127,6 +89,45 @@ and 'a from0 =
 and 'a from = unit -> 'a from0
 and a_from0 = A_from : 'a from0 -> a_from0
 and a_from_one0 = A_from_one : 'a from_one0 -> a_from_one0
+
+let unsafe_expr x = E_id x
+let int x = E_lit (L_int x)
+let string x = E_lit (L_string x)
+let bool x = E_lit (L_bool x)
+let float x = E_lit (L_float x)
+let null = E_lit L_null
+let in_ x select = E_in (x, select)
+
+module Expr = struct
+  let assumeNotNull x = E_app ("assumeNotNull", [ x ])
+  let toNullable x = E_app ("toNullable", [ x ])
+  let coalesce x y = E_app ("coalesce", [ x; y ])
+  let eq x y = E_app ("=", [ x; y ])
+  let ( = ) = eq
+  let add x y = E_app ("+", [ x; y ])
+  let sub x y = E_app ("-", [ x; y ])
+  let mul x y = E_app ("*", [ x; y ])
+  let div x y = E_app ("/", [ x; y ])
+  let ( && ) x y = E_app ("and", [ x; y ])
+  let ( || ) x y = E_app ("or", [ x; y ])
+  let not_ x = E_app ("not", [ x ])
+
+  let make_window f ?partition_by ?order_by args =
+    match (partition_by, order_by) with
+    | None, None -> E_app (f, args)
+    | _ ->
+        let window = { partition_by; order_by } in
+        E_window (f, args, window)
+
+  let count ?partition_by ?order_by x =
+    make_window ?partition_by ?order_by "count" [ x ]
+
+  let sum ?partition_by ?order_by x =
+    make_window ?partition_by ?order_by "sum" [ x ]
+
+  let uniq ?partition_by ?order_by x =
+    make_window ?partition_by ?order_by "uniq" [ x ]
+end
 
 let scope_from : type scope. scope from0 -> scope = function
   | From { scope; _ } -> scope
@@ -203,15 +204,15 @@ let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit
   in
   Lazy.force select
 
+let rec scope_from_select select =
+  match select with
+  | Select { scope; _ } -> scope
+  | Union { x; y; scope } -> scope (scope_from_select x) (scope_from_select y)
+
 let scope_from_one = function
   | From_table { scope; _ } -> scope
   | From_select { select; alias = _; cluster_name = _ } ->
-      let rec select_scope select =
-        match select with
-        | Select { scope; _ } -> scope
-        | Union { x; y; scope } -> scope (select_scope x) (select_scope y)
-      in
-      select_scope select
+      scope_from_select select
 
 let from from () =
   let from = from () in
@@ -297,6 +298,17 @@ module To_syntax = struct
         in
         Loc.with_dummy_loc
           (Syntax.E_window (Loc.with_dummy_loc name, args, window))
+    | E_in (expr, select) ->
+        let expr = expr_to_syntax expr in
+        let select = select ~alias:"q" in
+        let () =
+          (* need to "use" the field so it materializses *)
+          let scope = scope_from_select select in
+          let _ : _ expr = scope#query (fun scope -> scope#_1) in
+          ()
+        in
+        let select = to_syntax select in
+        Loc.with_dummy_loc (Syntax.E_in (expr, Syntax.In_query select))
 
   and group_by_to_syntax dimensions =
     List.map dimensions ~f:(fun (A_expr expr) ->
@@ -306,7 +318,8 @@ module To_syntax = struct
     List.map order_by ~f:(fun (A_expr expr, dir) ->
         Syntax.Order_by_expr (expr_to_syntax expr, dir))
 
-  let to_syntax q =
+  and to_syntax : type a. a select0 -> Syntax.query =
+   fun q ->
     let rec select_to_syntax : type a. a select0 -> Syntax.querysyn = function
       | Select
           {

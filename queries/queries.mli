@@ -10,16 +10,6 @@ type (+'null, +'typ) expr
 (** Used for "subtyping" of numeric types. *)
 type 'a number = private A_number
 
-val int : int -> (non_null, int number) expr
-val string : string -> (non_null, string) expr
-val bool : bool -> (non_null, bool) expr
-val float : float -> (non_null, float number) expr
-val null : (null, 'a) expr
-
-val unsafe_expr : string -> _ expr
-(** Inject a string into an expression without any checks. This is unsafe to do,
-    if string comes from user input (= SQL injection). *)
-
 type 'a scope = < query : 'n 'e. ('a -> ('n, 'e) expr) -> ('n, 'e) expr >
 (** Represents a table's or a subquery's scope. *)
 
@@ -41,6 +31,19 @@ type 'a from
 (** Used in cases where we don't care about the type of the expression (GROUP
     BY, ORDER BY, etc.). *)
 type a_expr = A_expr : _ expr -> a_expr
+
+val int : int -> (non_null, int number) expr
+val string : string -> (non_null, string) expr
+val bool : bool -> (non_null, bool) expr
+val float : float -> (non_null, float number) expr
+val null : (null, 'a) expr
+
+val in_ :
+  (_, 'a) expr -> < _1 : (_, 'a) expr > scope select -> (non_null, bool) expr
+
+val unsafe_expr : string -> _ expr
+(** Inject a string into an expression without any checks. This is unsafe to do,
+    if string comes from user input (= SQL injection). *)
 
 val select :
   from:'from from ->

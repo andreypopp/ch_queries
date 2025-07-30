@@ -31,6 +31,7 @@
     ("CLUSTER", CLUSTER);
     ("VIEW", VIEW);
     ("FINAL", FINAL);
+    ("IN", IN);
   ]
 
   let keyword_table = Hashtbl.create 16
@@ -87,6 +88,7 @@
     | Parser.CLUSTER -> "CLUSTER"
     | Parser.VIEW -> "VIEW"
     | Parser.FINAL -> "FINAL"
+    | Parser.IN -> "IN"
     | Parser.EOF -> "EOF"
 
 }
