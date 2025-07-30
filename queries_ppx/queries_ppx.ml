@@ -360,13 +360,15 @@ and stage_from_one from_one =
   let open Syntax in
   let loc = to_location from_one in
   match from_one.Loc.node with
-  | F_table { db; table; alias } ->
+  | F_table { db; table; alias; final } ->
       let qname =
         Printf.sprintf "Database.%s.%s"
           (String.capitalize_ascii db.node)
           table.node
       in
-      [%expr [%e evar ~loc qname] ~alias:[%e estring ~loc alias.node]]
+      [%expr
+        [%e evar ~loc qname] ~alias:[%e estring ~loc alias.node]
+          ~final:[%e ebool ~loc final]]
   | F_select { select; alias; cluster_name = Some cluster_name } ->
       let select_expr = stage_query select in
       let alias_expr = estring ~loc alias.node in

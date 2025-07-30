@@ -100,6 +100,7 @@ and 'a from_one0 =
       table : string;
       alias : string;
       scope : 'a;
+      final : bool;
     }
       -> 'a from_one0
   | From_select : {
@@ -133,7 +134,8 @@ let scope_from : type scope. scope from0 -> scope = function
 let from_select ?cluster_name ~alias select () =
   From_select { select = select ~alias; alias; cluster_name }
 
-let from_table ~db ~table scope ~alias () =
+let from_table ~db ~table scope =
+ fun ~final ~alias () ->
   let scope = scope ~alias in
   let scope : _ scope =
     object
@@ -143,7 +145,7 @@ let from_table ~db ~table scope ~alias () =
           e
     end
   in
-  From_table { db; table; alias; scope }
+  From_table { db; table; alias; scope; final }
 
 let rec add_field expr select =
   match select with
@@ -355,13 +357,14 @@ module To_syntax = struct
       | Union { x = _; y = _; _ } ->
           failwith "TODO: union queries not yet supported"
     and from_one_to_syntax : type a. a from_one0 -> Syntax.from_one = function
-      | From_table { db; table; alias; _ } ->
+      | From_table { db; table; alias; final; _ } ->
           Loc.with_dummy_loc
             (Syntax.F_table
                {
                  db = Loc.with_dummy_loc db;
                  table = Loc.with_dummy_loc table;
                  alias = Loc.with_dummy_loc alias;
+                 final;
                })
       | From_select { select; alias; cluster_name } ->
           Loc.with_dummy_loc

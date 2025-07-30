@@ -7,8 +7,8 @@ select from a JOIN:
     Queries.select ()
       ~from:
         (Queries.join
-           (Queries.from (Database.Public.users ~alias:"u"))
-           (Database.Public.profiles ~alias:"p")
+           (Queries.from (Database.Public.users ~alias:"u" ~final:false))
+           (Database.Public.profiles ~alias:"p" ~final:false)
            ~on:(fun ((u : _ Queries.scope), (p : _ Queries.scope)) ->
              Queries.Expr.( = )
                (u#query (fun u -> u#id))
@@ -37,8 +37,8 @@ select from a LEFT JOIN:
     Queries.select ()
       ~from:
         (Queries.left_join
-           (Queries.from (Database.Public.users ~alias:"u"))
-           (Database.Public.profiles ~alias:"p")
+           (Queries.from (Database.Public.users ~alias:"u" ~final:false))
+           (Database.Public.profiles ~alias:"p" ~final:false)
            ~on:(fun ((u : _ Queries.scope), (p : _ Queries.scope)) ->
              Queries.Expr.( = )
                (u#query (fun u -> u#id))
@@ -63,7 +63,7 @@ select from an OCaml value with JOIN:
   >   ON u.id = p.user_id
   > "];;
   > #show q
-  > let q = q Database.Public.profiles;;
+  > let q = q (Database.Public.profiles ~final:false);;
   > #show q
   > '
   >>> PREPROCESSING
@@ -71,7 +71,7 @@ select from an OCaml value with JOIN:
     Queries.select ()
       ~from:
         (Queries.left_join
-           (Queries.from (Database.Public.users ~alias:"u"))
+           (Queries.from (Database.Public.users ~alias:"u" ~final:false))
            (profiles ~alias:"p")
            ~on:(fun ((u : _ Queries.scope), (p : _ Queries.scope)) ->
              Queries.Expr.( = )
@@ -83,7 +83,7 @@ select from an OCaml value with JOIN:
           method user_name = p#query (fun p -> p#name)
         end)
   
-  let q = q Database.Public.profiles
+  let q = q (Database.Public.profiles ~final:false)
   >>> RUNNING
   val q :
     (alias:string ->
@@ -114,11 +114,11 @@ splicing ocaml values into JOIN-ON:
       ~from:
         (Queries.left_join
            (Queries.left_join
-              (Queries.from (Database.Public.users ~alias:"u"))
-              (Database.Public.profiles ~alias:"p")
+              (Queries.from (Database.Public.users ~alias:"u" ~final:false))
+              (Database.Public.profiles ~alias:"p" ~final:false)
               ~on:(fun ((u : _ Queries.scope), (p : _ Queries.scope)) ->
                 cond (u, p)))
-           (Database.Public.profiles ~alias:"p2")
+           (Database.Public.profiles ~alias:"p2" ~final:false)
            ~on:(fun
                ( ((u : _ Queries.scope), (p : _ Queries.nullable_scope)),
                  (p2 : _ Queries.scope) )

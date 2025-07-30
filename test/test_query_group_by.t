@@ -7,7 +7,7 @@ GROUP BY single column:
   >>> PREPROCESSING
   let users =
     Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users"))
+      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
@@ -33,7 +33,7 @@ GROUP BY multiple columns:
   >>> PREPROCESSING
   let users =
     Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users"))
+      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
@@ -64,7 +64,7 @@ GROUP BY with a parameter:
   >>> PREPROCESSING
   let users ~dimension =
     Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users"))
+      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Queries.scope) ->
         object
           method x = users#query (fun users -> users#x)

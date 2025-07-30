@@ -82,6 +82,7 @@ val from_table :
   db:string ->
   table:string ->
   (alias:string -> 'a) ->
+  final:bool ->
   alias:string ->
   'a scope from_one
 

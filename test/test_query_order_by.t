@@ -7,7 +7,7 @@ ORDER BY single column (default ASC):
   >>> PREPROCESSING
   let users =
     Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users"))
+      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Queries.scope) ->
         object
           method _1 = users#query (fun users -> users#x)
@@ -34,7 +34,7 @@ ORDER BY with DESC:
   >>> PREPROCESSING
   let users =
     Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users"))
+      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Queries.scope) ->
         object
           method _1 = users#query (fun users -> users#x)
@@ -62,7 +62,7 @@ ORDER BY multiple columns:
   >>> PREPROCESSING
   let users =
     Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users"))
+      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Queries.scope) ->
         object
           method _1 = users#query (fun users -> users#x)
@@ -94,7 +94,7 @@ ORDER BY with a parameter:
   >>> PREPROCESSING
   let users ~ord =
     Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users"))
+      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Queries.scope) ->
         object
           method _1 = users#query (fun users -> users#x)

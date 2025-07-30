@@ -11,7 +11,9 @@ test cluster syntax parsing:
         (Queries.from
            (Queries.from_select ~cluster_name:"my_cluster"
               (Queries.select ()
-                 ~from:(Queries.from (Database.Public.users ~alias:"users"))
+                 ~from:
+                   (Queries.from
+                      (Database.Public.users ~alias:"users" ~final:false))
                  ~select:(fun (users : _ Queries.scope) ->
                    object
                      method x = users#query (fun users -> users#x)
@@ -51,7 +53,9 @@ test parameterized cluster syntax:
         (Queries.from
            (Queries.from_select ~cluster_name
               (Queries.select ()
-                 ~from:(Queries.from (Database.Public.users ~alias:"users"))
+                 ~from:
+                   (Queries.from
+                      (Database.Public.users ~alias:"users" ~final:false))
                  ~select:(fun (users : _ Queries.scope) ->
                    object
                      method x = users#query (fun users -> users#x)

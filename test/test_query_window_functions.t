@@ -6,7 +6,7 @@ basic window functions:
   >>> PREPROCESSING
   let users =
     Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users"))
+      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Queries.scope) ->
         object
           method _1 =
@@ -36,7 +36,7 @@ window functions / param in PARTITION BY:
   >>> PREPROCESSING
   let users ~g =
     Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users"))
+      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Queries.scope) ->
         object
           method _1 =
@@ -68,7 +68,7 @@ window functions / param in ORDER BY:
   >>> PREPROCESSING
   let users ~o =
     Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users"))
+      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Queries.scope) ->
         object
           method _1 =

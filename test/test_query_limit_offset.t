@@ -7,7 +7,7 @@ LIMIT with literal value:
   >>> PREPROCESSING
   let users =
     Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users"))
+      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Queries.scope) ->
         object
           method _1 = users#query (fun users -> users#x)
@@ -30,7 +30,7 @@ LIMIT with parameter:
   >>> PREPROCESSING
   let users ~n =
     Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users"))
+      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Queries.scope) ->
         object
           method _1 = users#query (fun users -> users#x)
@@ -54,7 +54,7 @@ OFFSET with literal value:
   >>> PREPROCESSING
   let users =
     Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users"))
+      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Queries.scope) ->
         object
           method _1 = users#query (fun users -> users#x)
@@ -77,7 +77,7 @@ OFFSET with parameter:
   >>> PREPROCESSING
   let users ~n =
     Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users"))
+      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Queries.scope) ->
         object
           method _1 = users#query (fun users -> users#x)

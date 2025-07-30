@@ -51,7 +51,7 @@ and from_one = from_onesyn Loc.with_loc
 and from = fromsyn Loc.with_loc
 
 and from_onesyn =
-  | F_table : { db : id; table : id; alias : id } -> from_onesyn
+  | F_table : { db : id; table : id; alias : id; final : bool } -> from_onesyn
   | F_select : {
       select : query;
       alias : id;

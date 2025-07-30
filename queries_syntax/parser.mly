@@ -23,7 +23,7 @@
 %token GROUP BY HAVING ORDER ASC DESC
 %token OVER PARTITION QUALIFY
 %token LIMIT OFFSET
-%token CLUSTER VIEW
+%token CLUSTER VIEW FINAL
 %token EOF
 
 %left OR
@@ -119,8 +119,8 @@ from:
 
 from_one:
     id=param alias=alias? { with_loc $startpos $endpos (F_value {id; alias = Option.value alias ~default:id}) }
-  | db=id DOT table=id alias=alias?
-    { with_loc $startpos $endpos (F_table { db; table; alias = Option.value alias ~default:table }) }
+  | db=id DOT table=id alias=alias? final=final?
+    { with_loc $startpos $endpos (F_table { db; table; alias = Option.value alias ~default:table; final = Option.value final ~default:false }) }
   | LPAREN q=query RPAREN alias=alias
     { with_loc $startpos $endpos (F_select { select = q; alias; cluster_name = None }) }
   | CLUSTER LPAREN cluster_name=cluster_name COMMA VIEW LPAREN q=query RPAREN RPAREN alias=alias
@@ -129,6 +129,9 @@ from_one:
 cluster_name:
     id=id { Cluster_name id }
   | param=param { Cluster_name_param param }
+
+final:
+    FINAL { true }
 
 join_kind:
           JOIN { `INNER_JOIN }

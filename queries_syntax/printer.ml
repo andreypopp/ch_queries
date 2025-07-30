@@ -111,9 +111,10 @@ let pp_field { expr; alias } =
 
 let rec pp_from_one from_one =
   match from_one.Loc.node with
-  | F_table { db; table; alias } ->
-      group
-        (pp_id db ^^ string "." ^^ pp_id table ^^ string " AS " ^^ pp_id alias)
+  | F_table { db; table; alias; final } ->
+      let base = pp_id db ^^ string "." ^^ pp_id table in
+      let final_part = if final then string " FINAL" else empty in
+      group (base ^^ string " AS " ^^ pp_id alias ^^ final_part)
   | F_select { select; alias; cluster_name = Some cluster_name } ->
       let pp_cluster_name =
         match cluster_name with

@@ -7,7 +7,7 @@ basic form:
   >>> PREPROCESSING
   let users =
     Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users"))
+      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
@@ -38,7 +38,9 @@ select from a subquery:
         (Queries.from
            (Queries.from_select
               (Queries.select ()
-                 ~from:(Queries.from (Database.Public.users ~alias:"users"))
+                 ~from:
+                   (Queries.from
+                      (Database.Public.users ~alias:"users" ~final:false))
                  ~select:(fun (users : _ Queries.scope) ->
                    object
                      method x = users#query (fun users -> users#x)
@@ -67,7 +69,7 @@ select from a subquery:
 select from an OCaml value:
   $ ./compile_and_run '
   > let users t = [%query "SELECT q.x FROM ?t AS q WHERE q.is_active"]
-  > let (_ : _ Queries.select) = users Database.Public.users
+  > let (_ : _ Queries.select) = users (Database.Public.users ~final:false)
   > '
   >>> PREPROCESSING
   let users t =
@@ -79,7 +81,7 @@ select from an OCaml value:
         end)
       ~where:(fun (q : _ Queries.scope) -> q#query (fun q -> q#is_active))
   
-  let (_ : _ Queries.select) = users Database.Public.users
+  let (_ : _ Queries.select) = users (Database.Public.users ~final:false)
   >>> RUNNING
 
 splicing ocaml values into WHERE:
@@ -90,7 +92,7 @@ splicing ocaml values into WHERE:
   >>> PREPROCESSING
   let users ~where =
     Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users"))
+      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
@@ -113,7 +115,7 @@ splicing ocaml values into SELECT:
   >>> PREPROCESSING
   let users ~what =
     Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users"))
+      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Queries.scope) ->
         object
           method field = what users
@@ -134,7 +136,7 @@ splicing ocaml values into SELECT as scope:
   >>> PREPROCESSING
   let users ~what =
     Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users"))
+      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:what
   >>> RUNNING
   val users :
@@ -143,3 +145,31 @@ splicing ocaml values into SELECT as scope:
             x : (Queries.non_null, string) Queries.expr >
           Queries.scope -> 'a) ->
     'a Queries.scope Queries.select
+
+select from table with FINAL keyword:
+  $ ./compile_and_run '
+  > let users = [%query "SELECT users.x AS x FROM public.users AS users FINAL WHERE users.is_active"];;
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%expr "users.x"]
+  > let () = print_endline sql;;
+  > '
+  >>> PREPROCESSING
+  let users =
+    Queries.select ()
+      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:true))
+      ~select:(fun (users : _ Queries.scope) ->
+        object
+          method x = users#query (fun users -> users#x)
+        end)
+      ~where:(fun (users : _ Queries.scope) ->
+        users#query (fun users -> users#is_active))
+  
+  let sql, _parse_row =
+    Queries.query users @@ fun users ->
+    Queries.Row.string (users#query (fun users -> users#x))
+  
+  let () = print_endline sql
+  >>> RUNNING
+  SELECT q._1
+  FROM (
+    SELECT users.x AS _1 FROM public.users AS users FINAL WHERE users.is_active) AS
+  q
