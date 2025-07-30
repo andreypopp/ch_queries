@@ -49,7 +49,7 @@
     | Parser.ID s -> Printf.sprintf "ID(%s)" s
     | Parser.PARAM s -> Printf.sprintf "PARAM(%s)" s
     | Parser.PARAM_SPLICE s -> Printf.sprintf "PARAM_SPLICE(%s)" s
-  | Parser.OCAML_EXPR s -> Printf.sprintf "OCAML_EXPR(%s)" s
+    | Parser.OCAML_EXPR s -> Printf.sprintf "OCAML_EXPR(%s)" s
     | Parser.STRING s -> Printf.sprintf "STRING(%s)" s
     | Parser.NUMBER n -> Printf.sprintf "NUMBER(%d)" n
     | Parser.TRUE -> "TRUE"
@@ -62,6 +62,8 @@
     | Parser.DOT -> "DOT"
     | Parser.LPAREN -> "LPAREN"
     | Parser.RPAREN -> "RPAREN"
+    | Parser.LBRACKET -> "LBRACKET"
+    | Parser.RBRACKET -> "RBRACKET"
     | Parser.COMMA -> "COMMA"
     | Parser.PLUS -> "PLUS"
     | Parser.MINUS -> "MINUS"
@@ -122,6 +124,8 @@ rule token = parse
   | id as s             { get_keyword_or_id s }
   | '('                 { LPAREN }
   | ')'                 { RPAREN }
+  | '['                 { LBRACKET }
+  | ']'                 { RBRACKET }
   | ','                 { COMMA }
   | '.'                 { DOT }
   | '+'                 { PLUS }

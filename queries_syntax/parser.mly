@@ -16,7 +16,7 @@
 %token <int> NUMBER
 %token TRUE FALSE
 %token SELECT FROM PREWHERE WHERE AS DOT
-%token LPAREN RPAREN COMMA
+%token LPAREN RPAREN LBRACKET RBRACKET COMMA
 %token PLUS MINUS STAR SLASH EQUALS
 %token AND OR
 %token INNER JOIN LEFT ON
@@ -156,6 +156,8 @@ expr:
     { with_loc $startpos $endpos (E_lit (L_bool false)) }
   | LPAREN e=expr RPAREN
     { e }
+  | LBRACKET es=separated_list(COMMA, expr) RBRACKET
+    { with_loc $startpos $endpos (E_call (Func (with_loc $startpos $endpos "["), es)) }
   | e1=expr PLUS e2=expr
     { with_loc $startpos $endpos (E_call (Func (with_loc $startpos($2) $endpos($2) "+"), [e1; e2])) }
   | e1=expr MINUS e2=expr
@@ -182,5 +184,5 @@ expr:
     { with_loc $startpos $endpos (E_ocaml_expr ocaml_expr) }
   | e=expr IN LPAREN q=query RPAREN
     { with_loc $startpos $endpos (E_in (e, In_query q)) }
-  | e=expr IN param=param
-    { with_loc $startpos $endpos (E_in (e, In_query_param param)) }
+  | e=expr IN e_rhs=expr
+    { with_loc $startpos $endpos (E_in (e, In_expr e_rhs)) }

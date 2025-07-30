@@ -28,3 +28,36 @@ AND/OR operators:
          (users#query (fun users -> users#is_deleted))
          (users#query (fun users -> users#x)))
   >>> RUNNING
+
+arrays:
+  $ ./compile_and_run '
+  > let x = [%expr "[1,2,3]"]
+  > '
+  >>> PREPROCESSING
+  let x = Queries.array [ Queries.int 1; Queries.int 2; Queries.int 3 ]
+  >>> RUNNING
+
+  $ ./compile_and_run '
+  > let x = [%expr "[]"]
+  > '
+  >>> PREPROCESSING
+  let x = Queries.array []
+  >>> RUNNING
+
+  $ ./compile_and_run '
+  > let x = [%expr "[toNullable(1)]"]
+  > '
+  >>> PREPROCESSING
+  let x = Queries.array [ Queries.Expr.toNullable (Queries.int 1) ]
+  >>> RUNNING
+
+  $ ./compile_and_run '
+  > let x = [%expr "[1, true]"]
+  > ' 2>&1 | rg -v File
+  >>> PREPROCESSING
+  let x = Queries.array [ Queries.int 1; Queries.bool true ]
+  >>> RUNNING
+  Error: This expression has type (Queries.non_null, bool) Queries.expr
+         but an expression was expected of type
+           (Queries.non_null, int Queries.number) Queries.expr
+         Type bool is not compatible with type int Queries.number

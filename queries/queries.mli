@@ -4,11 +4,13 @@ type null = [ `not_null | `null ]
 type non_null = [ `not_null ]
 type 'a nullable = 'a constraint 'a = [< null ]
 
-type (+'null, +'typ) expr
-(** An SQL expression. *)
-
 (** Used for "subtyping" of numeric types. *)
 type 'a number = private A_number
+
+type ('null, 'a) array = private A_array
+
+type (+'null, +'typ) expr
+(** An SQL expression. *)
 
 type 'a scope = < query : 'n 'e. ('a -> ('n, 'e) expr) -> ('n, 'e) expr >
 (** Represents a table's or a subquery's scope. *)
@@ -37,9 +39,13 @@ val string : string -> (non_null, string) expr
 val bool : bool -> (non_null, bool) expr
 val float : float -> (non_null, float number) expr
 val null : (null, 'a) expr
+val array : ('n, 'a) expr list -> (non_null, ('n, 'a) array) expr
 
-val in_ :
-  (_, 'a) expr -> < _1 : (_, 'a) expr > scope select -> (non_null, bool) expr
+type 'a in_rhs =
+  | In_query : < _1 : (_, 'a) expr > scope select -> 'a in_rhs
+  | In_array : (_, (_, 'a) array) expr -> 'a in_rhs
+
+val in_ : (_, 'a) expr -> 'a in_rhs -> (non_null, bool) expr
 
 val unsafe_expr : string -> _ expr
 (** Inject a string into an expression without any checks. This is unsafe to do,

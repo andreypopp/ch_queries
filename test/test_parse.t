@@ -66,3 +66,10 @@ parsing cluster syntax with literal cluster name:
 parsing cluster syntax with parameterized cluster name:
   $ queries parse 'SELECT q.x FROM cluster(?cluster_name, view(SELECT t.x FROM db.table as t)) AS q'
   SELECT q.x FROM cluster(?cluster_name, view(SELECT t.x FROM db.table AS t)) AS q
+
+parsing arrays:
+  $ queries parse 'SELECT [] as x FROM db.table'
+  SELECT [] AS x FROM db.table AS table
+
+  $ queries parse 'SELECT [1, 2] as x FROM db.table'
+  SELECT [1, 2] AS x FROM db.table AS table

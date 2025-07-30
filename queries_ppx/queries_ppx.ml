@@ -124,6 +124,9 @@ let rec stage_expr ~from expr =
       pexp_apply ~loc f args
   | Syntax.E_call (func, args) -> (
       match func with
+      | Func { node = "["; _ } ->
+          let xs = elist ~loc (List.map (stage_expr ~from) args) in
+          [%expr Queries.array [%e xs]]
       | Func name ->
           let f =
             let loc = to_location name in
@@ -186,12 +189,16 @@ let rec stage_expr ~from expr =
       match in_query with
       | Syntax.In_query query ->
           let query = stage_query query in
-          [%expr Queries.in_ [%e expr] [%e query]]
-      | Syntax.In_query_param param ->
+          [%expr Queries.in_ [%e expr] (Queries.In_query [%e query])]
+      | Syntax.In_expr { node = E_value param; _ } ->
+          (* special for [E in ?param], we don't treat it as expression *)
           let loc = to_location param in
           let param = param.Loc.node in
           let param = evar ~loc param in
-          [%expr Queries.in_ [%e expr] [%e param]])
+          [%expr Queries.in_ [%e expr] [%e param]]
+      | Syntax.In_expr expr' ->
+          let expr' = stage_expr ~from expr' in
+          [%expr Queries.in_ [%e expr] (Queries.In_array [%e expr'])])
 
 and stage_dimensions ~loc ~from dimensions =
   let body =

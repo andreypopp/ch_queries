@@ -16,7 +16,7 @@ and exprsyn =
 
 and func = Func of id | Func_method of id * id
 and lit = L_int of int | L_bool of bool | L_string of string
-and in_query = In_query of query | In_query_param of id
+and in_query = In_query of query | In_expr of expr
 
 and window_spec = {
   partition_by : dimension list option;

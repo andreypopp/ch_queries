@@ -4,6 +4,7 @@ type null = [ `null | `not_null ]
 type non_null = [ `not_null ]
 type 'a nullable = [< null ] as 'a
 type 'a number = private A_number
+type ('null, 'a) array = private A_array
 
 type lit =
   | L_int of int
@@ -17,7 +18,7 @@ type (+'null, +'typ) expr =
   | E_lit : lit -> _ expr
   | E_app : string * args -> _ expr
   | E_window : string * args * window -> _ expr
-  | E_in : _ expr * < _1 : _ expr > scope select -> _ expr
+  | E_in : (_, 'a) expr * 'a in_rhs -> _ expr
 
 and args = [] : args | ( :: ) : _ expr * args -> args
 
@@ -25,6 +26,10 @@ and window = {
   partition_by : a_expr list option;
   order_by : (a_expr * [ `ASC | `DESC ]) list option;
 }
+
+and 'a in_rhs =
+  | In_query : < _1 : (_, 'a) expr > scope select -> 'a in_rhs
+  | In_array : (_, (_, 'a) array) expr -> 'a in_rhs
 
 and a_expr = A_expr : _ expr -> a_expr
 and 'a scope = < query : 'n 'e. ('a -> ('n, 'e) expr) -> ('n, 'e) expr >
@@ -97,6 +102,13 @@ let bool x = E_lit (L_bool x)
 let float x = E_lit (L_float x)
 let null = E_lit L_null
 let in_ x select = E_in (x, select)
+
+let array xs =
+  let rec args : _ expr list -> args = function
+    | [] -> []
+    | x :: xs -> x :: args xs
+  in
+  E_app ("[", args xs)
 
 module Expr = struct
   let assumeNotNull x = E_app ("assumeNotNull", [ x ])
@@ -298,7 +310,7 @@ module To_syntax = struct
         in
         Loc.with_dummy_loc
           (Syntax.E_window (Loc.with_dummy_loc name, args, window))
-    | E_in (expr, select) ->
+    | E_in (expr, In_query select) ->
         let expr = expr_to_syntax expr in
         let select = select ~alias:"q" in
         let () =
@@ -309,6 +321,10 @@ module To_syntax = struct
         in
         let select = to_syntax select in
         Loc.with_dummy_loc (Syntax.E_in (expr, Syntax.In_query select))
+    | E_in (expr, In_array expr') ->
+        let expr = expr_to_syntax expr in
+        let expr' = expr_to_syntax expr' in
+        Loc.with_dummy_loc (Syntax.E_in (expr, Syntax.In_expr expr'))
 
   and group_by_to_syntax dimensions =
     List.map dimensions ~f:(fun (A_expr expr) ->

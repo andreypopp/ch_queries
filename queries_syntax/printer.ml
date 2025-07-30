@@ -70,6 +70,8 @@ let rec pp_expr expr =
           match (name.Loc.node, args) with
           | "+", [ left; right ] ->
               group (pp_expr left ^/^ string "+" ^/^ pp_expr right)
+          | "[", xs ->
+              brackets (List.map ~f:pp_expr xs |> separate (string "," ^^ space))
           | "-", [ left; right ] ->
               group (pp_expr left ^/^ string "-" ^/^ pp_expr right)
           | "*", [ left; right ] ->
@@ -105,8 +107,7 @@ let rec pp_expr expr =
           group
             (pp_expr expr ^/^ string "IN" ^/^ lparen
             ^^ nest 2 (break 0 ^^ pp_query query ^^ rparen))
-      | In_query_param param ->
-          group (pp_expr expr ^/^ string "IN" ^/^ string "?" ^^ pp_id param))
+      | In_expr expr' -> group (pp_expr expr ^/^ string "IN" ^/^ pp_expr expr'))
 
 and pp_dimension = function
   | Dimension_expr expr -> pp_expr expr
