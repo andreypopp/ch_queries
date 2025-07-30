@@ -9,7 +9,8 @@
       "Bash(ocamlfind:*)",
       "Bash(dune build:*)",
       "Bash(DUNE_CONFIG__GLOBAL_LOCK=disabled dune exec queries --no-build -- *)",
-      "Bash(dune test:*)"
+      "Bash(dune test:*)",
+      "Bash(dune promote:*)"
     ],
     "deny": []
   }

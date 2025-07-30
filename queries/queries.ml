@@ -76,6 +76,7 @@ type 'scope select0 =
   | Select of {
       from : a_from0;
       scope : 'scope;  (** scope of the query, once it is queried *)
+      prewhere : a_expr option;
       where : a_expr option;
       qualify : a_expr option;
       group_by : a_expr list option;
@@ -159,11 +160,14 @@ let rec add_field expr select =
       let _alias = add_field expr u.y in
       alias
 
-let select ~from ?where ?qualify ?group_by ?having ?order_by ?limit ?offset
-    ~select () ~alias =
+let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit
+    ?offset ~select () ~alias =
   let from = from () in
   let inner_scope = scope_from from in
   let scope' = select inner_scope in
+  let prewhere =
+    Option.map (fun prewhere -> A_expr (prewhere inner_scope)) prewhere
+  in
   let where = Option.map (fun where -> A_expr (where inner_scope)) where in
   let qualify =
     Option.map (fun qualify -> A_expr (qualify inner_scope)) qualify
@@ -186,6 +190,7 @@ let select ~from ?where ?qualify ?group_by ?having ?order_by ?limit ?offset
                    let c = add_field e (Lazy.force select) in
                    unsafe_expr (Printf.sprintf "%s.%s" alias c)
              end;
+           prewhere;
            where;
            qualify;
            group_by;
@@ -306,6 +311,7 @@ module To_syntax = struct
       | Select
           {
             from = A_from from;
+            prewhere;
             where;
             qualify;
             group_by;
@@ -324,6 +330,9 @@ module To_syntax = struct
                   alias = Some (Loc.with_dummy_loc alias);
                 })
               fields
+          in
+          let prewhere =
+            Option.map (fun (A_expr expr) -> expr_to_syntax expr) prewhere
           in
           let where =
             Option.map (fun (A_expr expr) -> expr_to_syntax expr) where
@@ -346,6 +355,7 @@ module To_syntax = struct
           {
             Syntax.select = Select_fields select;
             from;
+            prewhere;
             where;
             qualify;
             group_by;
@@ -521,6 +531,7 @@ let query q f =
                          cluster_name = None;
                        })));
           select = Select_fields fields;
+          prewhere = None;
           where = None;
           qualify = None;
           group_by = None;

@@ -15,7 +15,7 @@
 %token <string> STRING
 %token <int> NUMBER
 %token TRUE FALSE
-%token SELECT FROM WHERE AS DOT
+%token SELECT FROM PREWHERE WHERE AS DOT
 %token LPAREN RPAREN COMMA
 %token PLUS MINUS STAR SLASH EQUALS
 %token AND OR
@@ -42,8 +42,8 @@ a_query:
     q=query EOF { q }
 
 query:
-    SELECT select=select FROM from=from where=where? qualify=qualify? group_by=group_by? having=having? order_by=order_by? limit=limit? offset=offset?
-    { with_loc $startpos $endpos { select; from; where; qualify; group_by; having; order_by; limit; offset } }
+    SELECT select=select FROM from=from prewhere=prewhere? where=where? qualify=qualify? group_by=group_by? having=having? order_by=order_by? limit=limit? offset=offset?
+    { with_loc $startpos $endpos { select; from; prewhere; where; qualify; group_by; having; order_by; limit; offset } }
 
 a_expr:
     e=expr EOF { e }
@@ -72,6 +72,9 @@ param_splice:
 
 alias:
     AS id=id { id }
+
+prewhere:
+    PREWHERE e=expr { e }
 
 where:
     WHERE e=expr { e }

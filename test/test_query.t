@@ -173,3 +173,35 @@ select from table with FINAL keyword:
   FROM (
     SELECT users.x AS _1 FROM public.users AS users FINAL WHERE users.is_active) AS
   q
+
+select with PREWHERE clause:
+  $ ./compile_and_run '
+  > let users = [%query "SELECT users.x AS x FROM public.users PREWHERE users.is_active WHERE users.id = 10"];;
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%expr "users.x"]
+  > let () = print_endline sql;;
+  > '
+  >>> PREPROCESSING
+  let users =
+    Queries.select ()
+      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Queries.scope) ->
+        object
+          method x = users#query (fun users -> users#x)
+        end)
+      ~prewhere:(fun (users : _ Queries.scope) ->
+        users#query (fun users -> users#is_active))
+      ~where:(fun (users : _ Queries.scope) ->
+        Queries.Expr.( = ) (users#query (fun users -> users#id)) (Queries.int 10))
+  
+  let sql, _parse_row =
+    Queries.query users @@ fun users ->
+    Queries.Row.string (users#query (fun users -> users#x))
+  
+  let () = print_endline sql
+  >>> RUNNING
+  SELECT q._1
+  FROM (
+    SELECT users.x AS _1
+    FROM public.users AS users
+    PREWHERE users.is_active
+    WHERE users.id = 10) AS q

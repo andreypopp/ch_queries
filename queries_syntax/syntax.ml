@@ -37,6 +37,7 @@ type query = querysyn Loc.with_loc
 and querysyn = {
   select : select;
   from : from;
+  prewhere : expr option;
   where : expr option;
   qualify : expr option;
   group_by : dimension list option;

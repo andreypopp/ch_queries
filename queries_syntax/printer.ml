@@ -151,6 +151,7 @@ and pp_query
         {
           Syntax.select;
           from;
+          prewhere;
           where;
           qualify;
           group_by;
@@ -169,6 +170,11 @@ and pp_query
   in
   let select = group (string "SELECT" ^^ nest 2 (break 1 ^^ pp_fields)) in
   let from = group (string "FROM " ^^ pp_from from) in
+  let prewhere =
+    match prewhere with
+    | None -> None
+    | Some expr -> Some (group (string "PREWHERE" ^/^ pp_expr expr))
+  in
   let where =
     match where with
     | None -> None
@@ -225,6 +231,7 @@ and pp_query
           [
             Some select;
             Some from;
+            prewhere;
             where;
             qualify;
             group_by;

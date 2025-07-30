@@ -44,6 +44,7 @@ type a_expr = A_expr : _ expr -> a_expr
 
 val select :
   from:'from from ->
+  ?prewhere:('from -> (_, bool) expr) ->
   ?where:('from -> (_, bool) expr) ->
   ?qualify:('from -> (_, bool) expr) ->
   ?group_by:('from -> a_expr list) ->

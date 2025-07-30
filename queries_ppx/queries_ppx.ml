@@ -234,6 +234,7 @@ let rec stage_query
          {
            Syntax.select;
            from;
+           prewhere;
            where;
            qualify;
            group_by;
@@ -260,6 +261,17 @@ let rec stage_query
   in
   let args =
     [ (Labelled "select", select); (Labelled "from", stage_from from) ]
+  in
+  let args =
+    match prewhere with
+    | None -> args
+    | Some prewhere ->
+        let loc = to_location prewhere in
+        let prewhere =
+          pexp_fun ~loc Nolabel None (from_scope_pattern from)
+            (stage_expr ~from:(Some from) prewhere)
+        in
+        (Labelled "prewhere", prewhere) :: args
   in
   let args =
     match where with

@@ -6,6 +6,7 @@
   let keywords = [
     ("SELECT", SELECT);
     ("FROM", FROM);
+    ("PREWHERE", PREWHERE);
     ("WHERE", WHERE);
     ("QUALIFY", QUALIFY);
     ("HAVING", HAVING);
@@ -54,6 +55,7 @@
     | Parser.FALSE -> "FALSE"
     | Parser.SELECT -> "SELECT"
     | Parser.FROM -> "FROM"
+    | Parser.PREWHERE -> "PREWHERE"
     | Parser.WHERE -> "WHERE"
     | Parser.AS -> "AS"
     | Parser.DOT -> "DOT"
