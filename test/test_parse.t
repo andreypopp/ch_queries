@@ -58,3 +58,11 @@ paersing ORDER BY:
 
   $ queries parse 'SELECT x.name FROM ?x ORDER BY x.name, x.age'
   SELECT x.name FROM x AS x ORDER BY x.name ASC, x.age ASC
+
+parsing cluster syntax with literal cluster name:
+  $ queries parse 'SELECT q.x FROM cluster(my_cluster, view(SELECT t.x FROM db.table as t)) AS q'
+  SELECT q.x FROM cluster(my_cluster, view(SELECT t.x FROM db.table AS t)) AS q
+
+parsing cluster syntax with parameterized cluster name:
+  $ queries parse 'SELECT q.x FROM cluster(?cluster_name, view(SELECT t.x FROM db.table as t)) AS q'
+  SELECT q.x FROM cluster(?cluster_name, view(SELECT t.x FROM db.table AS t)) AS q

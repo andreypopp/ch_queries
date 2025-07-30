@@ -27,6 +27,8 @@
     ("PARTITION", PARTITION);
     ("LIMIT", LIMIT);
     ("OFFSET", OFFSET);
+    ("CLUSTER", CLUSTER);
+    ("VIEW", VIEW);
   ]
 
   let keyword_table = Hashtbl.create 16
@@ -79,6 +81,8 @@
     | Parser.QUALIFY -> "QUALIFY"
     | Parser.LIMIT -> "LIMIT"
     | Parser.OFFSET -> "OFFSET"
+    | Parser.CLUSTER -> "CLUSTER"
+    | Parser.VIEW -> "VIEW"
     | Parser.EOF -> "EOF"
 
 }

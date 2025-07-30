@@ -114,10 +114,20 @@ let rec pp_from_one from_one =
   | F_table { db; table; alias } ->
       group
         (pp_id db ^^ string "." ^^ pp_id table ^^ string " AS " ^^ pp_id alias)
-  | F_select { select; alias } ->
+  | F_select { select; alias; cluster_name = Some cluster_name } ->
+      let pp_cluster_name =
+        match cluster_name with
+        | Cluster_name id -> pp_id id
+        | Cluster_name_param id -> string "?" ^^ pp_id id
+      in
       group
-        (string "("
-        ^^ nest 2 (break 0 ^^ pp_query select ^^ string ")")
+        (string "cluster" ^^ lparen ^^ pp_cluster_name ^^ comma ^^ space
+       ^^ string "view" ^^ lparen ^^ pp_query select ^^ rparen ^^ rparen
+       ^^ space ^^ string "AS" ^^ space ^^ pp_id alias)
+  | F_select { select; alias; cluster_name = None } ->
+      group
+        (lparen
+        ^^ nest 2 (break 0 ^^ pp_query select ^^ rparen)
         ^^ group (string " AS" ^/^ pp_id alias))
   | F_value { id; alias } -> group (pp_id id ^^ string " AS " ^^ pp_id alias)
 

@@ -75,7 +75,8 @@ val left_join :
   on:('a * 'b scope -> (_, bool) expr) ->
   ('a * 'b nullable_scope) from
 
-val from_select : alias:string -> 'a scope select -> 'a scope from_one
+val from_select :
+  ?cluster_name:string -> alias:string -> 'a scope select -> 'a scope from_one
 
 val from_table :
   db:string ->

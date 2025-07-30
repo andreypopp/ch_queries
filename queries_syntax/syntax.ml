@@ -52,8 +52,15 @@ and from = fromsyn Loc.with_loc
 
 and from_onesyn =
   | F_table : { db : id; table : id; alias : id } -> from_onesyn
-  | F_select : { select : query; alias : id } -> from_onesyn
+  | F_select : {
+      select : query;
+      alias : id;
+      cluster_name : cluster_name option;
+    }
+      -> from_onesyn
   | F_value : { id : id; alias : id } -> from_onesyn
+
+and cluster_name = Cluster_name of id | Cluster_name_param of id
 
 and fromsyn =
   | F : from_one -> fromsyn

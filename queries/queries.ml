@@ -102,7 +102,12 @@ and 'a from_one0 =
       scope : 'a;
     }
       -> 'a from_one0
-  | From_select : { select : 'a select0; alias : string } -> 'a from_one0
+  | From_select : {
+      select : 'a select0;
+      alias : string;
+      cluster_name : string option;
+    }
+      -> 'a from_one0
 
 and 'a from_one = unit -> 'a from_one0
 
@@ -125,7 +130,8 @@ let scope_from : type scope. scope from0 -> scope = function
   | From { scope; _ } -> scope
   | From_join { scope; _ } -> scope
 
-let from_select ~alias select () = From_select { select = select ~alias; alias }
+let from_select ?cluster_name ~alias select () =
+  From_select { select = select ~alias; alias; cluster_name }
 
 let from_table ~db ~table scope ~alias () =
   let scope = scope ~alias in
@@ -192,7 +198,7 @@ let select ~from ?where ?qualify ?group_by ?having ?order_by ?limit ?offset
 
 let scope_from_one = function
   | From_table { scope; _ } -> scope
-  | From_select { select; alias = _ } ->
+  | From_select { select; alias = _; cluster_name = _ } ->
       let rec select_scope select =
         match select with
         | Select { scope; _ } -> scope
@@ -357,12 +363,18 @@ module To_syntax = struct
                  table = Loc.with_dummy_loc table;
                  alias = Loc.with_dummy_loc alias;
                })
-      | From_select { select; alias } ->
+      | From_select { select; alias; cluster_name } ->
           Loc.with_dummy_loc
             (Syntax.F_select
                {
                  select = Loc.with_dummy_loc (select_to_syntax select);
                  alias = Loc.with_dummy_loc alias;
+                 cluster_name =
+                   Option.map
+                     (fun name ->
+                       Queries_syntax.Syntax.Cluster_name
+                         (Loc.with_dummy_loc name))
+                     cluster_name;
                })
     and from_to_syntax : type a. a from0 -> Syntax.from = function
       | From { from = A_from_one from; _ } ->
@@ -500,7 +512,11 @@ let query q f =
               (Queries_syntax.Syntax.F
                  (Queries_syntax.Loc.with_dummy_loc
                     (Queries_syntax.Syntax.F_select
-                       { select; alias = Queries_syntax.Loc.with_dummy_loc "q" })));
+                       {
+                         select;
+                         alias = Queries_syntax.Loc.with_dummy_loc "q";
+                         cluster_name = None;
+                       })));
           select = Select_fields fields;
           where = None;
           qualify = None;
