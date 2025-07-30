@@ -29,9 +29,11 @@ The user typically runs dune build in watch mode outside Claude session):
 
 ## Project structure
 
-- **lib/** - Core library modules (currently empty, ready for implementation)
-- **bin/** - Executable entry point (`main.ml` contains simple "Hello, World!")
-- **test/** - Test modules (currently empty `test_queries.ml`)
+- **queries/** - core libary `queries` which implements typesafe DSL combinators for query generation
+- **queries_syntax/** - surface syntax + lexer/parser for the DSL
+- **queries_ppx/** - a ppx rewriter which translates surface syntax to the typesafe DSL combinators
+- **bin/** - some debug UI
+- **test/** - tests in cram format (`*.t`), use `dune test` to run them, `dune test --auto-promote` to promote passing tests
 
 ## Code Style
 
