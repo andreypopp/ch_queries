@@ -29,11 +29,16 @@ The user typically runs dune build in watch mode outside Claude session):
 
 ## Project structure
 
-- **queries/** - core libary `queries` which implements typesafe DSL combinators for query generation
+- **queries/** - core libary which implements typesafe DSL combinators for query generation
 - **queries_syntax/** - surface syntax + lexer/parser for the DSL
+    - **queries_syntax/syntax.ml** - lexer for the DSL (tokens are defined in the parser)
+    - **queries_syntax/lexer.mll** - lexer for the DSL (tokens are defined in the parser)
+    - **queries_syntax/parser.mly** - parser for the DSL
 - **queries_ppx/** - a ppx rewriter which translates surface syntax to the typesafe DSL combinators
 - **bin/** - some debug UI
-- **test/** - tests in cram format (`*.t`), use `dune test` to run them, `dune test --auto-promote` to promote passing tests
+- **test/** - tests in cram format (`*.t`)
+    - to run: `dune test`
+    - to run and promote the changes in expected vs current: `dune test --auto-promote`, only use when you've verified the changes are correct
 
 ## Code Style
 
