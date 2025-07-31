@@ -102,7 +102,9 @@ splicing ocaml values into WHERE:
   val users :
     where:(< id : (Queries.non_null, int Queries.number) Queries.expr;
              is_active : (Queries.non_null, bool) Queries.expr;
-             x : (Queries.non_null, string) Queries.expr >
+             x : (Queries.non_null, string) Queries.expr;
+             xs : (Queries.non_null, (Queries.non_null, string) Queries.array)
+                  Queries.expr >
            Queries.scope -> ('a, bool) Queries.expr) ->
     < x : (Queries.non_null, string) Queries.expr > Queries.scope
     Queries.select
@@ -124,7 +126,9 @@ splicing ocaml values into SELECT:
   val users :
     what:(< id : (Queries.non_null, int Queries.number) Queries.expr;
             is_active : (Queries.non_null, bool) Queries.expr;
-            x : (Queries.non_null, string) Queries.expr >
+            x : (Queries.non_null, string) Queries.expr;
+            xs : (Queries.non_null, (Queries.non_null, string) Queries.array)
+                 Queries.expr >
           Queries.scope -> 'a) ->
     < field : 'a > Queries.scope Queries.select
 
@@ -142,7 +146,9 @@ splicing ocaml values into SELECT as scope:
   val users :
     what:(< id : (Queries.non_null, int Queries.number) Queries.expr;
             is_active : (Queries.non_null, bool) Queries.expr;
-            x : (Queries.non_null, string) Queries.expr >
+            x : (Queries.non_null, string) Queries.expr;
+            xs : (Queries.non_null, (Queries.non_null, string) Queries.array)
+                 Queries.expr >
           Queries.scope -> 'a) ->
     'a Queries.scope Queries.select
 

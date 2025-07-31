@@ -134,7 +134,9 @@ splicing ocaml values into JOIN-ON:
   val q :
     (< id : (Queries.non_null, int Queries.number) Queries.expr;
        is_active : (Queries.non_null, bool) Queries.expr;
-       x : (Queries.non_null, string) Queries.expr >
+       x : (Queries.non_null, string) Queries.expr;
+       xs : (Queries.non_null, (Queries.non_null, string) Queries.array)
+            Queries.expr >
      Queries.scope *
      < name : (Queries.non_null, string) Queries.expr;
        user_id : (Queries.non_null, int Queries.number) Queries.expr >

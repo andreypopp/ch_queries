@@ -104,7 +104,9 @@ ORDER BY with a parameter:
   val users :
     ord:(< id : (Queries.non_null, int Queries.number) Queries.expr;
            is_active : (Queries.non_null, bool) Queries.expr;
-           x : (Queries.non_null, string) Queries.expr >
+           x : (Queries.non_null, string) Queries.expr;
+           xs : (Queries.non_null, (Queries.non_null, string) Queries.array)
+                Queries.expr >
          Queries.scope -> (Queries.a_expr * [ `ASC | `DESC ]) list) ->
     < _1 : (Queries.non_null, string) Queries.expr > Queries.scope
     Queries.select

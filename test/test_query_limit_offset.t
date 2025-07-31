@@ -40,7 +40,9 @@ LIMIT with parameter:
   val users :
     n:(< id : (Queries.non_null, int Queries.number) Queries.expr;
          is_active : (Queries.non_null, bool) Queries.expr;
-         x : (Queries.non_null, string) Queries.expr >
+         x : (Queries.non_null, string) Queries.expr;
+         xs : (Queries.non_null, (Queries.non_null, string) Queries.array)
+              Queries.expr >
        Queries.scope -> ('a, int Queries.number) Queries.expr) ->
     < _1 : (Queries.non_null, string) Queries.expr > Queries.scope
     Queries.select
@@ -87,7 +89,9 @@ OFFSET with parameter:
   val users :
     n:(< id : (Queries.non_null, int Queries.number) Queries.expr;
          is_active : (Queries.non_null, bool) Queries.expr;
-         x : (Queries.non_null, string) Queries.expr >
+         x : (Queries.non_null, string) Queries.expr;
+         xs : (Queries.non_null, (Queries.non_null, string) Queries.array)
+              Queries.expr >
        Queries.scope -> ('a, int Queries.number) Queries.expr) ->
     < _1 : (Queries.non_null, string) Queries.expr > Queries.scope
     Queries.select
