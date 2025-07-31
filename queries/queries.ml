@@ -19,6 +19,7 @@ type (+'null, +'typ) expr =
   | E_app : string * args -> _ expr
   | E_window : string * args * window -> _ expr
   | E_in : (_, 'a) expr * 'a in_rhs -> _ expr
+  | E_lambda : string * _ expr -> (_, _) expr
 
 and args = [] : args | ( :: ) : _ expr * args -> args
 
@@ -97,6 +98,15 @@ let string x = E_lit (L_string x)
 let bool x = E_lit (L_bool x)
 let float x = E_lit (L_float x)
 let null = E_lit L_null
+
+let lambda :
+    string ->
+    (('pn, 'pa) expr -> ('n, 'a) expr) ->
+    (non_null, ('pn, 'pa) expr -> ('n, 'a) expr) expr =
+ fun param f ->
+  let body = f (unsafe_expr param) in
+  E_lambda (param, body)
+
 let in_ x select = E_in (x, select)
 
 let array xs =
@@ -119,6 +129,8 @@ module Expr = struct
   let ( && ) x y = E_app ("and", [ x; y ])
   let ( || ) x y = E_app ("or", [ x; y ])
   let not_ x = E_app ("not", [ x ])
+  let arrayFilter f x = E_app ("arrayFilter", [ f; x ])
+  let length x = E_app ("length", [ x ])
 
   let make_window f ?partition_by ?order_by args =
     match (partition_by, order_by) with
@@ -330,6 +342,10 @@ module To_syntax = struct
         let expr = expr_to_syntax expr in
         let expr' = expr_to_syntax expr' in
         Loc.with_dummy_loc (Syntax.E_in (expr, Syntax.In_expr expr'))
+    | E_lambda (param, body) ->
+        let param = Loc.with_dummy_loc param in
+        let body = expr_to_syntax body in
+        Loc.with_dummy_loc (Syntax.E_lambda (param, body))
 
   and group_by_to_syntax dimensions =
     List.map dimensions ~f:(fun (A_expr expr) ->

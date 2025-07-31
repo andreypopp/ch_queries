@@ -8,6 +8,9 @@ module Database = struct
           method id : (non_null, int number) expr = unsafe_expr (alias ^ ".id")
           method x : (non_null, string) expr = unsafe_expr (alias ^ ".x")
 
+          method xs : (non_null, (non_null, string) array) expr =
+            unsafe_expr (alias ^ ".xs")
+
           method is_active : (non_null, bool) expr =
             unsafe_expr (alias ^ ".is_active")
         end

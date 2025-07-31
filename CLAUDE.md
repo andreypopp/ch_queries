@@ -34,11 +34,14 @@ The user typically runs dune build in watch mode outside Claude session):
     - **queries_syntax/syntax.ml** - lexer for the DSL (tokens are defined in the parser)
     - **queries_syntax/lexer.mll** - lexer for the DSL (tokens are defined in the parser)
     - **queries_syntax/parser.mly** - parser for the DSL
+    - **queries_syntax/printer.ml** - printer for the syntax, uses pprint library
 - **queries_ppx/** - a ppx rewriter which translates surface syntax to the typesafe DSL combinators
 - **bin/** - some debug UI
 - **test/** - tests in cram format (`*.t`)
     - to run: `dune test`
     - to run and promote the changes in expected vs current: `dune test --auto-promote`, only use when you've verified the changes are correct
+
+when exploring a project structure, it is fine to read entire files (they are small)
 
 ## Code Style
 

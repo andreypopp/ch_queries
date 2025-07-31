@@ -39,6 +39,12 @@ val string : string -> (non_null, string) expr
 val bool : bool -> (non_null, bool) expr
 val float : float -> (non_null, float number) expr
 val null : (null, 'a) expr
+
+val lambda :
+  string ->
+  (('pn, 'pa) expr -> ('n, 'a) expr) ->
+  (non_null, ('pn, 'pa) expr -> ('n, 'a) expr) expr
+
 val array : ('n, 'a) expr list -> (non_null, ('n, 'a) array) expr
 
 type 'a in_rhs =
@@ -106,6 +112,13 @@ module Expr : sig
   val ( && ) : ('n, bool) expr -> ('n, bool) expr -> ('n, bool) expr
   val ( || ) : ('n, bool) expr -> ('n, bool) expr -> ('n, bool) expr
   val not_ : ('n, bool) expr -> ('n, bool) expr
+
+  val arrayFilter :
+    (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
+    ('m, ('n, 'a) array) expr ->
+    ('m, ('n, 'a) array) expr
+
+  val length : ('n, _ array) expr -> ('n, int number) expr
 
   val count :
     ?partition_by:a_expr list ->

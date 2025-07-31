@@ -93,6 +93,7 @@
     | Parser.FINAL -> "FINAL"
     | Parser.IN -> "IN"
     | Parser.UNION -> "UNION"
+    | Parser.ARROW -> "ARROW"
     | Parser.EOF -> "EOF"
 
 }
@@ -135,6 +136,7 @@ rule token = parse
   | '*'                 { STAR }
   | '/'                 { SLASH }
   | '='                 { EQUALS }
+  | "->"                { ARROW }
   | eof                 { EOF }
   | _ as c              { raise (Error ("Unexpected character: " ^ String.make 1 c)) }
 

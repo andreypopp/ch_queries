@@ -16,6 +16,7 @@ let escape_single_quoted s =
 
 let rec pp_expr expr =
   match expr.Loc.node with
+  | E_id id -> string id.Loc.node
   | E_col (ns, id) -> string (Printf.sprintf "%s.%s" ns.Loc.node id.Loc.node)
   | E_lit (L_int n) -> string (string_of_int n)
   | E_lit (L_bool b) -> string (string_of_bool b)
@@ -108,6 +109,8 @@ let rec pp_expr expr =
             (pp_expr expr ^/^ string "IN" ^/^ lparen
             ^^ nest 2 (break 0 ^^ pp_query query ^^ rparen))
       | In_expr expr' -> group (pp_expr expr ^/^ string "IN" ^/^ pp_expr expr'))
+  | E_lambda (param, body) ->
+      group (pp_id param ^/^ string "->" ^/^ pp_expr body)
 
 and pp_dimension = function
   | Dimension_expr expr -> pp_expr expr

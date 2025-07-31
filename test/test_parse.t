@@ -73,3 +73,26 @@ parsing arrays:
 
   $ queries parse 'SELECT [1, 2] as x FROM db.table'
   SELECT [1, 2] AS x FROM db.table AS table
+
+parsing lambda expressions:
+  $ queries parse 'SELECT arrayMap(x -> x + 1, [1, 2, 3]) FROM db.table'
+  SELECT arrayMap(x -> x + 1, [1, 2, 3]) FROM db.table AS table
+
+  $ queries parse 'SELECT arrayFilter(item -> item + 1, t.numbers) FROM db.table AS t'
+  SELECT arrayFilter(item -> item + 1, t.numbers) FROM db.table AS t
+
+  $ queries parse 'SELECT arrayReduce(x -> x * 2, t.arr) FROM db.table AS t'
+  SELECT arrayReduce(x -> x * 2, t.arr) FROM db.table AS t
+
+parsing nested lambda expressions:
+  $ queries parse 'SELECT arrayMap(x -> arrayMap(y -> x + y, [1, 2]), [3, 4]) FROM db.table'
+  SELECT arrayMap(x -> arrayMap(y -> x + y, [1, 2]), [3, 4])
+  FROM db.table AS table
+
+parsing lambda with complex body:
+  $ queries parse 'SELECT arrayMap(x -> x * 2 + 1, t.nums) FROM db.table AS t'
+  SELECT arrayMap(x -> x * 2 + 1, t.nums) FROM db.table AS t
+
+parsing lambda with parentheses:
+  $ queries parse 'SELECT arrayMap((x -> x + 1), t.arr) FROM db.table AS t'
+  SELECT arrayMap(x -> x + 1, t.arr) FROM db.table AS t

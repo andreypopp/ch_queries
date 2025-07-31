@@ -92,6 +92,9 @@ and from_one_scope_pattern from_one =
 let rec stage_expr ~from expr =
   let loc = to_location expr in
   match expr.Loc.node with
+  | Syntax.E_id id ->
+      let loc = to_location id in
+      [%expr Queries.unsafe_expr [%e estring ~loc id.node]]
   | Syntax.E_col (scope, id) ->
       let e = evar ~loc scope.Loc.node in
       let e' = pexp_send ~loc e (Located.mk ~loc "query") in
@@ -199,6 +202,11 @@ let rec stage_expr ~from expr =
       | Syntax.In_expr expr' ->
           let expr' = stage_expr ~from expr' in
           [%expr Queries.in_ [%e expr] (Queries.In_array [%e expr'])])
+  | Syntax.E_lambda (param, body) ->
+      let param_name = param.Loc.node in
+      let body_expr = stage_expr ~from body in
+      [%expr
+        Queries.lambda [%e estring ~loc param_name] (fun x -> [%e body_expr])]
 
 and stage_dimensions ~loc ~from dimensions =
   let body =

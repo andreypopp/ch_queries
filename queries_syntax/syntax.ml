@@ -5,6 +5,7 @@ type expr = exprsyn Loc.with_loc
 
 and exprsyn =
   | E_col of id * id
+  | E_id of id
   | E_lit of lit
   | E_call of func * expr list
       (** encodes function calls and operators as well *)
@@ -13,6 +14,7 @@ and exprsyn =
   | E_value of id  (** variable_name for splicing OCaml values *)
   | E_ocaml_expr of string  (** OCaml expression for splicing *)
   | E_in of expr * in_query
+  | E_lambda of id * expr  (** lambda expression: param -> body *)
 
 and func = Func of id | Func_method of id * id
 and lit = L_int of int | L_bool of bool | L_string of string

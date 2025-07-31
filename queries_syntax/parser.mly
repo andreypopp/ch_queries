@@ -26,9 +26,11 @@
 %token CLUSTER VIEW FINAL
 %token IN
 %token UNION
+%token ARROW
 %token EOF
 
 %left UNION
+%right ARROW
 %left OR
 %left AND
 %left EQUALS
@@ -154,6 +156,8 @@ join_kind:
 expr:
     ns=id DOT id=id
     { with_loc $startpos $endpos (E_col (ns, id)) }
+  | id=id
+    { with_loc $startpos $endpos (E_id id) }
   | n=NUMBER
     { with_loc $startpos $endpos (E_lit (L_int n)) }
   | s=STRING
@@ -194,3 +198,5 @@ expr:
     { with_loc $startpos $endpos (E_in (e, In_query q)) }
   | e=expr IN e_rhs=expr
     { with_loc $startpos $endpos (E_in (e, In_expr e_rhs)) }
+  | param=id ARROW body=expr
+    { with_loc $startpos $endpos (E_lambda (param, body)) }
