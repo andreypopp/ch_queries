@@ -14,12 +14,12 @@ type lit =
   | L_null
 
 type (+'null, +'typ) expr =
-  | E_id : string -> _ expr
   | E_lit : lit -> _ expr
   | E_app : string * args -> _ expr
   | E_window : string * args * window -> _ expr
   | E_in : (_, 'a) expr * 'a in_rhs -> _ expr
   | E_lambda : string * _ expr -> _ expr
+  | E_unsafe : string -> _ expr
   | E_unsafe_concat : args -> _ expr
 
 and args = [] : args | ( :: ) : _ expr * args -> args
@@ -93,7 +93,7 @@ and 'a from = unit -> 'a from0
 and a_from0 = A_from : 'a from0 -> a_from0
 and a_from_one0 = A_from_one : 'a from_one0 -> a_from_one0
 
-let unsafe_expr x = E_id x
+let unsafe_expr x = E_unsafe x
 let unsafe_concat xs = E_unsafe_concat xs
 let int x = E_lit (L_int x)
 let string x = E_lit (L_string x)
@@ -303,7 +303,7 @@ module To_syntax = struct
           | expr :: rest -> expr_to_syntax expr :: convert_args rest
         in
         Loc.with_dummy_loc (Syntax.E_unsafe_concat (convert_args args))
-    | E_id name ->
+    | E_unsafe name ->
         Loc.with_dummy_loc (Syntax.E_param (Loc.with_dummy_loc name, None))
     | E_lit lit ->
         let syntax_lit =
