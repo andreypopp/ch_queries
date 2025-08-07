@@ -16,14 +16,14 @@ let escape_single_quoted s =
 
 let rec pp_expr expr =
   match expr.Loc.node with
-  | E_concat xs -> group (separate_map empty pp_expr xs)
-  | E_id id -> string id.Loc.node
+  | E_unsafe_concat xs -> group (separate_map empty pp_expr xs)
+  | E_unsafe id -> string id.Loc.node
   | E_col (ns, id) -> string (Printf.sprintf "%s.%s" ns.Loc.node id.Loc.node)
   | E_lit (L_int n) -> string (string_of_int n)
   | E_lit (L_bool b) -> string (string_of_bool b)
   | E_lit (L_string s) ->
       string (Printf.sprintf "'%s'" (escape_single_quoted s))
-  | E_value (v, typ) -> (
+  | E_param (v, typ) -> (
       let base = string v.node in
       match typ with None -> base | Some t -> base ^^ string ":" ^^ pp_typ t)
   | E_window (name, args, window_spec) ->

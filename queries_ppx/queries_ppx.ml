@@ -147,10 +147,10 @@ let rec typ_to_ocaml_type ~loc typ =
 let rec stage_expr ~from expr =
   let loc = to_location expr in
   match expr.Loc.node with
-  | Syntax.E_concat xs ->
+  | Syntax.E_unsafe_concat xs ->
       let xs = List.map (stage_expr ~from) xs in
       [%expr Queries.unsafe_concat Queries.Args.([%e elist ~loc xs])]
-  | Syntax.E_id id ->
+  | Syntax.E_unsafe id ->
       let loc = to_location id in
       [%expr Queries.unsafe_expr [%e estring ~loc id.node]]
   | Syntax.E_col (scope, id) ->
@@ -214,7 +214,7 @@ let rec stage_expr ~from expr =
             eapply ~loc:method_loc method_call staged_args
           in
           [%expr [%e e'] (fun [%p p] -> [%e method_call_with_args])])
-  | Syntax.E_value (var, typ) -> (
+  | Syntax.E_param (var, typ) -> (
       let e = evar ~loc var.Loc.node in
       let e_with_scope =
         match Option.map from_scope_expr from with
@@ -259,7 +259,7 @@ let rec stage_expr ~from expr =
       | Syntax.In_query query ->
           let query = stage_query query in
           [%expr Queries.in_ [%e expr] (Queries.In_query [%e query])]
-      | Syntax.In_expr { node = E_value (param, _typ); _ } ->
+      | Syntax.In_expr { node = E_param (param, _typ); _ } ->
           (* special for [E in ?param], we don't treat it as expression *)
           let loc = to_location param in
           let param = param.Loc.node in
@@ -279,7 +279,7 @@ and stage_dimensions ~loc ~from dimensions =
     List.map
       (function
         | Syntax.Dimension_splice id ->
-            let e = Syntax.E_value (id, None) in
+            let e = Syntax.E_param (id, None) in
             stage_expr ~from { Loc.node = e; loc = id.loc }
         | Syntax.Dimension_expr expr ->
             let expr = stage_expr ~from expr in
@@ -293,7 +293,7 @@ and stage_order_by ~loc ~from order_by =
     List.map
       (function
         | Syntax.Order_by_splice id ->
-            let e = Syntax.E_value (id, None) in
+            let e = Syntax.E_param (id, None) in
             stage_expr ~from { Loc.node = e; loc = id.loc }
         | Syntax.Order_by_expr (expr, dir) ->
             let expr = stage_expr ~from expr in

@@ -167,7 +167,7 @@ expr:
     ns=id DOT id=id
     { with_loc $startpos $endpos (E_col (ns, id)) }
   | id=id
-    { with_loc $startpos $endpos (E_id id) }
+    { with_loc $startpos $endpos (E_unsafe id) }
   | n=NUMBER
     { with_loc $startpos $endpos (E_lit (L_int n)) }
   | s=STRING
@@ -201,9 +201,9 @@ expr:
   | fn=id LPAREN args=separated_list(COMMA, expr) RPAREN OVER LPAREN window_spec=window_spec RPAREN
     { with_loc $startpos $endpos (E_window (fn, args, window_spec)) }
   | param=param
-    { with_loc $startpos $endpos (E_value (param, None)) }
+    { with_loc $startpos $endpos (E_param (param, None)) }
   | param=param COLON typ=typ
-    { with_loc $startpos $endpos (E_value (param, Some typ)) }
+    { with_loc $startpos $endpos (E_param (param, Some typ)) }
   | ocaml_expr=OCAML_EXPR
     { with_loc $startpos $endpos (E_ocaml_expr ocaml_expr) }
   | e=expr IN LPAREN q=query_no_param RPAREN

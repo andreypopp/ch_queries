@@ -4,19 +4,20 @@ type order_direction = ASC | DESC
 type expr = exprsyn Loc.with_loc
 
 and exprsyn =
-  | E_col of id * id
-  | E_id of id
-  | E_lit of lit
+  | E_col of id * id  (** column reference, e.g. `table.col` *)
+  | E_lit of lit  (** literal value, e.g. `42`, `true`, `'hello'` *)
   | E_call of func * expr list
       (** encodes function calls and operators as well *)
   | E_window of id * expr list * window_spec
-      (** window function with OVER clause *)
-  | E_value of id * typ option
-      (** variable_name for splicing OCaml values, ?param or ?param:typ *)
+      (** window function, e.g. f(..)OVER(...) *)
+  | E_param of id * typ option
+      (** param for splicing OCaml values, ?param or ?param:typ *)
   | E_ocaml_expr of string  (** OCaml expression for splicing *)
   | E_in of expr * in_query
+      (** in-query, e.g. `expr IN (query)` or `expr IN (expr)` *)
   | E_lambda of id * expr  (** lambda expression: param -> body *)
-  | E_concat of expr list
+  | E_unsafe of string Loc.with_loc  (** unsafe injection of an SQL fragment *)
+  | E_unsafe_concat of expr list  (** unsafe concatenation of SQL fragments *)
 
 and func = Func of id | Func_method of id * id
 and lit = L_int of int | L_bool of bool | L_string of string

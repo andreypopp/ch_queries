@@ -20,7 +20,7 @@ type (+'null, +'typ) expr =
   | E_window : string * args * window -> _ expr
   | E_in : (_, 'a) expr * 'a in_rhs -> _ expr
   | E_lambda : string * _ expr -> _ expr
-  | E_concat : args -> _ expr
+  | E_unsafe_concat : args -> _ expr
 
 and args = [] : args | ( :: ) : _ expr * args -> args
 
@@ -94,7 +94,7 @@ and a_from0 = A_from : 'a from0 -> a_from0
 and a_from_one0 = A_from_one : 'a from_one0 -> a_from_one0
 
 let unsafe_expr x = E_id x
-let unsafe_concat xs = E_concat xs
+let unsafe_concat xs = E_unsafe_concat xs
 let int x = E_lit (L_int x)
 let string x = E_lit (L_string x)
 let bool x = E_lit (L_bool x)
@@ -297,14 +297,14 @@ module To_syntax = struct
   open Queries_syntax
 
   let rec expr_to_syntax : type n typ. (n, typ) expr -> Syntax.expr = function
-    | E_concat args ->
+    | E_unsafe_concat args ->
         let rec convert_args : args -> Syntax.expr list = function
           | [] -> []
           | expr :: rest -> expr_to_syntax expr :: convert_args rest
         in
-        Loc.with_dummy_loc (Syntax.E_concat (convert_args args))
+        Loc.with_dummy_loc (Syntax.E_unsafe_concat (convert_args args))
     | E_id name ->
-        Loc.with_dummy_loc (Syntax.E_value (Loc.with_dummy_loc name, None))
+        Loc.with_dummy_loc (Syntax.E_param (Loc.with_dummy_loc name, None))
     | E_lit lit ->
         let syntax_lit =
           match lit with

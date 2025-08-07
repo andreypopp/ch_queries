@@ -24,7 +24,7 @@ uexpr:
     items=uexpr_items { 
       match items with
       | [item] -> item
-      | items -> with_loc $startpos $endpos (E_concat items)
+      | items -> with_loc $startpos $endpos (E_unsafe_concat items)
     }
 
 uexpr_items:
@@ -34,9 +34,9 @@ uexpr_items:
 uexpr_item:
     param=PARAM { 
       let id = with_loc $startpos $endpos param in
-      with_loc $startpos $endpos (E_value (id, None)) 
+      with_loc $startpos $endpos (E_param (id, None)) 
     }
   | sql=SQL { 
       let sql = with_loc $startpos $endpos sql in
-      with_loc $startpos $endpos (E_id sql) 
+      with_loc $startpos $endpos (E_unsafe sql) 
     }
