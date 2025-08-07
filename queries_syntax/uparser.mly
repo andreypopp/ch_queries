@@ -4,8 +4,8 @@
   let make_loc start_pos end_pos = 
     { Loc.start_pos; end_pos }
   
-  let with_loc start_pos end_pos node =
-    { Loc.node; loc = make_loc start_pos end_pos }
+  let make_id start_pos end_pos node = make_id ~loc:(make_loc start_pos end_pos) node
+  let make_expr start_pos end_pos node = make_expr ~loc:(make_loc start_pos end_pos) node
 %}
 
 %token <string> PARAM
@@ -24,7 +24,7 @@ uexpr:
     items=uexpr_items { 
       match items with
       | [item] -> item
-      | items -> with_loc $startpos $endpos (E_unsafe_concat items)
+      | items -> make_expr $startpos $endpos (E_unsafe_concat items)
     }
 
 uexpr_items:
@@ -33,10 +33,10 @@ uexpr_items:
 
 uexpr_item:
     param=PARAM { 
-      let id = with_loc $startpos $endpos param in
-      with_loc $startpos $endpos (E_param (id, None)) 
+      let id = make_id $startpos $endpos param in
+      make_expr $startpos $endpos (E_param (id, None)) 
     }
   | sql=SQL { 
-      let sql = with_loc $startpos $endpos sql in
-      with_loc $startpos $endpos (E_unsafe sql) 
+      let sql = make_id $startpos $endpos sql in
+      make_expr $startpos $endpos (E_unsafe sql) 
     }

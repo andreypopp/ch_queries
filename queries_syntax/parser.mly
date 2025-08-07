@@ -4,8 +4,12 @@
   let make_loc start_pos end_pos = 
     { Loc.start_pos; end_pos }
   
-  let with_loc start_pos end_pos node =
-    { Loc.node; loc = make_loc start_pos end_pos }
+  let make_expr start_pos end_pos node = make_expr ~loc:(make_loc start_pos end_pos) node
+  let make_typ start_pos end_pos node = make_typ ~loc:(make_loc start_pos end_pos) node
+  let make_query start_pos end_pos node = make_query ~loc:(make_loc start_pos end_pos) node
+  let make_id start_pos end_pos node = make_id ~loc:(make_loc start_pos end_pos) node
+  let make_from_one start_pos end_pos node = make_from_one ~loc:(make_loc start_pos end_pos) node
+  let make_from start_pos end_pos node = make_from ~loc:(make_loc start_pos end_pos) node
 %}
 
 %token <string> ID
@@ -50,22 +54,22 @@ a_typ:
 
 typ:
     id=id
-    { with_loc $startpos $endpos (T id) }
+    { make_typ $startpos $endpos (T id) }
   | id=id LPAREN args=separated_list(COMMA, typ) RPAREN
-    { with_loc $startpos $endpos (T_app (id, args)) }
+    { make_typ $startpos $endpos (T_app (id, args)) }
 
 a_query:
     q=query EOF { q }
 
 query_no_param:
     SELECT select=select FROM from=from prewhere=prewhere? where=where? qualify=qualify? group_by=group_by? having=having? order_by=order_by? limit=limit? offset=offset?
-    { with_loc $startpos $endpos (Syntax.Q_select { select; from; prewhere; where; qualify; group_by; having; order_by; limit; offset }) }
+    { make_query $startpos $endpos (Syntax.Q_select { select; from; prewhere; where; qualify; group_by; having; order_by; limit; offset }) }
   | q1=query UNION q2=query
-    { with_loc $startpos $endpos (Syntax.Q_union (q1, q2)) }
+    { make_query $startpos $endpos (Syntax.Q_union (q1, q2)) }
 
 query:
     q=query_no_param { q }
-  | param=param { with_loc $startpos $endpos (Syntax.Q_param param) }
+  | param=param { make_query $startpos $endpos (Syntax.Q_param param) }
 
 a_expr:
     e=expr EOF { e }
@@ -84,13 +88,13 @@ field:
     { { expr = e; alias = a } }
 
 id:
-    id=ID { with_loc $startpos $endpos id }
+    id=ID { make_id $startpos $endpos id }
 
 param:
-    id=PARAM { with_loc $startpos $endpos id }
+    id=PARAM { make_id $startpos $endpos id }
 
 param_splice:
-    id=PARAM_SPLICE { with_loc $startpos $endpos id }
+    id=PARAM_SPLICE { make_id $startpos $endpos id }
 
 alias:
     AS id=id { id }
@@ -138,18 +142,18 @@ partition_by:
 
 from:
     f=from_one
-    { with_loc $startpos $endpos (F f) }
+    { make_from $startpos $endpos (F f) }
   | from=from kind=join_kind join=from_one ON on=expr
-    { with_loc $startpos $endpos (F_join { kind; from; join; on }) }
+    { make_from $startpos $endpos (F_join { kind; from; join; on }) }
 
 from_one:
-    id=param alias=alias? { with_loc $startpos $endpos (F_value {id; alias = Option.value alias ~default:id}) }
+    id=param alias=alias? { make_from_one $startpos $endpos (F_value {id; alias = Option.value alias ~default:id}) }
   | db=id DOT table=id alias=alias? final=final?
-    { with_loc $startpos $endpos (F_table { db; table; alias = Option.value alias ~default:table; final = Option.value final ~default:false }) }
+    { make_from_one $startpos $endpos (F_table { db; table; alias = Option.value alias ~default:table; final = Option.value final ~default:false }) }
   | LPAREN q=query RPAREN alias=alias
-    { with_loc $startpos $endpos (F_select { select = q; alias; cluster_name = None }) }
+    { make_from_one $startpos $endpos (F_select { select = q; alias; cluster_name = None }) }
   | CLUSTER LPAREN cluster_name=cluster_name COMMA VIEW LPAREN q=query RPAREN RPAREN alias=alias
-    { with_loc $startpos $endpos (F_select { select = q; alias; cluster_name = Some cluster_name }) }
+    { make_from_one $startpos $endpos (F_select { select = q; alias; cluster_name = Some cluster_name }) }
 
 cluster_name:
     id=id { Cluster_name id }
@@ -165,50 +169,50 @@ join_kind:
 
 expr:
     ns=id DOT id=id
-    { with_loc $startpos $endpos (E_col (ns, id)) }
+    { make_expr $startpos $endpos (E_col (ns, id)) }
   | id=id
-    { with_loc $startpos $endpos (E_unsafe id) }
+    { make_expr $startpos $endpos (E_unsafe id) }
   | n=NUMBER
-    { with_loc $startpos $endpos (E_lit (L_int n)) }
+    { make_expr $startpos $endpos (E_lit (L_int n)) }
   | s=STRING
-    { with_loc $startpos $endpos (E_lit (L_string s)) }
+    { make_expr $startpos $endpos (E_lit (L_string s)) }
   | TRUE
-    { with_loc $startpos $endpos (E_lit (L_bool true)) }
+    { make_expr $startpos $endpos (E_lit (L_bool true)) }
   | FALSE
-    { with_loc $startpos $endpos (E_lit (L_bool false)) }
+    { make_expr $startpos $endpos (E_lit (L_bool false)) }
   | LPAREN e=expr RPAREN
     { e }
   | LBRACKET es=separated_list(COMMA, expr) RBRACKET
-    { with_loc $startpos $endpos (E_call (Func (with_loc $startpos $endpos "["), es)) }
+    { make_expr $startpos $endpos (E_call (Func (make_id $startpos $endpos "["), es)) }
   | e1=expr PLUS e2=expr
-    { with_loc $startpos $endpos (E_call (Func (with_loc $startpos($2) $endpos($2) "+"), [e1; e2])) }
+    { make_expr $startpos $endpos (E_call (Func (make_id $startpos($2) $endpos($2) "+"), [e1; e2])) }
   | e1=expr MINUS e2=expr
-    { with_loc $startpos $endpos (E_call (Func (with_loc $startpos($2) $endpos($2) "-"), [e1; e2])) }
+    { make_expr $startpos $endpos (E_call (Func (make_id $startpos($2) $endpos($2) "-"), [e1; e2])) }
   | e1=expr STAR e2=expr
-    { with_loc $startpos $endpos (E_call (Func (with_loc $startpos($2) $endpos($2) "*"), [e1; e2])) }
+    { make_expr $startpos $endpos (E_call (Func (make_id $startpos($2) $endpos($2) "*"), [e1; e2])) }
   | e1=expr SLASH e2=expr
-    { with_loc $startpos $endpos (E_call (Func (with_loc $startpos($2) $endpos($2) "/"), [e1; e2])) }
+    { make_expr $startpos $endpos (E_call (Func (make_id $startpos($2) $endpos($2) "/"), [e1; e2])) }
   | e1=expr AND e2=expr
-    { with_loc $startpos $endpos (E_call (Func (with_loc $startpos($2) $endpos($2) "AND"), [e1; e2])) }
+    { make_expr $startpos $endpos (E_call (Func (make_id $startpos($2) $endpos($2) "AND"), [e1; e2])) }
   | e1=expr OR e2=expr
-    { with_loc $startpos $endpos (E_call (Func (with_loc $startpos($2) $endpos($2) "OR"), [e1; e2])) }
+    { make_expr $startpos $endpos (E_call (Func (make_id $startpos($2) $endpos($2) "OR"), [e1; e2])) }
   | e1=expr EQUALS e2=expr
-    { with_loc $startpos $endpos (E_call (Func (with_loc $startpos($2) $endpos($2) "="), [e1; e2])) }
+    { make_expr $startpos $endpos (E_call (Func (make_id $startpos($2) $endpos($2) "="), [e1; e2])) }
   | fn=id LPAREN args=separated_list(COMMA, expr) RPAREN
-    { with_loc $startpos $endpos (E_call (Func fn, args)) }
+    { make_expr $startpos $endpos (E_call (Func fn, args)) }
   | table=id DOT method_name=id LPAREN args=separated_list(COMMA, expr) RPAREN
-    { with_loc $startpos $endpos (E_call (Func_method (table, method_name), args)) }
+    { make_expr $startpos $endpos (E_call (Func_method (table, method_name), args)) }
   | fn=id LPAREN args=separated_list(COMMA, expr) RPAREN OVER LPAREN window_spec=window_spec RPAREN
-    { with_loc $startpos $endpos (E_window (fn, args, window_spec)) }
+    { make_expr $startpos $endpos (E_window (fn, args, window_spec)) }
   | param=param
-    { with_loc $startpos $endpos (E_param (param, None)) }
+    { make_expr $startpos $endpos (E_param (param, None)) }
   | param=param COLON typ=typ
-    { with_loc $startpos $endpos (E_param (param, Some typ)) }
+    { make_expr $startpos $endpos (E_param (param, Some typ)) }
   | ocaml_expr=OCAML_EXPR
-    { with_loc $startpos $endpos (E_ocaml_expr ocaml_expr) }
+    { make_expr $startpos $endpos (E_ocaml_expr ocaml_expr) }
   | e=expr IN LPAREN q=query_no_param RPAREN
-    { with_loc $startpos $endpos (E_in (e, In_query q)) }
+    { make_expr $startpos $endpos (E_in (e, In_query q)) }
   | e=expr IN e_rhs=expr
-    { with_loc $startpos $endpos (E_in (e, In_expr e_rhs)) }
+    { make_expr $startpos $endpos (E_in (e, In_expr e_rhs)) }
   | param=id ARROW body=expr
-    { with_loc $startpos $endpos (E_lambda (param, body)) }
+    { make_expr $startpos $endpos (E_lambda (param, body)) }

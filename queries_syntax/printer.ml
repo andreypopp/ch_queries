@@ -1,7 +1,7 @@
 open PPrint
 open Syntax
 
-let pp_id id = string id.Loc.node
+let pp_id id = string id.node
 
 let escape_single_quoted s =
   let buf = Buffer.create (String.length s) in
@@ -15,10 +15,10 @@ let escape_single_quoted s =
   Buffer.contents buf
 
 let rec pp_expr expr =
-  match expr.Loc.node with
+  match expr.node with
   | E_unsafe_concat xs -> group (separate_map empty pp_expr xs)
-  | E_unsafe id -> string id.Loc.node
-  | E_col (ns, id) -> string (Printf.sprintf "%s.%s" ns.Loc.node id.Loc.node)
+  | E_unsafe id -> string id.node
+  | E_col (ns, id) -> string (Printf.sprintf "%s.%s" ns.node id.node)
   | E_lit (L_int n) -> string (string_of_int n)
   | E_lit (L_bool b) -> string (string_of_bool b)
   | E_lit (L_string s) ->
@@ -71,7 +71,7 @@ let rec pp_expr expr =
   | E_call (func, args) -> (
       match func with
       | Func name -> (
-          match (name.Loc.node, args) with
+          match (name.node, args) with
           | "+", [ left; right ] ->
               group (pp_expr left ^/^ string "+" ^/^ pp_expr right)
           | "[", xs ->
@@ -125,7 +125,7 @@ and pp_field { expr; alias } =
   | Some alias_name -> group (pp_expr expr ^/^ string "AS" ^/^ pp_id alias_name)
 
 and pp_from_one from_one =
-  match from_one.Loc.node with
+  match from_one.node with
   | F_table { db; table; alias; final } ->
       let base = pp_id db ^^ string "." ^^ pp_id table in
       let final_part = if final then string " FINAL" else empty in
@@ -148,7 +148,7 @@ and pp_from_one from_one =
   | F_value { id; alias } -> group (pp_id id ^^ string " AS " ^^ pp_id alias)
 
 and pp_from from =
-  match from.Loc.node with
+  match from.node with
   | F from_one -> pp_from_one from_one
   | F_join { kind; from; join; on; _ } ->
       let join_kind_str =
@@ -160,7 +160,7 @@ and pp_from from =
         (pp_from from ^/^ string join_kind_str ^/^ pp_from_one join
        ^/^ string "ON" ^/^ pp_expr on)
 
-and pp_query { node; loc = _ } =
+and pp_query { node; eq = _; loc = _ } =
   match node with
   | Q_union (q1, q2) -> group (pp_query q1 ^/^ string "UNION" ^/^ pp_query q2)
   | Q_param id -> string "?" ^^ pp_id id
@@ -257,7 +257,7 @@ and pp_query { node; loc = _ } =
               ]))
 
 and pp_typ typ =
-  match typ.Loc.node with
+  match typ.node with
   | T id -> pp_id id
   | T_app (id, args) ->
       let pp_args =

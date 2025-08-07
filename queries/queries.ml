@@ -39,7 +39,7 @@ and 'a scope = < query : 'n 'e. ('a -> ('n, 'e) expr) -> ('n, 'e) expr >
 and 'a nullable_scope =
   < query : 'n 'e. ('a -> ('n, 'e) expr) -> (null, 'e) expr >
 
-and a_field = A_field : _ expr * string -> a_field [@@ocaml.warning "-37"]
+and a_field = A_field : Queries_syntax.Syntax.expr * string -> a_field
 
 and 'scope select0 =
   | Select of {
@@ -171,61 +171,6 @@ let from_table ~db ~table scope =
   in
   From_table { db; table; alias; scope; final }
 
-let rec add_field expr select =
-  match select with
-  | Select s ->
-      let alias = Printf.sprintf "_%d" (List.length s.fields + 1) in
-      let field = A_field (expr, alias) in
-      s.fields <- field :: s.fields;
-      alias
-  | Union u ->
-      let alias = add_field expr u.x in
-      let _alias = add_field expr u.y in
-      alias
-
-let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit
-    ?offset ~select () ~alias =
-  let from = from () in
-  let inner_scope = scope_from from in
-  let scope' = select inner_scope in
-  let prewhere =
-    Option.map (fun prewhere -> A_expr (prewhere inner_scope)) prewhere
-  in
-  let where = Option.map (fun where -> A_expr (where inner_scope)) where in
-  let qualify =
-    Option.map (fun qualify -> A_expr (qualify inner_scope)) qualify
-  in
-  let group_by = Option.map (fun group_by -> group_by inner_scope) group_by in
-  let having = Option.map (fun having -> A_expr (having inner_scope)) having in
-  let order_by = Option.map (fun order_by -> order_by inner_scope) order_by in
-  let limit = Option.map (fun limit -> A_expr (limit inner_scope)) limit in
-  let offset = Option.map (fun offset -> A_expr (offset inner_scope)) offset in
-  let rec select =
-    lazy
-      (Select
-         {
-           from = A_from from;
-           scope =
-             object
-               method query : 'n 'e. (_ -> ('n, 'e) expr) -> ('n, 'e) expr =
-                 fun f ->
-                   let e = f scope' in
-                   let c = add_field e (Lazy.force select) in
-                   unsafe (Printf.sprintf "%s.%s" alias c)
-             end;
-           prewhere;
-           where;
-           qualify;
-           group_by;
-           having;
-           order_by;
-           limit;
-           offset;
-           fields = [];
-         })
-  in
-  Lazy.force select
-
 let rec scope_from_select select : _ scope =
   match select with
   | Select { scope; _ } -> scope
@@ -291,8 +236,6 @@ let left_join from (join : 'a scope from_one) ~on () =
       on = A_expr on;
     }
 
-let union x y ~alias = Union { x = x ~alias; y = y ~alias }
-
 module To_syntax = struct
   open Queries_syntax
 
@@ -302,9 +245,8 @@ module To_syntax = struct
           | [] -> []
           | expr :: rest -> expr_to_syntax expr :: convert_args rest
         in
-        Loc.with_dummy_loc (Syntax.E_unsafe_concat (convert_args args))
-    | E_unsafe name ->
-        Loc.with_dummy_loc (Syntax.E_param (Loc.with_dummy_loc name, None))
+        Syntax.make_expr (E_unsafe_concat (convert_args args))
+    | E_unsafe name -> Syntax.make_expr (E_param (Syntax.make_id name, None))
     | E_lit lit ->
         let syntax_lit =
           match lit with
@@ -314,15 +256,14 @@ module To_syntax = struct
           | L_float _ -> failwith "float literals not supported in syntax"
           | L_null -> failwith "null literals not supported in syntax"
         in
-        Loc.with_dummy_loc (Syntax.E_lit syntax_lit)
+        Syntax.make_expr (E_lit syntax_lit)
     | E_app (name, args) ->
         let rec convert_args : args -> Syntax.expr list = function
           | [] -> []
           | expr :: rest -> expr_to_syntax expr :: convert_args rest
         in
         let args = convert_args args in
-        Loc.with_dummy_loc
-          (Syntax.E_call (Syntax.Func (Loc.with_dummy_loc name), args))
+        Syntax.make_expr (E_call (Func (Syntax.make_id name), args))
     | E_window (name, args, { partition_by; order_by }) ->
         let rec convert_args : args -> Syntax.expr list = function
           | [] -> []
@@ -334,8 +275,7 @@ module To_syntax = struct
           let order_by = Option.map order_by_to_syntax order_by in
           { Syntax.partition_by; order_by }
         in
-        Loc.with_dummy_loc
-          (Syntax.E_window (Loc.with_dummy_loc name, args, window))
+        Syntax.make_expr (E_window (Syntax.make_id name, args, window))
     | E_in (expr, In_query select) ->
         let expr = expr_to_syntax expr in
         let select = select ~alias:"q" in
@@ -346,15 +286,15 @@ module To_syntax = struct
           ()
         in
         let select = to_syntax select in
-        Loc.with_dummy_loc (Syntax.E_in (expr, Syntax.In_query select))
+        Syntax.make_expr (E_in (expr, Syntax.In_query select))
     | E_in (expr, In_array expr') ->
         let expr = expr_to_syntax expr in
         let expr' = expr_to_syntax expr' in
-        Loc.with_dummy_loc (Syntax.E_in (expr, Syntax.In_expr expr'))
+        Syntax.make_expr (E_in (expr, Syntax.In_expr expr'))
     | E_lambda (param, body) ->
-        let param = Loc.with_dummy_loc param in
+        let param = Syntax.make_id param in
         let body = expr_to_syntax body in
-        Loc.with_dummy_loc (Syntax.E_lambda (param, body))
+        Syntax.make_expr (E_lambda (param, body))
 
   and group_by_to_syntax dimensions =
     List.map dimensions ~f:(fun (A_expr expr) ->
@@ -384,10 +324,7 @@ module To_syntax = struct
           let select =
             List.rev_map
               ~f:(fun (A_field (expr, alias)) ->
-                {
-                  Syntax.expr = expr_to_syntax expr;
-                  alias = Some (Loc.with_dummy_loc alias);
-                })
+                { Syntax.expr; alias = Some (Syntax.make_id alias) })
               fields
           in
           let prewhere =
@@ -427,30 +364,29 @@ module To_syntax = struct
       | Union { x; y } -> Q_union (to_syntax x, to_syntax y)
     and from_one_to_syntax : type a. a from_one0 -> Syntax.from_one = function
       | From_table { db; table; alias; final; _ } ->
-          Loc.with_dummy_loc
-            (Syntax.F_table
+          Syntax.make_from_one
+            (F_table
                {
-                 db = Loc.with_dummy_loc db;
-                 table = Loc.with_dummy_loc table;
-                 alias = Loc.with_dummy_loc alias;
+                 db = Syntax.make_id db;
+                 table = Syntax.make_id table;
+                 alias = Syntax.make_id alias;
                  final;
                })
       | From_select { select; alias; cluster_name } ->
-          Loc.with_dummy_loc
-            (Syntax.F_select
+          Syntax.make_from_one
+            (F_select
                {
-                 select = Loc.with_dummy_loc (select_to_syntax select);
-                 alias = Loc.with_dummy_loc alias;
+                 select = Syntax.make_query (select_to_syntax select);
+                 alias = Syntax.make_id alias;
                  cluster_name =
                    Option.map
                      (fun name ->
-                       Queries_syntax.Syntax.Cluster_name
-                         (Loc.with_dummy_loc name))
+                       Queries_syntax.Syntax.Cluster_name (Syntax.make_id name))
                      cluster_name;
                })
     and from_to_syntax : type a. a from0 -> Syntax.from = function
       | From { from = A_from_one from; _ } ->
-          Loc.with_dummy_loc (Syntax.F (from_one_to_syntax from))
+          Syntax.make_from (F (from_one_to_syntax from))
       | From_join
           {
             kind;
@@ -459,8 +395,8 @@ module To_syntax = struct
             on = A_expr on;
             _;
           } ->
-          Loc.with_dummy_loc
-            (Syntax.F_join
+          Syntax.make_from
+            (F_join
                {
                  kind;
                  from = from_to_syntax from;
@@ -468,8 +404,76 @@ module To_syntax = struct
                  on = expr_to_syntax on;
                })
     in
-    Loc.with_dummy_loc (select_to_syntax q)
+    Syntax.make_query (select_to_syntax q)
 end
+
+let rec add_field expr select =
+  match select with
+  | Select s -> (
+      let expr = To_syntax.expr_to_syntax expr in
+      let found =
+        List.find_map s.fields ~f:(function
+          | A_field (expr', alias)
+            when Queries_syntax.Syntax.(equal_node equal_exprsyn) expr expr' ->
+              Some alias
+          | _ -> None)
+      in
+      match found with
+      | None ->
+          let alias = Printf.sprintf "_%d" (List.length s.fields + 1) in
+          let field = A_field (expr, alias) in
+          s.fields <- field :: s.fields;
+          alias
+      | Some alias -> alias)
+  | Union u ->
+      let alias = add_field expr u.x in
+      let _alias = add_field expr u.y in
+      alias
+
+let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit
+    ?offset ~select () ~alias =
+  let from = from () in
+  let inner_scope = scope_from from in
+  let scope' = select inner_scope in
+  let prewhere =
+    Option.map (fun prewhere -> A_expr (prewhere inner_scope)) prewhere
+  in
+  let where = Option.map (fun where -> A_expr (where inner_scope)) where in
+  let qualify =
+    Option.map (fun qualify -> A_expr (qualify inner_scope)) qualify
+  in
+  let group_by = Option.map (fun group_by -> group_by inner_scope) group_by in
+  let having = Option.map (fun having -> A_expr (having inner_scope)) having in
+  let order_by = Option.map (fun order_by -> order_by inner_scope) order_by in
+  let limit = Option.map (fun limit -> A_expr (limit inner_scope)) limit in
+  let offset = Option.map (fun offset -> A_expr (offset inner_scope)) offset in
+  let rec select =
+    lazy
+      (Select
+         {
+           from = A_from from;
+           scope =
+             object
+               method query : 'n 'e. (_ -> ('n, 'e) expr) -> ('n, 'e) expr =
+                 fun f ->
+                   let e = f scope' in
+                   let c = add_field e (Lazy.force select) in
+                   unsafe (Printf.sprintf "%s.%s" alias c)
+             end;
+           prewhere;
+           where;
+           qualify;
+           group_by;
+           having;
+           order_by;
+           limit;
+           offset;
+           fields = [];
+         })
+  in
+  Lazy.force select
+
+let union x y ~alias = Union { x = x ~alias; y = y ~alias }
 
 type json =
   [ `Assoc of (string * json) list
@@ -581,13 +585,13 @@ let query q f =
     Queries_syntax.Syntax.Q_select
       {
         from =
-          Queries_syntax.Loc.with_dummy_loc
-            (Queries_syntax.Syntax.F
-               (Queries_syntax.Loc.with_dummy_loc
-                  (Queries_syntax.Syntax.F_select
+          Queries_syntax.Syntax.make_from
+            (F
+               (Queries_syntax.Syntax.make_from_one
+                  (F_select
                      {
                        select;
-                       alias = Queries_syntax.Loc.with_dummy_loc "q";
+                       alias = Queries_syntax.Syntax.make_id "q";
                        cluster_name = None;
                      })));
         select = Select_fields fields;
@@ -602,8 +606,7 @@ let query q f =
       }
   in
   let sql =
-    Queries_syntax.Printer.print_query
-      (Queries_syntax.Loc.with_dummy_loc select)
+    Queries_syntax.Printer.print_query (Queries_syntax.Syntax.make_query select)
   in
   let parse_row = Row.parse row in
   (sql, parse_row)

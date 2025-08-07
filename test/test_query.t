@@ -237,3 +237,43 @@ select with PREWHERE clause:
     FROM public.users AS users
     PREWHERE users.is_active
     WHERE users.id = 10) AS q
+
+expressions referenced multiple times result in a single column added to teh subquery:
+  $ ./compile_and_run '
+  > let users = [%query "SELECT q.is_active AS is_active FROM (SELECT users.is_active AS is_active FROM public.users) AS q WHERE q.is_active"];;
+  > let sql, _parse_row = Queries.(query users @@ fun users -> Row.bool [%expr "users.is_active"])
+  > let () = print_endline sql;;
+  > '
+  >>> PREPROCESSING
+  let users =
+    Queries.select ()
+      ~from:
+        (Queries.from
+           (Queries.from_select
+              (Queries.select ()
+                 ~from:
+                   (Queries.from
+                      (Database.Public.users ~alias:"users" ~final:false))
+                 ~select:(fun (users : _ Queries.scope) ->
+                   object
+                     method is_active = users#query (fun users -> users#is_active)
+                   end))
+              ~alias:"q"))
+      ~select:(fun (q : _ Queries.scope) ->
+        object
+          method is_active = q#query (fun q -> q#is_active)
+        end)
+      ~where:(fun (q : _ Queries.scope) -> q#query (fun q -> q#is_active))
+  
+  let sql, _parse_row =
+    let open Queries in
+    query users @@ fun users ->
+    Row.bool (users#query (fun users -> users#is_active))
+  
+  let () = print_endline sql
+  >>> RUNNING
+  SELECT q._1
+  FROM (
+    SELECT q._1 AS _1
+    FROM (SELECT users.is_active AS _1 FROM public.users AS users) AS q
+    WHERE q._1) AS q

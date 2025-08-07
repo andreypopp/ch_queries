@@ -1,6 +1,15 @@
-type id = string Loc.with_loc
+open Ppx_hash_lib.Std.Hash.Builtin
+open Ppx_compare_lib.Builtin
 
-type expr = exprsyn Loc.with_loc
+type 'a node = { node : 'a; loc : Loc.t; eq : 'a Eq_class.t }
+(** Data annotated with its location in the source code. *)
+
+let hash_fold_node _ h { node = _; loc = _; eq } = Eq_class.hash_fold_t h eq
+let equal_node _ a b = Eq_class.equal a.eq b.eq
+
+type id = string node [@@deriving hash, equal]
+
+type expr = exprsyn node [@@deriving hash, equal]
 
 and exprsyn =
   | E_col of id * id  (** column reference, e.g. `table.col` *)
@@ -15,7 +24,7 @@ and exprsyn =
   | E_in of expr * in_query
       (** in-query, e.g. `expr IN (query)` or `expr IN (expr)` *)
   | E_lambda of id * expr  (** lambda expression: param -> body *)
-  | E_unsafe of string Loc.with_loc  (** unsafe injection of an SQL fragment *)
+  | E_unsafe of string node  (** unsafe injection of an SQL fragment *)
   | E_unsafe_concat of expr list  (** unsafe concatenation of SQL fragments *)
 
 and func = Func of id | Func_method of id * id
@@ -37,7 +46,7 @@ and dimension = Dimension_expr of expr | Dimension_splice of id
 and field = { expr : expr; alias : id option }
 (** used for SELECT *)
 
-and query = querysyn Loc.with_loc
+and query = querysyn node
 
 and querysyn =
   | Q_select of {
@@ -56,30 +65,80 @@ and querysyn =
   | Q_param of id
 
 and select = Select_fields of field list | Select_splice of id
-and from_one = from_onesyn Loc.with_loc
-and from = fromsyn Loc.with_loc
+and from_one = from_onesyn node
+and from = fromsyn node
 
 and from_onesyn =
-  | F_table : { db : id; table : id; alias : id; final : bool } -> from_onesyn
-  | F_select : {
+  | F_table of { db : id; table : id; alias : id; final : bool }
+  | F_select of {
       select : query;
       alias : id;
       cluster_name : cluster_name option;
     }
-      -> from_onesyn
-  | F_value : { id : id; alias : id } -> from_onesyn
+  | F_value of { id : id; alias : id }
 
 and cluster_name = Cluster_name of id | Cluster_name_param of id
 
 and fromsyn =
-  | F : from_one -> fromsyn
-  | F_join : {
+  | F of from_one
+  | F_join of {
       kind : [ `INNER_JOIN | `LEFT_JOIN ];
       from : from;
       join : from_one;
       on : expr;
     }
-      -> fromsyn
 
-and typ = typsyn Loc.with_loc
+and typ = typsyn node
 and typsyn = T of id | T_app of id * typ list
+
+module Eq_expr = Eq_class.Make (struct
+  type t = exprsyn
+
+  let hash = hash_exprsyn
+  let equal = equal_exprsyn
+end)
+
+module Eq_typ = Eq_class.Make (struct
+  type t = typsyn
+
+  let hash = hash_typsyn
+  let equal = equal_typsyn
+end)
+
+module Eq_query = Eq_class.Make (struct
+  type t = querysyn
+
+  let hash = hash_querysyn
+  let equal = equal_querysyn
+end)
+
+module Eq_id = Eq_class.Make (struct
+  type t = string
+
+  let hash = hash_string
+  let equal = equal_string
+end)
+
+module Eq_from_one = Eq_class.Make (struct
+  type t = from_onesyn
+
+  let hash = hash_from_onesyn
+  let equal = equal_from_onesyn
+end)
+
+module Eq_from = Eq_class.Make (struct
+  type t = fromsyn
+
+  let hash = hash_fromsyn
+  let equal = equal_fromsyn
+end)
+
+let make_typ ?(loc = Loc.dummy) node = { node; loc; eq = Eq_typ.v node }
+let make_expr ?(loc = Loc.dummy) node = { node; loc; eq = Eq_expr.v node }
+let make_query ?(loc = Loc.dummy) node = { node; loc; eq = Eq_query.v node }
+let make_id ?(loc = Loc.dummy) node = { node; loc; eq = Eq_id.v node }
+
+let make_from_one ?(loc = Loc.dummy) node =
+  { node; loc; eq = Eq_from_one.v node }
+
+let make_from ?(loc = Loc.dummy) node = { node; loc; eq = Eq_from.v node }
