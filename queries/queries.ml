@@ -295,7 +295,8 @@ module To_syntax = struct
   open Queries_syntax
 
   let rec expr_to_syntax : type n typ. (n, typ) expr -> Syntax.expr = function
-    | E_id name -> Loc.with_dummy_loc (Syntax.E_value (Loc.with_dummy_loc name))
+    | E_id name ->
+        Loc.with_dummy_loc (Syntax.E_value (Loc.with_dummy_loc name, None))
     | E_lit lit ->
         let syntax_lit =
           match lit with

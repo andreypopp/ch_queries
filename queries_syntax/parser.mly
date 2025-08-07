@@ -15,7 +15,7 @@
 %token <string> STRING
 %token <int> NUMBER
 %token TRUE FALSE
-%token SELECT FROM PREWHERE WHERE AS DOT
+%token SELECT FROM PREWHERE WHERE AS DOT COLON
 %token LPAREN RPAREN LBRACKET RBRACKET COMMA
 %token PLUS MINUS STAR SLASH EQUALS
 %token AND OR
@@ -201,7 +201,9 @@ expr:
   | fn=id LPAREN args=separated_list(COMMA, expr) RPAREN OVER LPAREN window_spec=window_spec RPAREN
     { with_loc $startpos $endpos (E_window (fn, args, window_spec)) }
   | param=param
-    { with_loc $startpos $endpos (E_value param) }
+    { with_loc $startpos $endpos (E_value (param, None)) }
+  | param=param COLON typ=typ
+    { with_loc $startpos $endpos (E_value (param, Some typ)) }
   | ocaml_expr=OCAML_EXPR
     { with_loc $startpos $endpos (E_ocaml_expr ocaml_expr) }
   | e=expr IN LPAREN q=query_no_param RPAREN

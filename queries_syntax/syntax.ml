@@ -11,7 +11,8 @@ and exprsyn =
       (** encodes function calls and operators as well *)
   | E_window of id * expr list * window_spec
       (** window function with OVER clause *)
-  | E_value of id  (** variable_name for splicing OCaml values *)
+  | E_value of id * typ option
+      (** variable_name for splicing OCaml values, ?param or ?param:typ *)
   | E_ocaml_expr of string  (** OCaml expression for splicing *)
   | E_in of expr * in_query
   | E_lambda of id * expr  (** lambda expression: param -> body *)

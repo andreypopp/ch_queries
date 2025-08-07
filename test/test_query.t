@@ -109,6 +109,32 @@ splicing ocaml values into WHERE:
     < x : (Queries.non_null, string) Queries.expr > Queries.scope
     Queries.select
 
+splicing ocaml values into WHERE:
+  $ ./compile_and_run '
+  > let users ~where = [%query "SELECT users.x AS x FROM public.users WHERE ?where:Bool"];;
+  > #show users
+  > '
+  >>> PREPROCESSING
+  let users ~where =
+    Queries.select ()
+      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Queries.scope) ->
+        object
+          method x = users#query (fun users -> users#x)
+        end)
+      ~where:(fun (users : _ Queries.scope) ->
+        (where users : (Queries.non_null, bool) Queries.expr))
+  >>> RUNNING
+  val users :
+    where:(< id : (Queries.non_null, int Queries.number) Queries.expr;
+             is_active : (Queries.non_null, bool) Queries.expr;
+             x : (Queries.non_null, string) Queries.expr;
+             xs : (Queries.non_null, (Queries.non_null, string) Queries.array)
+                  Queries.expr >
+           Queries.scope -> (Queries.non_null, bool) Queries.expr) ->
+    < x : (Queries.non_null, string) Queries.expr > Queries.scope
+    Queries.select
+
 splicing ocaml values into SELECT:
   $ ./compile_and_run '
   > let users ~what = [%query "SELECT ?what AS field FROM public.users"];;

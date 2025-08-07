@@ -29,6 +29,30 @@ let parse_cmd =
   in
   Cmd.v (Cmd.info "parse" ~doc) Term.(const parse_query $ query)
 
+let parse_expr_cmd =
+  let doc = "Parse a SQL expression" in
+  let expr =
+    let doc = "SQL expression to parse" in
+    Arg.(required & pos 0 (some string) None & info [] ~docv:"EXPR" ~doc)
+  in
+  let parse_expr expr_str =
+    try
+      let lexbuf = Lexing.from_string expr_str in
+      let expr =
+        Queries_syntax.Parser.a_expr Queries_syntax.Lexer.token lexbuf
+      in
+      let pretty_printed = Queries_syntax.Printer.print_expr expr in
+      print_endline pretty_printed
+    with
+    | Queries_syntax.Lexer.Error msg ->
+        Printf.eprintf "Lexical error: %s\n" msg;
+        exit 1
+    | Queries_syntax.Parser.Error ->
+        Printf.eprintf "Parse error\n";
+        exit 1
+  in
+  Cmd.v (Cmd.info "parse-expr" ~doc) Term.(const parse_expr $ expr)
+
 let tokenize_cmd =
   let doc = "Tokenize a query and print tokens with locations" in
   let query =
@@ -46,6 +70,6 @@ let tokenize_cmd =
 let main_cmd =
   let doc = "A SQL query parser" in
   let info = Cmd.info "queries" ~doc in
-  Cmd.group info [ version_cmd; parse_cmd; tokenize_cmd ]
+  Cmd.group info [ version_cmd; parse_cmd; parse_expr_cmd; tokenize_cmd ]
 
 let () = exit (Cmd.eval main_cmd)

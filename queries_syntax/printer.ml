@@ -22,7 +22,9 @@ let rec pp_expr expr =
   | E_lit (L_bool b) -> string (string_of_bool b)
   | E_lit (L_string s) ->
       string (Printf.sprintf "'%s'" (escape_single_quoted s))
-  | E_value v -> string v.node
+  | E_value (v, typ) -> (
+      let base = string v.node in
+      match typ with None -> base | Some t -> base ^^ string ":" ^^ pp_typ t)
   | E_window (name, args, window_spec) ->
       let pp_args =
         match args with
@@ -252,6 +254,17 @@ and pp_query { node; loc = _ } =
                 limit;
                 offset;
               ]))
+
+and pp_typ typ =
+  match typ.Loc.node with
+  | T id -> pp_id id
+  | T_app (id, args) ->
+      let pp_args =
+        match args with
+        | [] -> empty
+        | _ -> separate (string "," ^^ space) (List.map ~f:pp_typ args)
+      in
+      pp_id id ^^ string "(" ^^ pp_args ^^ string ")"
 
 let print' pp v =
   let buffer = Buffer.create 256 in

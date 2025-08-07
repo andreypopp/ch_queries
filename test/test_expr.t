@@ -61,3 +61,87 @@ arrays:
          but an expression was expected of type
            (Queries.non_null, int Queries.number) Queries.expr
          Type bool is not compatible with type int Queries.number
+
+parameter expressions:
+  $ ./compile_and_run '
+  > let x ~param = [%expr "?param"]
+  > '
+  >>> PREPROCESSING
+  let x ~param = param
+  >>> RUNNING
+
+parameter expressions with type annotation:
+  $ ./compile_and_run '
+  > let x ~param = [%expr "?param:String"]
+  > '
+  >>> PREPROCESSING
+  let x ~param = (param : (Queries.non_null, string) Queries.expr)
+  >>> RUNNING
+
+parameter expressions with numeric types:
+  $ ./compile_and_run '
+  > let x ~param = [%expr "?param:Int32"]
+  > '
+  >>> PREPROCESSING
+  let x ~param = (param : (Queries.non_null, int Queries.number) Queries.expr)
+  >>> RUNNING
+
+  $ ./compile_and_run '
+  > let x ~param = [%expr "?param:Int64"]
+  > '
+  >>> PREPROCESSING
+  let x ~param = (param : (Queries.non_null, int64 Queries.number) Queries.expr)
+  >>> RUNNING
+
+  $ ./compile_and_run '
+  > let x ~param = [%expr "?param:Float64"]
+  > '
+  >>> PREPROCESSING
+  let x ~param = (param : (Queries.non_null, float Queries.number) Queries.expr)
+  >>> RUNNING
+
+parameter expressions with nullable types:
+  $ ./compile_and_run '
+  > let x ~param = [%expr "?param:Nullable(String)"]
+  > '
+  >>> PREPROCESSING
+  let x ~param = (param : (Queries.null, string) Queries.expr)
+  >>> RUNNING
+
+  $ ./compile_and_run '
+  > let x ~param = [%expr "?param:Nullable(Int32)"]
+  > '
+  >>> PREPROCESSING
+  let x ~param = (param : (Queries.null, int Queries.number) Queries.expr)
+  >>> RUNNING
+
+parameter expressions with array types:
+  $ ./compile_and_run '
+  > let x ~param = [%expr "?param:Array(String)"]
+  > '
+  >>> PREPROCESSING
+  let x ~param =
+    (param
+      : (Queries.non_null, (Queries.non_null, string) Queries.array) Queries.expr)
+  >>> RUNNING
+
+  $ ./compile_and_run '
+  > let x ~param = [%expr "?param:Array(Int32)"]
+  > '
+  >>> PREPROCESSING
+  let x ~param =
+    (param
+      : ( Queries.non_null,
+          (Queries.non_null, int Queries.number) Queries.array )
+        Queries.expr)
+  >>> RUNNING
+
+parameter expressions with nested complex types:
+  $ ./compile_and_run '
+  > let x ~param = [%expr "?param:Array(Nullable(String))"]
+  > '
+  >>> PREPROCESSING
+  let x ~param =
+    (param
+      : (Queries.non_null, (Queries.null, string) Queries.array) Queries.expr)
+  >>> RUNNING

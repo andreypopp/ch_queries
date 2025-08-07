@@ -96,6 +96,47 @@ and from_one_scope_pattern from_one =
   | F_table { alias; _ } | F_select { alias; _ } | F_value { alias; _ } ->
       pvar ~loc alias.node
 
+let rec typ_to_ocaml_type ~loc typ =
+  let open Syntax in
+  match typ.Loc.node with
+  | T id -> (
+      match id.Loc.node with
+      | "String" -> ([%type: Queries.non_null], [%type: string])
+      | "Bool" -> ([%type: Queries.non_null], [%type: bool])
+      | "Int32" -> ([%type: Queries.non_null], [%type: int Queries.number])
+      | "UInt32" -> ([%type: Queries.non_null], [%type: int Queries.number])
+      | "Int64" -> ([%type: Queries.non_null], [%type: int64 Queries.number])
+      | "UInt64" -> ([%type: Queries.non_null], [%type: int64 Queries.number])
+      | "Float32" -> ([%type: Queries.non_null], [%type: float Queries.number])
+      | "Float64" -> ([%type: Queries.non_null], [%type: float Queries.number])
+      | t ->
+          let loc = to_location id in
+          Location.raise_errorf ~loc "unknown ClickHouse type: %s" t)
+  | T_app (id, args) -> (
+      match id.Loc.node with
+      | "Nullable" -> (
+          match args with
+          | [ inner_typ ] ->
+              let _, t = typ_to_ocaml_type ~loc inner_typ in
+              ([%type: Queries.null], t)
+          | _ ->
+              let loc = to_location id in
+              Location.raise_errorf ~loc
+                "Nullable(..) requires exactly one argument")
+      | "Array" -> (
+          match args with
+          | [ element_typ ] ->
+              let n, t = typ_to_ocaml_type ~loc element_typ in
+              ( [%type: Queries.non_null],
+                [%type: ([%t n], [%t t]) Queries.array] )
+          | _ ->
+              let loc = to_location id in
+              Location.raise_errorf ~loc
+                "Array(..) requires exactly one argument")
+      | t ->
+          let loc = to_location id in
+          Location.raise_errorf ~loc "Unknown  ClickHouse type: %s" t)
+
 let rec stage_expr ~from expr =
   let loc = to_location expr in
   match expr.Loc.node with
@@ -163,11 +204,19 @@ let rec stage_expr ~from expr =
             eapply ~loc:method_loc method_call staged_args
           in
           [%expr [%e e'] (fun [%p p] -> [%e method_call_with_args])])
-  | Syntax.E_value var -> (
+  | Syntax.E_value (var, typ) -> (
       let e = evar ~loc var.Loc.node in
-      match Option.map from_scope_expr from with
-      | None -> e
-      | Some arg -> [%expr [%e e] [%e arg]])
+      let e_with_scope =
+        match Option.map from_scope_expr from with
+        | None -> e
+        | Some arg -> [%expr [%e e] [%e arg]]
+      in
+      match typ with
+      | None -> e_with_scope
+      | Some t ->
+          let n, ocaml_t = typ_to_ocaml_type ~loc t in
+          let typed_expr_type = [%type: ([%t n], [%t ocaml_t]) Queries.expr] in
+          [%expr ([%e e_with_scope] : [%t typed_expr_type])])
   | Syntax.E_ocaml_expr ocaml_code -> (
       (* Parse the OCaml expression and adjust location for error reporting *)
       let adjusted_loc =
@@ -200,7 +249,7 @@ let rec stage_expr ~from expr =
       | Syntax.In_query query ->
           let query = stage_query query in
           [%expr Queries.in_ [%e expr] (Queries.In_query [%e query])]
-      | Syntax.In_expr { node = E_value param; _ } ->
+      | Syntax.In_expr { node = E_value (param, _typ); _ } ->
           (* special for [E in ?param], we don't treat it as expression *)
           let loc = to_location param in
           let param = param.Loc.node in
@@ -220,7 +269,7 @@ and stage_dimensions ~loc ~from dimensions =
     List.map
       (function
         | Syntax.Dimension_splice id ->
-            let e = Syntax.E_value id in
+            let e = Syntax.E_value (id, None) in
             stage_expr ~from { Loc.node = e; loc = id.loc }
         | Syntax.Dimension_expr expr ->
             let expr = stage_expr ~from expr in
@@ -234,7 +283,7 @@ and stage_order_by ~loc ~from order_by =
     List.map
       (function
         | Syntax.Order_by_splice id ->
-            let e = Syntax.E_value id in
+            let e = Syntax.E_value (id, None) in
             stage_expr ~from { Loc.node = e; loc = id.loc }
         | Syntax.Order_by_expr (expr, dir) ->
             let expr = stage_expr ~from expr in
@@ -460,47 +509,7 @@ let expand_expr ~ctxt:_ expr =
       stage_expr ~from:None expr
   | _ -> Location.raise_errorf "expected a string literal for the '%%expr'"
 
-let rec typ_to_ocaml_type ~loc typ =
-  let open Syntax in
-  match typ.Loc.node with
-  | T id -> (
-      match id.Loc.node with
-      | "String" -> ([%type: Queries.non_null], [%type: string])
-      | "Int32" -> ([%type: Queries.non_null], [%type: int Queries.number])
-      | "UInt32" -> ([%type: Queries.non_null], [%type: int Queries.number])
-      | "Int64" -> ([%type: Queries.non_null], [%type: int64 Queries.number])
-      | "UInt64" -> ([%type: Queries.non_null], [%type: int64 Queries.number])
-      | "Float32" -> ([%type: Queries.non_null], [%type: float Queries.number])
-      | "Float64" -> ([%type: Queries.non_null], [%type: float Queries.number])
-      | t ->
-          let loc = to_location id in
-          Location.raise_errorf ~loc "unknown ClickHouse type: %s" t)
-  | T_app (id, args) -> (
-      match id.Loc.node with
-      | "Nullable" -> (
-          match args with
-          | [ inner_typ ] ->
-              let _, t = typ_to_ocaml_type ~loc inner_typ in
-              ([%type: Queries.null], t)
-          | _ ->
-              let loc = to_location id in
-              Location.raise_errorf ~loc
-                "Nullable(..) requires exactly one argument")
-      | "Array" -> (
-          match args with
-          | [ element_typ ] ->
-              let n, t = typ_to_ocaml_type ~loc element_typ in
-              ( [%type: Queries.non_null],
-                [%type: ([%t n], [%t t]) Queries.array] )
-          | _ ->
-              let loc = to_location id in
-              Location.raise_errorf ~loc
-                "Array(..) requires exactly one argument")
-      | t ->
-          let loc = to_location id in
-          Location.raise_errorf ~loc "Unknown  ClickHouse type: %s" t)
-
-and replace_nullability_in_type ~loc typ nullability =
+let replace_nullability_in_type ~loc typ nullability =
   (* Extract the content type from (Queries.non_null, content) Queries.expr *)
   let content_typ =
     match typ.ptyp_desc with

@@ -61,6 +61,7 @@
     | Parser.WHERE -> "WHERE"
     | Parser.AS -> "AS"
     | Parser.DOT -> "DOT"
+    | Parser.COLON -> "COLON"
     | Parser.LPAREN -> "LPAREN"
     | Parser.RPAREN -> "RPAREN"
     | Parser.LBRACKET -> "LBRACKET"
@@ -131,6 +132,7 @@ rule token = parse
   | ']'                 { RBRACKET }
   | ','                 { COMMA }
   | '.'                 { DOT }
+  | ':'                 { COLON }
   | '+'                 { PLUS }
   | '-'                 { MINUS }
   | '*'                 { STAR }
