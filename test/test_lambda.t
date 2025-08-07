@@ -14,7 +14,7 @@ test IN expression with subquery:
             Queries.Expr.length
               (Queries.Expr.arrayFilter
                  (Queries.lambda "x" (fun x ->
-                      Queries.Expr.( = ) (Queries.unsafe_expr "x") (Queries.int 1)))
+                      Queries.Expr.( = ) (Queries.unsafe "x") (Queries.int 1)))
                  (users#query (fun users -> users#xs)))
         end)
   

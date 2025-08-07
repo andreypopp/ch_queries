@@ -57,7 +57,7 @@ module Args : sig
   type t = [] : t | ( :: ) : ('a, 'b) expr * t -> t
 end
 
-val unsafe_expr : string -> _ expr
+val unsafe : string -> _ expr
 (** Inject a string into an expression without any checks. This is unsafe to do,
     if string comes from user input (= SQL injection). *)
 

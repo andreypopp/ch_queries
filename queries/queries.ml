@@ -93,7 +93,7 @@ and 'a from = unit -> 'a from0
 and a_from0 = A_from : 'a from0 -> a_from0
 and a_from_one0 = A_from_one : 'a from_one0 -> a_from_one0
 
-let unsafe_expr x = E_unsafe x
+let unsafe x = E_unsafe x
 let unsafe_concat xs = E_unsafe_concat xs
 let int x = E_lit (L_int x)
 let string x = E_lit (L_string x)
@@ -106,7 +106,7 @@ let lambda :
     (('pn, 'pa) expr -> ('n, 'a) expr) ->
     (non_null, ('pn, 'pa) expr -> ('n, 'a) expr) expr =
  fun param f ->
-  let body = f (unsafe_expr param) in
+  let body = f (unsafe param) in
   E_lambda (param, body)
 
 let in_ x select = E_in (x, select)
@@ -211,7 +211,7 @@ let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit
                  fun f ->
                    let e = f scope' in
                    let c = add_field e (Lazy.force select) in
-                   unsafe_expr (Printf.sprintf "%s.%s" alias c)
+                   unsafe (Printf.sprintf "%s.%s" alias c)
              end;
            prewhere;
            where;

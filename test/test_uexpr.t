@@ -9,9 +9,9 @@ Test untyped expressions
     Queries.unsafe_concat
       (let open Queries.Args in
        [
-         Queries.unsafe_expr "someUnknownFunction(";
+         Queries.unsafe "someUnknownFunction(";
          x;
-         Queries.unsafe_expr ", interval 1 day)";
+         Queries.unsafe ", interval 1 day)";
        ])
   >>> RUNNING
   val e : ('a, 'b) Queries.expr -> ('c, 'd) Queries.expr
@@ -25,9 +25,9 @@ Test untyped expressions
     Queries.unsafe_concat
       (let open Queries.Args in
        [
-         Queries.unsafe_expr "someUnknownFunction(";
+         Queries.unsafe "someUnknownFunction(";
          x;
-         Queries.unsafe_expr ", interval 1 day)";
+         Queries.unsafe ", interval 1 day)";
        ])
   >>> RUNNING
   val e :
@@ -44,9 +44,9 @@ Test untyped expressions
     Queries.unsafe_concat
       (let open Queries.Args in
        [
-         Queries.unsafe_expr "someUnknownFunction(";
+         Queries.unsafe "someUnknownFunction(";
          x;
-         Queries.unsafe_expr ", interval 1 day)";
+         Queries.unsafe ", interval 1 day)";
        ])
   >>> RUNNING
   val e :

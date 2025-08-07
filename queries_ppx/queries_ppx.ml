@@ -152,7 +152,7 @@ let rec stage_expr ~from expr =
       [%expr Queries.unsafe_concat Queries.Args.([%e elist ~loc xs])]
   | Syntax.E_unsafe id ->
       let loc = to_location id in
-      [%expr Queries.unsafe_expr [%e estring ~loc id.node]]
+      [%expr Queries.unsafe [%e estring ~loc id.node]]
   | Syntax.E_col (scope, id) ->
       let e = evar ~loc scope.Loc.node in
       let e' = pexp_send ~loc e (Located.mk ~loc "query") in

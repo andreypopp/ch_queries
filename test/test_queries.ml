@@ -5,14 +5,14 @@ module Database = struct
     let users =
       let scope ~alias =
         object
-          method id : (non_null, int number) expr = unsafe_expr (alias ^ ".id")
-          method x : (non_null, string) expr = unsafe_expr (alias ^ ".x")
+          method id : (non_null, int number) expr = unsafe (alias ^ ".id")
+          method x : (non_null, string) expr = unsafe (alias ^ ".x")
 
           method xs : (non_null, (non_null, string) array) expr =
-            unsafe_expr (alias ^ ".xs")
+            unsafe (alias ^ ".xs")
 
           method is_active : (non_null, bool) expr =
-            unsafe_expr (alias ^ ".is_active")
+            unsafe (alias ^ ".is_active")
         end
       in
       from_table ~db:"public" ~table:"users" scope
@@ -21,9 +21,9 @@ module Database = struct
       let scope ~alias =
         object
           method user_id : (non_null, int number) expr =
-            unsafe_expr (alias ^ ".user_id")
+            unsafe (alias ^ ".user_id")
 
-          method name : (non_null, string) expr = unsafe_expr (alias ^ ".name")
+          method name : (non_null, string) expr = unsafe (alias ^ ".name")
         end
       in
       from_table ~db:"public" ~table:"profiles" scope
