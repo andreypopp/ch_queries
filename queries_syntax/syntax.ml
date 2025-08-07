@@ -2,7 +2,8 @@ open Ppx_hash_lib.Std.Hash.Builtin
 open Ppx_compare_lib.Builtin
 
 type 'a node = { node : 'a; loc : Loc.t; eq : 'a Eq_class.t }
-(** Data annotated with its location in the source code. *)
+(** Data annotated with its location in the source code along with an
+    equivalence class (used for fast equality comparison and fast hashing). *)
 
 let hash_fold_node _ h { node = _; loc = _; eq } = Eq_class.hash_fold_t h eq
 let equal_node _ a b = Eq_class.equal a.eq b.eq

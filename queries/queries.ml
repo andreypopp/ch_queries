@@ -343,14 +343,13 @@ let in_ x xs =
 let rec add_field expr select =
   match select with
   | Select s -> (
-      let found =
+      match
         List.find_map s.fields ~f:(function
           | A_field (expr', alias)
-            when Queries_syntax.Syntax.(equal_node equal_exprsyn) expr expr' ->
+            when Queries_syntax.Syntax.equal_expr expr expr' ->
               Some alias
           | _ -> None)
-      in
-      match found with
+      with
       | None ->
           let alias = Printf.sprintf "_%d" (List.length s.fields + 1) in
           let field = A_field (expr, alias) in
