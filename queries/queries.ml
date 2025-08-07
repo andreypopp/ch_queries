@@ -75,79 +75,6 @@ and 'a from = unit -> 'a from0
 and a_from0 = A_from : 'a from0 -> a_from0
 and a_from_one0 = A_from_one : 'a from_one0 -> a_from_one0
 
-let unsafe x = Syntax.make_expr (E_unsafe (Syntax.make_id x))
-
-let unsafe_concat xs =
-  let rec args : args -> _ expr list = function
-    | [] -> []
-    | x :: xs -> x :: args xs
-  in
-  Syntax.make_expr (Syntax.E_unsafe_concat (args xs))
-
-let lit lit = Syntax.make_expr (Syntax.E_lit lit)
-let int x = lit (L_int x)
-let string x = lit (L_string x)
-let bool x = lit (L_bool x)
-let float x = lit (L_float x)
-let null = lit L_null
-
-let lambda :
-    string ->
-    (('pn, 'pa) expr -> ('n, 'a) expr) ->
-    (non_null, ('pn, 'pa) expr -> ('n, 'a) expr) expr =
- fun param f ->
-  let body = f (unsafe param) in
-  Syntax.make_expr (E_lambda (Syntax.make_id param, body))
-
-let array xs = Syntax.make_expr (E_call (Syntax.Func (Syntax.make_id "["), xs))
-
-module Expr = struct
-  let def n args =
-    Syntax.make_expr (Syntax.E_call (Syntax.Func (Syntax.make_id n), args))
-
-  let assumeNotNull x = def "assumeNotNull" [ x ]
-  let toNullable x = def "toNullable" [ x ]
-  let coalesce x y = def "coalesce" [ x; y ]
-  let eq x y = def "=" [ x; y ]
-  let ( = ) = eq
-  let add x y = def "+" [ x; y ]
-  let sub x y = def "-" [ x; y ]
-  let mul x y = def "*" [ x; y ]
-  let div x y = def "/" [ x; y ]
-  let ( && ) x y = def "and" [ x; y ]
-  let ( || ) x y = def "or" [ x; y ]
-  let not_ x = def "not" [ x ]
-  let arrayFilter f x = def "arrayFilter" [ f; x ]
-  let length x = def "length" [ x ]
-
-  let make_window f ?partition_by ?order_by args =
-    match (partition_by, order_by) with
-    | None, None -> def f args
-    | _ ->
-        let partition_by =
-          Option.map
-            (List.map ~f:(fun (A_expr expr) -> Syntax.Dimension_expr expr))
-            partition_by
-        in
-        let order_by =
-          Option.map
-            (List.map ~f:(fun (A_expr expr, dir) ->
-                 Syntax.Order_by_expr (expr, dir)))
-            order_by
-        in
-        let window = { Syntax.partition_by; order_by } in
-        Syntax.make_expr (E_window (Syntax.make_id f, args, window))
-
-  let count ?partition_by ?order_by x =
-    make_window ?partition_by ?order_by "count" [ x ]
-
-  let sum ?partition_by ?order_by x =
-    make_window ?partition_by ?order_by "sum" [ x ]
-
-  let uniq ?partition_by ?order_by x =
-    make_window ?partition_by ?order_by "uniq" [ x ]
-end
-
 let scope_from : type scope. scope from0 -> scope = function
   | From { scope; _ } -> scope
   | From_join { scope; _ } -> scope
@@ -221,7 +148,7 @@ let left_join from (join : 'a scope from_one) ~on () =
   let scope_join : _ nullable_scope =
     object
       method query : 'n 'e. (_ -> ('n, 'e) expr) -> (null, 'e) expr =
-        fun f -> Expr.toNullable (scope_join#query f)
+        fun f -> scope_join#query f
     end
   in
   From_join
@@ -332,6 +259,79 @@ module To_syntax = struct
                })
     in
     Syntax.make_query (select_to_syntax q)
+end
+
+let unsafe x = Syntax.make_expr (E_unsafe (Syntax.make_id x))
+
+let unsafe_concat xs =
+  let rec args : args -> _ expr list = function
+    | [] -> []
+    | x :: xs -> x :: args xs
+  in
+  Syntax.make_expr (Syntax.E_unsafe_concat (args xs))
+
+let lit lit = Syntax.make_expr (Syntax.E_lit lit)
+let int x = lit (L_int x)
+let string x = lit (L_string x)
+let bool x = lit (L_bool x)
+let float x = lit (L_float x)
+let null = lit L_null
+
+let lambda :
+    string ->
+    (('pn, 'pa) expr -> ('n, 'a) expr) ->
+    (non_null, ('pn, 'pa) expr -> ('n, 'a) expr) expr =
+ fun param f ->
+  let body = f (unsafe param) in
+  Syntax.make_expr (E_lambda (Syntax.make_id param, body))
+
+let array xs = Syntax.make_expr (E_call (Syntax.Func (Syntax.make_id "["), xs))
+
+module Expr = struct
+  let def n args =
+    Syntax.make_expr (Syntax.E_call (Syntax.Func (Syntax.make_id n), args))
+
+  let assumeNotNull x = def "assumeNotNull" [ x ]
+  let toNullable x = def "toNullable" [ x ]
+  let coalesce x y = def "coalesce" [ x; y ]
+  let eq x y = def "=" [ x; y ]
+  let ( = ) = eq
+  let add x y = def "+" [ x; y ]
+  let sub x y = def "-" [ x; y ]
+  let mul x y = def "*" [ x; y ]
+  let div x y = def "/" [ x; y ]
+  let ( && ) x y = def "and" [ x; y ]
+  let ( || ) x y = def "or" [ x; y ]
+  let not_ x = def "not" [ x ]
+  let arrayFilter f x = def "arrayFilter" [ f; x ]
+  let length x = def "length" [ x ]
+
+  let make_window f ?partition_by ?order_by args =
+    match (partition_by, order_by) with
+    | None, None -> def f args
+    | _ ->
+        let partition_by =
+          Option.map
+            (List.map ~f:(fun (A_expr expr) -> Syntax.Dimension_expr expr))
+            partition_by
+        in
+        let order_by =
+          Option.map
+            (List.map ~f:(fun (A_expr expr, dir) ->
+                 Syntax.Order_by_expr (expr, dir)))
+            order_by
+        in
+        let window = { Syntax.partition_by; order_by } in
+        Syntax.make_expr (E_window (Syntax.make_id f, args, window))
+
+  let count ?partition_by ?order_by x =
+    make_window ?partition_by ?order_by "count" [ x ]
+
+  let sum ?partition_by ?order_by x =
+    make_window ?partition_by ?order_by "sum" [ x ]
+
+  let uniq ?partition_by ?order_by x =
+    make_window ?partition_by ?order_by "uniq" [ x ]
 end
 
 let in_ x xs =
