@@ -28,7 +28,14 @@ and exprsyn =
   | E_unsafe_concat of expr list  (** unsafe concatenation of SQL fragments *)
 
 and func = Func of id | Func_method of id * id
-and lit = L_int of int | L_bool of bool | L_string of string
+
+and lit =
+  | L_int of int
+  | L_bool of bool
+  | L_string of string
+  | L_float of float
+  | L_null
+
 and in_query = In_query of query | In_expr of expr
 
 and window_spec = {

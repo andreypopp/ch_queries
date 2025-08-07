@@ -1,3 +1,5 @@
+module Syntax = Queries_syntax.Syntax
+
 type null = [ `null | `not_null ]
 (** Expression syntax *)
 
@@ -6,28 +8,8 @@ type 'a nullable = [< null ] as 'a
 type 'a number = private A_number
 type ('null, 'a) array = private A_array
 
-type lit =
-  | L_int of int
-  | L_float of float
-  | L_string of string
-  | L_bool of bool
-  | L_null
-
-type (+'null, +'typ) expr =
-  | E_lit : lit -> _ expr
-  | E_app : string * args -> _ expr
-  | E_window : string * args * window -> _ expr
-  | E_in : (_, 'a) expr * 'a in_rhs -> _ expr
-  | E_lambda : string * _ expr -> _ expr
-  | E_unsafe : string -> _ expr
-  | E_unsafe_concat : args -> _ expr
-
+type (+'null, +'typ) expr = Syntax.expr
 and args = [] : args | ( :: ) : _ expr * args -> args
-
-and window = {
-  partition_by : a_expr list option;
-  order_by : (a_expr * [ `ASC | `DESC ]) list option;
-}
 
 and 'a in_rhs =
   | In_query : < _1 : (_, 'a) expr > scope select -> 'a in_rhs
@@ -93,13 +75,21 @@ and 'a from = unit -> 'a from0
 and a_from0 = A_from : 'a from0 -> a_from0
 and a_from_one0 = A_from_one : 'a from_one0 -> a_from_one0
 
-let unsafe x = E_unsafe x
-let unsafe_concat xs = E_unsafe_concat xs
-let int x = E_lit (L_int x)
-let string x = E_lit (L_string x)
-let bool x = E_lit (L_bool x)
-let float x = E_lit (L_float x)
-let null = E_lit L_null
+let unsafe x = Syntax.make_expr (E_unsafe (Syntax.make_id x))
+
+let unsafe_concat xs =
+  let rec args : args -> _ expr list = function
+    | [] -> []
+    | x :: xs -> x :: args xs
+  in
+  Syntax.make_expr (Syntax.E_unsafe_concat (args xs))
+
+let lit lit = Syntax.make_expr (Syntax.E_lit lit)
+let int x = lit (L_int x)
+let string x = lit (L_string x)
+let bool x = lit (L_bool x)
+let float x = lit (L_float x)
+let null = lit L_null
 
 let lambda :
     string ->
@@ -107,39 +97,46 @@ let lambda :
     (non_null, ('pn, 'pa) expr -> ('n, 'a) expr) expr =
  fun param f ->
   let body = f (unsafe param) in
-  E_lambda (param, body)
+  Syntax.make_expr (E_lambda (Syntax.make_id param, body))
 
-let in_ x select = E_in (x, select)
-
-let array xs =
-  let rec args : _ expr list -> args = function
-    | [] -> []
-    | x :: xs -> x :: args xs
-  in
-  E_app ("[", args xs)
+let array xs = Syntax.make_expr (E_call (Syntax.Func (Syntax.make_id "["), xs))
 
 module Expr = struct
-  let assumeNotNull x = E_app ("assumeNotNull", [ x ])
-  let toNullable x = E_app ("toNullable", [ x ])
-  let coalesce x y = E_app ("coalesce", [ x; y ])
-  let eq x y = E_app ("=", [ x; y ])
+  let def n args =
+    Syntax.make_expr (Syntax.E_call (Syntax.Func (Syntax.make_id n), args))
+
+  let assumeNotNull x = def "assumeNotNull" [ x ]
+  let toNullable x = def "toNullable" [ x ]
+  let coalesce x y = def "coalesce" [ x; y ]
+  let eq x y = def "=" [ x; y ]
   let ( = ) = eq
-  let add x y = E_app ("+", [ x; y ])
-  let sub x y = E_app ("-", [ x; y ])
-  let mul x y = E_app ("*", [ x; y ])
-  let div x y = E_app ("/", [ x; y ])
-  let ( && ) x y = E_app ("and", [ x; y ])
-  let ( || ) x y = E_app ("or", [ x; y ])
-  let not_ x = E_app ("not", [ x ])
-  let arrayFilter f x = E_app ("arrayFilter", [ f; x ])
-  let length x = E_app ("length", [ x ])
+  let add x y = def "+" [ x; y ]
+  let sub x y = def "-" [ x; y ]
+  let mul x y = def "*" [ x; y ]
+  let div x y = def "/" [ x; y ]
+  let ( && ) x y = def "and" [ x; y ]
+  let ( || ) x y = def "or" [ x; y ]
+  let not_ x = def "not" [ x ]
+  let arrayFilter f x = def "arrayFilter" [ f; x ]
+  let length x = def "length" [ x ]
 
   let make_window f ?partition_by ?order_by args =
     match (partition_by, order_by) with
-    | None, None -> E_app (f, args)
+    | None, None -> def f args
     | _ ->
-        let window = { partition_by; order_by } in
-        E_window (f, args, window)
+        let partition_by =
+          Option.map
+            (List.map ~f:(fun (A_expr expr) -> Syntax.Dimension_expr expr))
+            partition_by
+        in
+        let order_by =
+          Option.map
+            (List.map ~f:(fun (A_expr expr, dir) ->
+                 Syntax.Order_by_expr (expr, dir)))
+            order_by
+        in
+        let window = { Syntax.partition_by; order_by } in
+        Syntax.make_expr (E_window (Syntax.make_id f, args, window))
 
   let count ?partition_by ?order_by x =
     make_window ?partition_by ?order_by "count" [ x ]
@@ -239,70 +236,12 @@ let left_join from (join : 'a scope from_one) ~on () =
 module To_syntax = struct
   open Queries_syntax
 
-  let rec expr_to_syntax : type n typ. (n, typ) expr -> Syntax.expr = function
-    | E_unsafe_concat args ->
-        let rec convert_args : args -> Syntax.expr list = function
-          | [] -> []
-          | expr :: rest -> expr_to_syntax expr :: convert_args rest
-        in
-        Syntax.make_expr (E_unsafe_concat (convert_args args))
-    | E_unsafe name -> Syntax.make_expr (E_param (Syntax.make_id name, None))
-    | E_lit lit ->
-        let syntax_lit =
-          match lit with
-          | L_int x -> Syntax.L_int x
-          | L_bool x -> Syntax.L_bool x
-          | L_string x -> Syntax.L_string x
-          | L_float _ -> failwith "float literals not supported in syntax"
-          | L_null -> failwith "null literals not supported in syntax"
-        in
-        Syntax.make_expr (E_lit syntax_lit)
-    | E_app (name, args) ->
-        let rec convert_args : args -> Syntax.expr list = function
-          | [] -> []
-          | expr :: rest -> expr_to_syntax expr :: convert_args rest
-        in
-        let args = convert_args args in
-        Syntax.make_expr (E_call (Func (Syntax.make_id name), args))
-    | E_window (name, args, { partition_by; order_by }) ->
-        let rec convert_args : args -> Syntax.expr list = function
-          | [] -> []
-          | expr :: rest -> expr_to_syntax expr :: convert_args rest
-        in
-        let args = convert_args args in
-        let window =
-          let partition_by = Option.map group_by_to_syntax partition_by in
-          let order_by = Option.map order_by_to_syntax order_by in
-          { Syntax.partition_by; order_by }
-        in
-        Syntax.make_expr (E_window (Syntax.make_id name, args, window))
-    | E_in (expr, In_query select) ->
-        let expr = expr_to_syntax expr in
-        let select = select ~alias:"q" in
-        let () =
-          (* need to "use" the field so it materializses *)
-          let scope = scope_from_select select in
-          let _ : _ expr = scope#query (fun scope -> scope#_1) in
-          ()
-        in
-        let select = to_syntax select in
-        Syntax.make_expr (E_in (expr, Syntax.In_query select))
-    | E_in (expr, In_array expr') ->
-        let expr = expr_to_syntax expr in
-        let expr' = expr_to_syntax expr' in
-        Syntax.make_expr (E_in (expr, Syntax.In_expr expr'))
-    | E_lambda (param, body) ->
-        let param = Syntax.make_id param in
-        let body = expr_to_syntax body in
-        Syntax.make_expr (E_lambda (param, body))
-
-  and group_by_to_syntax dimensions =
-    List.map dimensions ~f:(fun (A_expr expr) ->
-        Syntax.Dimension_expr (expr_to_syntax expr))
+  let rec group_by_to_syntax dimensions =
+    List.map dimensions ~f:(fun (A_expr expr) -> Syntax.Dimension_expr expr)
 
   and order_by_to_syntax order_by =
     List.map order_by ~f:(fun (A_expr expr, dir) ->
-        Syntax.Order_by_expr (expr_to_syntax expr, dir))
+        Syntax.Order_by_expr (expr, dir))
 
   and to_syntax : type a. a select0 -> Syntax.query =
    fun q ->
@@ -327,26 +266,14 @@ module To_syntax = struct
                 { Syntax.expr; alias = Some (Syntax.make_id alias) })
               fields
           in
-          let prewhere =
-            Option.map (fun (A_expr expr) -> expr_to_syntax expr) prewhere
-          in
-          let where =
-            Option.map (fun (A_expr expr) -> expr_to_syntax expr) where
-          in
-          let qualify =
-            Option.map (fun (A_expr expr) -> expr_to_syntax expr) qualify
-          in
+          let prewhere = Option.map (fun (A_expr expr) -> expr) prewhere in
+          let where = Option.map (fun (A_expr expr) -> expr) where in
+          let qualify = Option.map (fun (A_expr expr) -> expr) qualify in
           let group_by = Option.map group_by_to_syntax group_by in
-          let having =
-            Option.map (fun (A_expr expr) -> expr_to_syntax expr) having
-          in
+          let having = Option.map (fun (A_expr expr) -> expr) having in
           let order_by = Option.map order_by_to_syntax order_by in
-          let limit =
-            Option.map (fun (A_expr expr) -> expr_to_syntax expr) limit
-          in
-          let offset =
-            Option.map (fun (A_expr expr) -> expr_to_syntax expr) offset
-          in
+          let limit = Option.map (fun (A_expr expr) -> expr) limit in
+          let offset = Option.map (fun (A_expr expr) -> expr) offset in
           let from = from_to_syntax from in
           Q_select
             {
@@ -401,16 +328,29 @@ module To_syntax = struct
                  kind;
                  from = from_to_syntax from;
                  join = from_one_to_syntax join;
-                 on = expr_to_syntax on;
+                 on;
                })
     in
     Syntax.make_query (select_to_syntax q)
 end
 
+let in_ x xs =
+  match xs with
+  | In_array expr -> Syntax.make_expr (Syntax.E_in (x, In_expr expr))
+  | In_query select ->
+      let select = select ~alias:"q" in
+      let () =
+        (* need to "use" the field so it materializses *)
+        let scope = scope_from_select select in
+        let _ : _ expr = scope#query (fun scope -> scope#_1) in
+        ()
+      in
+      let select = To_syntax.to_syntax select in
+      Syntax.make_expr (Syntax.E_in (x, In_query select))
+
 let rec add_field expr select =
   match select with
   | Select s -> (
-      let expr = To_syntax.expr_to_syntax expr in
       let found =
         List.find_map s.fields ~f:(function
           | A_field (expr', alias)
@@ -574,11 +514,8 @@ let query q f =
   let row = f scope in
   let fields = Row.fields row in
   let fields =
-    List.map fields ~f:(fun (A_expr e) ->
-        {
-          Queries_syntax.Syntax.expr = To_syntax.expr_to_syntax e;
-          alias = None;
-        })
+    List.map fields ~f:(fun (A_expr expr) ->
+        { Queries_syntax.Syntax.expr; alias = None })
   in
   let select = To_syntax.to_syntax q in
   let select =

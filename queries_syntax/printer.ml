@@ -20,6 +20,8 @@ let rec pp_expr expr =
   | E_unsafe id -> string id.node
   | E_col (ns, id) -> string (Printf.sprintf "%s.%s" ns.node id.node)
   | E_lit (L_int n) -> string (string_of_int n)
+  | E_lit (L_float n) -> string (string_of_float n)
+  | E_lit L_null -> string "NULL"
   | E_lit (L_bool b) -> string (string_of_bool b)
   | E_lit (L_string s) ->
       string (Printf.sprintf "'%s'" (escape_single_quoted s))

@@ -160,6 +160,8 @@ let rec stage_expr ~from expr =
       [%expr
         [%e e'] (fun [%p p] -> [%e pexp_send ~loc e (Located.mk ~loc id.node)])]
   | Syntax.E_lit (L_int n) -> [%expr Queries.int [%e eint ~loc n]]
+  | Syntax.E_lit (L_float n) -> [%expr Queries.float [%e efloat ~loc (string_of_float n)]]
+  | Syntax.E_lit L_null -> [%expr Queries.null]
   | Syntax.E_lit (L_bool b) -> [%expr Queries.bool [%e ebool ~loc b]]
   | Syntax.E_lit (L_string s) -> [%expr Queries.string [%e estring ~loc s]]
   | Syntax.E_window (name, args, { partition_by; order_by }) ->
