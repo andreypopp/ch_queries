@@ -1,15 +1,12 @@
 module Syntax = Queries_syntax.Syntax
 
 type null = [ `null | `not_null ]
-(** Expression syntax *)
-
 type non_null = [ `not_null ]
 type 'a nullable = [< null ] as 'a
 type 'a number = private A_number
 type ('null, 'a) array = private A_array
 
 type (+'null, +'typ) expr = Syntax.expr
-and args = [] : args | ( :: ) : _ expr * args -> args
 
 and 'a in_rhs =
   | In_query : < _1 : (_, 'a) expr > scope select -> 'a in_rhs
@@ -262,11 +259,8 @@ end
 let unsafe x = Syntax.make_expr (E_unsafe (Syntax.make_id x))
 
 let unsafe_concat xs =
-  let rec args : args -> _ expr list = function
-    | [] -> []
-    | x :: xs -> x :: args xs
-  in
-  Syntax.make_expr (Syntax.E_unsafe_concat (args xs))
+  let xs = List.map xs ~f:(fun (A_expr expr) -> expr) in
+  Syntax.make_expr (Syntax.E_unsafe_concat xs)
 
 let lit lit = Syntax.make_expr (Syntax.E_lit lit)
 let int x = lit (L_int x)
@@ -545,7 +539,3 @@ let query q f =
   in
   let parse_row = Row.parse row in
   (sql, parse_row)
-
-module Args = struct
-  type t = args = [] : t | ( :: ) : _ expr * t -> t
-end

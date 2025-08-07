@@ -7,12 +7,11 @@ Test untyped expressions
   >>> PREPROCESSING
   let e x =
     Queries.unsafe_concat
-      (let open Queries.Args in
-       [
-         Queries.unsafe "someUnknownFunction(";
-         x;
-         Queries.unsafe ", interval 1 day)";
-       ])
+      [
+        Queries.A_expr (Queries.unsafe "someUnknownFunction(");
+        Queries.A_expr x;
+        Queries.A_expr (Queries.unsafe ", interval 1 day)");
+      ]
   >>> RUNNING
   val e : ('a, 'b) Queries.expr -> ('c, 'd) Queries.expr
 
@@ -23,12 +22,11 @@ Test untyped expressions
   >>> PREPROCESSING
   let e x : (Queries.non_null, int Queries.number) Queries.expr =
     Queries.unsafe_concat
-      (let open Queries.Args in
-       [
-         Queries.unsafe "someUnknownFunction(";
-         x;
-         Queries.unsafe ", interval 1 day)";
-       ])
+      [
+        Queries.A_expr (Queries.unsafe "someUnknownFunction(");
+        Queries.A_expr x;
+        Queries.A_expr (Queries.unsafe ", interval 1 day)");
+      ]
   >>> RUNNING
   val e :
     ('a, 'b) Queries.expr ->
@@ -42,12 +40,11 @@ Test untyped expressions
   let e (x : (Queries.non_null, int64 Queries.number) Queries.expr) :
       (Queries.non_null, int Queries.number) Queries.expr =
     Queries.unsafe_concat
-      (let open Queries.Args in
-       [
-         Queries.unsafe "someUnknownFunction(";
-         x;
-         Queries.unsafe ", interval 1 day)";
-       ])
+      [
+        Queries.A_expr (Queries.unsafe "someUnknownFunction(");
+        Queries.A_expr x;
+        Queries.A_expr (Queries.unsafe ", interval 1 day)");
+      ]
   >>> RUNNING
   val e :
     (Queries.non_null, int64 Queries.number) Queries.expr ->

@@ -148,8 +148,10 @@ let rec stage_expr ~from expr =
   let loc = to_location expr in
   match expr.node with
   | Syntax.E_unsafe_concat xs ->
-      let xs = List.map (stage_expr ~from) xs in
-      [%expr Queries.unsafe_concat Queries.Args.([%e elist ~loc xs])]
+      let xs =
+        List.map (fun e -> [%expr Queries.A_expr [%e stage_expr ~from e]]) xs
+      in
+      [%expr Queries.unsafe_concat [%e elist ~loc xs]]
   | Syntax.E_unsafe id ->
       let loc = to_location id in
       [%expr Queries.unsafe [%e estring ~loc id.node]]
@@ -160,7 +162,8 @@ let rec stage_expr ~from expr =
       [%expr
         [%e e'] (fun [%p p] -> [%e pexp_send ~loc e (Located.mk ~loc id.node)])]
   | Syntax.E_lit (L_int n) -> [%expr Queries.int [%e eint ~loc n]]
-  | Syntax.E_lit (L_float n) -> [%expr Queries.float [%e efloat ~loc (string_of_float n)]]
+  | Syntax.E_lit (L_float n) ->
+      [%expr Queries.float [%e efloat ~loc (string_of_float n)]]
   | Syntax.E_lit L_null -> [%expr Queries.null]
   | Syntax.E_lit (L_bool b) -> [%expr Queries.bool [%e ebool ~loc b]]
   | Syntax.E_lit (L_string s) -> [%expr Queries.string [%e estring ~loc s]]

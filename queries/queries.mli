@@ -53,15 +53,11 @@ type 'a in_rhs =
 
 val in_ : (_, 'a) expr -> 'a in_rhs -> (non_null, bool) expr
 
-module Args : sig
-  type t = [] : t | ( :: ) : ('a, 'b) expr * t -> t
-end
-
 val unsafe : string -> _ expr
 (** Inject a string into an expression without any checks. This is unsafe to do,
     if string comes from user input (= SQL injection). *)
 
-val unsafe_concat : Args.t -> _ expr
+val unsafe_concat : a_expr list -> _ expr
 
 val select :
   from:'from from ->
