@@ -1,5 +1,4 @@
 type id = string Loc.with_loc
-type order_direction = ASC | DESC
 
 type expr = exprsyn Loc.with_loc
 
