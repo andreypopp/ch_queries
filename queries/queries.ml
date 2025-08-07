@@ -88,9 +88,7 @@ let from_table ~db ~table scope =
   let scope : _ scope =
     object
       method query : 'n 'e. (_ -> ('n, 'e) expr) -> ('n, 'e) expr =
-        fun f ->
-          let e = f scope in
-          e
+        fun f -> f scope
     end
   in
   From_table { db; table; alias; scope; final }
