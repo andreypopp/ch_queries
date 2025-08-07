@@ -1,10 +1,7 @@
-(ocamllex lexer type_lexer)
+(ocamllex lexer)
 
 (menhir
  (modules parser))
-
-(menhir
- (modules type_parser))
 
 (library
  (name queries_syntax)

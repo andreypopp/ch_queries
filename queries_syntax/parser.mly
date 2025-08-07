@@ -38,11 +38,21 @@
 %left STAR SLASH
 %left IN
 
-%start a_query a_expr
+%start a_query a_expr a_typ
 %type <Syntax.query> a_query
 %type <Syntax.expr> a_expr
+%type <Syntax.typ> a_typ
 
 %%
+
+a_typ:
+    t=typ EOF { t }
+
+typ:
+    id=id
+    { with_loc $startpos $endpos (T id) }
+  | id=id LPAREN args=separated_list(COMMA, typ) RPAREN
+    { with_loc $startpos $endpos (T_app (id, args)) }
 
 a_query:
     q=query EOF { q }

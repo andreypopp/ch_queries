@@ -44,9 +44,9 @@ let parse_expr ~loc s =
 let parse_typ ~loc s =
   let lexbuf = Lexing.from_string s in
   set_position lexbuf loc;
-  try Type_parser.a_typ Type_lexer.token lexbuf with
-  | Type_parser.Error -> raise_parse_errorf lexbuf ~msg:"type parse error"
-  | Type_lexer.Error msg -> raise_parse_errorf ~msg lexbuf
+  try Parser.a_typ Lexer.token lexbuf with
+  | Parser.Error -> raise_parse_errorf lexbuf ~msg:"type parse error"
+  | Lexer.Error msg -> raise_parse_errorf ~msg lexbuf
 
 let to_location ({ loc = { start_pos; end_pos }; _ } : _ Loc.with_loc) :
     location =
