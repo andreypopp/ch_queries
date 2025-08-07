@@ -1,7 +1,7 @@
-(ocamllex lexer)
+(ocamllex lexer ulexer)
 
 (menhir
- (modules parser))
+ (modules parser uparser))
 
 (library
  (name queries_syntax)

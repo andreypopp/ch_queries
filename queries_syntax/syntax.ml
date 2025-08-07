@@ -16,6 +16,7 @@ and exprsyn =
   | E_ocaml_expr of string  (** OCaml expression for splicing *)
   | E_in of expr * in_query
   | E_lambda of id * expr  (** lambda expression: param -> body *)
+  | E_concat of expr list
 
 and func = Func of id | Func_method of id * id
 and lit = L_int of int | L_bool of bool | L_string of string

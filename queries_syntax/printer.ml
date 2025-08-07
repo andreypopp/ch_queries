@@ -16,6 +16,7 @@ let escape_single_quoted s =
 
 let rec pp_expr expr =
   match expr.Loc.node with
+  | E_concat xs -> group (separate_map empty pp_expr xs)
   | E_id id -> string id.Loc.node
   | E_col (ns, id) -> string (Printf.sprintf "%s.%s" ns.Loc.node id.Loc.node)
   | E_lit (L_int n) -> string (string_of_int n)

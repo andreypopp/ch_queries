@@ -48,6 +48,13 @@ let parse_typ ~loc s =
   | Parser.Error -> raise_parse_errorf lexbuf ~msg:"type parse error"
   | Lexer.Error msg -> raise_parse_errorf ~msg lexbuf
 
+let parse_uexpr ~loc s =
+  let lexbuf = Lexing.from_string s in
+  set_position lexbuf loc;
+  try Uparser.a_uexpr Ulexer.token lexbuf with
+  | Uparser.Error -> raise_parse_errorf lexbuf ~msg:"uexpr parse error"
+  | Ulexer.Error msg -> raise_parse_errorf ~msg lexbuf
+
 let to_location ({ loc = { start_pos; end_pos }; _ } : _ Loc.with_loc) :
     location =
   { loc_start = start_pos; loc_end = end_pos; loc_ghost = false }
@@ -140,6 +147,9 @@ let rec typ_to_ocaml_type ~loc typ =
 let rec stage_expr ~from expr =
   let loc = to_location expr in
   match expr.Loc.node with
+  | Syntax.E_concat xs ->
+      let xs = List.map (stage_expr ~from) xs in
+      [%expr Queries.unsafe_concat Queries.Args.([%e elist ~loc xs])]
   | Syntax.E_id id ->
       let loc = to_location id in
       [%expr Queries.unsafe_expr [%e estring ~loc id.node]]
@@ -509,21 +519,12 @@ let expand_expr ~ctxt:_ expr =
       stage_expr ~from:None expr
   | _ -> Location.raise_errorf "expected a string literal for the '%%expr'"
 
-let replace_nullability_in_type ~loc typ nullability =
-  (* Extract the content type from (Queries.non_null, content) Queries.expr *)
-  let content_typ =
-    match typ.ptyp_desc with
-    | Ptyp_constr
-        ({ txt = Ldot (Lident "Queries", "expr"); _ }, [ _; content_typ ]) ->
-        content_typ
-    | _ -> typ (* fallback: treat the whole type as content *)
-  in
-  let nullability_typ =
-    match nullability with
-    | `Null -> [%type: Queries.null]
-    | `Non_null -> [%type: Queries.non_null]
-  in
-  [%type: ([%t nullability_typ], [%t content_typ]) Queries.expr]
+let expand_uexpr ~ctxt:_ expr =
+  match expr.pexp_desc with
+  | Pexp_constant (Pconst_string (txt, loc, _)) ->
+      let expr = parse_uexpr ~loc txt in
+      stage_expr ~from:None expr
+  | _ -> Location.raise_errorf "expected a string literal for the '%%uexpr'"
 
 let expand_typ ~ctxt:_ expr =
   match expr.pexp_desc with
@@ -548,11 +549,17 @@ let typ_extension =
     Ast_pattern.(single_expr_payload __)
     expand_typ
 
+let uexpr_extension =
+  Extension.V3.declare "uexpr" Extension.Context.expression
+    Ast_pattern.(single_expr_payload __)
+    expand_uexpr
+
 let rules =
   [
     Context_free.Rule.extension select_extension;
     Context_free.Rule.extension expr_extension;
     Context_free.Rule.extension typ_extension;
+    Context_free.Rule.extension uexpr_extension;
   ]
 
 let () = Driver.register_transformation ~rules "queries_ppx"
