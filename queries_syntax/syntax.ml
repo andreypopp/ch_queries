@@ -78,3 +78,6 @@ and fromsyn =
       on : expr;
     }
       -> fromsyn
+
+and typ = typsyn Loc.with_loc
+and typsyn = T of id | T_app of id * typ list

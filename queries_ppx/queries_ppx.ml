@@ -41,6 +41,13 @@ let parse_expr ~loc s =
     in
     Location.Error.raise (Location.Error.make ~loc:error_loc ~sub:[] msg)
 
+let parse_typ ~loc s =
+  let lexbuf = Lexing.from_string s in
+  set_position lexbuf loc;
+  try Type_parser.a_typ Type_lexer.token lexbuf with
+  | Type_parser.Error -> raise_parse_errorf lexbuf ~msg:"type parse error"
+  | Type_lexer.Error msg -> raise_parse_errorf ~msg lexbuf
+
 let to_location ({ loc = { start_pos; end_pos }; _ } : _ Loc.with_loc) :
     location =
   { loc_start = start_pos; loc_end = end_pos; loc_ghost = false }
@@ -453,6 +460,70 @@ let expand_expr ~ctxt:_ expr =
       stage_expr ~from:None expr
   | _ -> Location.raise_errorf "expected a string literal for the '%%expr'"
 
+let rec typ_to_ocaml_type ~loc typ =
+  let open Syntax in
+  match typ.Loc.node with
+  | T id -> (
+      match id.Loc.node with
+      | "String" -> ([%type: Queries.non_null], [%type: string])
+      | "Int32" -> ([%type: Queries.non_null], [%type: int Queries.number])
+      | "UInt32" -> ([%type: Queries.non_null], [%type: int Queries.number])
+      | "Int64" -> ([%type: Queries.non_null], [%type: int64 Queries.number])
+      | "UInt64" -> ([%type: Queries.non_null], [%type: int64 Queries.number])
+      | "Float32" -> ([%type: Queries.non_null], [%type: float Queries.number])
+      | "Float64" -> ([%type: Queries.non_null], [%type: float Queries.number])
+      | t ->
+          let loc = to_location id in
+          Location.raise_errorf ~loc "unknown ClickHouse type: %s" t)
+  | T_app (id, args) -> (
+      match id.Loc.node with
+      | "Nullable" -> (
+          match args with
+          | [ inner_typ ] ->
+              let _, t = typ_to_ocaml_type ~loc inner_typ in
+              ([%type: Queries.null], t)
+          | _ ->
+              let loc = to_location id in
+              Location.raise_errorf ~loc
+                "Nullable(..) requires exactly one argument")
+      | "Array" -> (
+          match args with
+          | [ element_typ ] ->
+              let n, t = typ_to_ocaml_type ~loc element_typ in
+              ( [%type: Queries.non_null],
+                [%type: ([%t n], [%t t]) Queries.array] )
+          | _ ->
+              let loc = to_location id in
+              Location.raise_errorf ~loc
+                "Array(..) requires exactly one argument")
+      | t ->
+          let loc = to_location id in
+          Location.raise_errorf ~loc "Unknown  ClickHouse type: %s" t)
+
+and replace_nullability_in_type ~loc typ nullability =
+  (* Extract the content type from (Queries.non_null, content) Queries.expr *)
+  let content_typ =
+    match typ.ptyp_desc with
+    | Ptyp_constr
+        ({ txt = Ldot (Lident "Queries", "expr"); _ }, [ _; content_typ ]) ->
+        content_typ
+    | _ -> typ (* fallback: treat the whole type as content *)
+  in
+  let nullability_typ =
+    match nullability with
+    | `Null -> [%type: Queries.null]
+    | `Non_null -> [%type: Queries.non_null]
+  in
+  [%type: ([%t nullability_typ], [%t content_typ]) Queries.expr]
+
+let expand_typ ~ctxt:_ expr =
+  match expr.pexp_desc with
+  | Pexp_constant (Pconst_string (txt, loc, _)) ->
+      let typ = parse_typ ~loc txt in
+      let n, t = typ_to_ocaml_type ~loc typ in
+      [%type: ([%t n], [%t t]) Queries.expr]
+  | _ -> Location.raise_errorf "expected a string literal for [%%typ ...]"
+
 let select_extension =
   Extension.V3.declare "query" Extension.Context.expression
     Ast_pattern.(single_expr_payload __)
@@ -463,10 +534,16 @@ let expr_extension =
     Ast_pattern.(single_expr_payload __)
     expand_expr
 
+let typ_extension =
+  Extension.V3.declare "typ" Extension.Context.core_type
+    Ast_pattern.(single_expr_payload __)
+    expand_typ
+
 let rules =
   [
     Context_free.Rule.extension select_extension;
     Context_free.Rule.extension expr_extension;
+    Context_free.Rule.extension typ_extension;
   ]
 
 let () = Driver.register_transformation ~rules "queries_ppx"
