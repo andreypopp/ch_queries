@@ -18,6 +18,7 @@
     ("JOIN", JOIN);
     ("INNER", INNER);
     ("LEFT", LEFT);
+    ("OPTIONAL", OPTIONAL);
     ("ON", ON);
     ("GROUP", GROUP);
     ("BY", BY);
@@ -77,6 +78,7 @@
     | Parser.INNER -> "INNER"
     | Parser.JOIN -> "JOIN"
     | Parser.LEFT -> "LEFT"
+    | Parser.OPTIONAL -> "OPTIONAL"
     | Parser.ON -> "ON"
     | Parser.GROUP -> "GROUP"
     | Parser.BY -> "BY"

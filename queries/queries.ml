@@ -46,6 +46,7 @@ and 'a from_one0 =
       alias : string;
       scope : 'a;
       final : bool;
+      mutable used : bool;
     }
       -> 'a from_one0
   | From_select : {
@@ -61,10 +62,13 @@ and 'a from0 =
   | From : { scope : 'a; from : a_from_one0 } -> 'a from0
   | From_join : {
       scope : 'a * 'b;
-      kind : [ `INNER_JOIN | `LEFT_JOIN ];
+      kind : [ `INNER_JOIN | `LEFT_JOIN | `LEFT_JOIN_OPTIONAL ];
       from : a_from0;
       join : a_from_one0;
-      on : a_expr;
+      on : a_expr Lazy.t;
+          (** Need this to be lazy so we can support optional joins - we don't
+              want to materialize the join if it is not used besides the ON
+              clause. *)
     }
       -> ('a * 'b) from0
 
@@ -82,13 +86,29 @@ let from_select ?cluster_name ~alias select () =
 let from_table ~db ~table scope =
  fun ~final ~alias () ->
   let scope = scope ~alias in
-  let scope : _ scope =
-    object
-      method query : 'n 'e. (_ -> ('n, 'e) expr) -> ('n, 'e) expr =
-        fun f -> f scope
-    end
+  let rec t =
+    lazy
+      (From_table
+         {
+           db;
+           table;
+           alias;
+           scope =
+             object
+               method query : 'n 'e. (_ -> ('n, 'e) expr) -> ('n, 'e) expr =
+                 fun f ->
+                   let () =
+                     match Lazy.force t with
+                     | From_table t -> t.used <- true
+                     | _ -> ()
+                   in
+                   f scope
+             end;
+           final;
+           used = false;
+         })
   in
-  From_table { db; table; alias; scope; final }
+  Lazy.force t
 
 let rec scope_from_select select : _ scope =
   match select with
@@ -119,40 +139,38 @@ let join from join ~on () =
   let join = join () in
   let scope_join = scope_from_one join in
   let scope = (scope_from from, scope_join) in
-  let on = on scope in
   From_join
     {
       scope;
       kind = `INNER_JOIN;
       from = A_from from;
       join = A_from_one join;
-      on = A_expr on;
+      on = lazy (A_expr (on scope));
     }
 
-let left_join from (join : 'a scope from_one) ~on () =
+let left_join ?(optional = false) from (join : 'a scope from_one) ~on () =
   let from = from () in
   let join = join () in
   let scope_from = scope_from from in
-  let scope_join : _ scope =
+  let scope_join' : _ scope =
     object
       method query : 'n 'e. (_ -> ('n, 'e) expr) -> ('n, 'e) expr =
         fun f -> (scope_from_one join)#query f
     end
   in
-  let on = on (scope_from, scope_join) in
   let scope_join : _ nullable_scope =
     object
       method query : 'n 'e. (_ -> ('n, 'e) expr) -> (null, 'e) expr =
-        fun f -> scope_join#query f
+        fun f -> scope_join'#query f
     end
   in
   From_join
     {
       scope = (scope_from, scope_join);
-      kind = `LEFT_JOIN;
+      kind = (if optional then `LEFT_JOIN_OPTIONAL else `LEFT_JOIN);
       from = A_from from;
       join = A_from_one join;
-      on = A_expr on;
+      on = lazy (A_expr (on (scope_from, scope_join')));
     }
 
 module To_syntax = struct
@@ -236,22 +254,38 @@ module To_syntax = struct
     and from_to_syntax : type a. a from0 -> Syntax.from = function
       | From { from = A_from_one from; _ } ->
           Syntax.make_from (F (from_one_to_syntax from))
-      | From_join
-          {
-            kind;
-            from = A_from from;
-            join = A_from_one join;
-            on = A_expr on;
-            _;
-          } ->
-          Syntax.make_from
-            (F_join
-               {
-                 kind;
-                 from = from_to_syntax from;
-                 join = from_one_to_syntax join;
-                 on;
-               })
+      | From_join { kind; from = A_from from; join = A_from_one join; on; _ }
+        -> (
+          let translate () =
+            let kind =
+              match kind with
+              | `INNER_JOIN -> `INNER_JOIN
+              | `LEFT_JOIN | `LEFT_JOIN_OPTIONAL -> `LEFT_JOIN
+            in
+            let (A_expr on) = Lazy.force on in
+            Syntax.make_from
+              (F_join
+                 {
+                   kind;
+                   from = from_to_syntax from;
+                   join = from_one_to_syntax join;
+                   on;
+                 })
+          in
+          match kind with
+          | `LEFT_JOIN_OPTIONAL ->
+              let should_eliminate =
+                match join with
+                | From_table { used; _ } -> not used
+                | From_select { select; _ } ->
+                    let rec fields = function
+                      | Select { fields; _ } -> fields
+                      | Union { x; y = _ } -> fields x
+                    in
+                    List.is_empty (fields select)
+              in
+              if not should_eliminate then translate () else from_to_syntax from
+          | `LEFT_JOIN | `INNER_JOIN -> translate ())
     in
     Syntax.make_query (select_to_syntax q)
 end

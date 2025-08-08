@@ -93,6 +93,9 @@ let rec from_scope_pattern ?kind from =
         | `LEFT_JOIN ->
             [%pat?
               ([%p from_one_scope_pattern join] : _ Queries.nullable_scope)]
+        | `LEFT_JOIN_OPTIONAL ->
+            [%pat?
+              ([%p from_one_scope_pattern join] : _ Queries.nullable_scope)]
       in
       [%pat? [%p x], [%p y]]
 
@@ -465,6 +468,7 @@ and stage_from from =
         match kind with
         | `INNER_JOIN -> [%expr Queries.join]
         | `LEFT_JOIN -> [%expr Queries.left_join]
+        | `LEFT_JOIN_OPTIONAL -> [%expr Queries.left_join ~optional:true]
       in
       let on =
         pexp_fun ~loc Nolabel None

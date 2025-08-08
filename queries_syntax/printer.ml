@@ -157,6 +157,7 @@ and pp_from from =
         match kind with
         | `INNER_JOIN -> "INNER JOIN"
         | `LEFT_JOIN -> "LEFT JOIN"
+        | `LEFT_JOIN_OPTIONAL -> "LEFT JOIN OPTIONAL"
       in
       group
         (pp_from from ^/^ string join_kind_str ^/^ pp_from_one join

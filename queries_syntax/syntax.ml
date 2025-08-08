@@ -90,7 +90,7 @@ and cluster_name = Cluster_name of id | Cluster_name_param of id
 and fromsyn =
   | F of from_one
   | F_join of {
-      kind : [ `INNER_JOIN | `LEFT_JOIN ];
+      kind : [ `INNER_JOIN | `LEFT_JOIN | `LEFT_JOIN_OPTIONAL ];
       from : from;
       join : from_one;
       on : expr;

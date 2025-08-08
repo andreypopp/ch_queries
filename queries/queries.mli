@@ -85,6 +85,7 @@ val join :
   ('a * 'b scope) from
 
 val left_join :
+  ?optional:bool ->
   'a from ->
   'b scope from_one ->
   on:('a * 'b scope -> (_, bool) expr) ->
