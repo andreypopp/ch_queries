@@ -66,6 +66,47 @@ select from a subquery:
       SELECT users.is_active AS _1, users.x AS _2 FROM public.users AS users) AS q
     WHERE q._1) AS q
 
+select from a subquery (no alias default to "q"):
+  $ ./compile_and_run '
+  > let users = [%q "SELECT q.x AS x FROM (SELECT users.x AS x, users.is_active AS is_active FROM public.users) WHERE q.is_active"];;
+  > let sql, _parse_row = Queries.(query users @@ fun users -> Row.string [%e "users.x"])
+  > let () = print_endline sql;;
+  > '
+  >>> PREPROCESSING
+  let users =
+    Queries.select ()
+      ~from:
+        (Queries.from
+           (Queries.from_select
+              (Queries.select ()
+                 ~from:
+                   (Queries.from
+                      (Database.Public.users ~alias:"users" ~final:false))
+                 ~select:(fun (users : _ Queries.scope) ->
+                   object
+                     method x = users#query (fun users -> users#x)
+                     method is_active = users#query (fun users -> users#is_active)
+                   end))
+              ~alias:"q"))
+      ~select:(fun (q : _ Queries.scope) ->
+        object
+          method x = q#query (fun q -> q#x)
+        end)
+      ~where:(fun (q : _ Queries.scope) -> q#query (fun q -> q#is_active))
+  
+  let sql, _parse_row =
+    let open Queries in
+    query users @@ fun users -> Row.string (users#query (fun users -> users#x))
+  
+  let () = print_endline sql
+  >>> RUNNING
+  SELECT q._1
+  FROM (
+    SELECT q._2 AS _1
+    FROM (
+      SELECT users.is_active AS _1, users.x AS _2 FROM public.users AS users) AS q
+    WHERE q._1) AS q
+
 select from an OCaml value:
   $ ./compile_and_run '
   > let users t = [%q "SELECT q.x FROM ?t AS q WHERE q.is_active"]

@@ -99,6 +99,10 @@ param_splice:
 alias:
     AS id=id { id }
 
+alias_or_q:
+    { make_id $startpos $endpos "q" }
+  | AS id=id { id }
+
 prewhere:
     PREWHERE e=expr { e }
 
@@ -150,9 +154,9 @@ from_one:
     id=param alias=alias? { make_from_one $startpos $endpos (F_value {id; alias = Option.value alias ~default:id}) }
   | db=id DOT table=id alias=alias? final=final?
     { make_from_one $startpos $endpos (F_table { db; table; alias = Option.value alias ~default:table; final = Option.value final ~default:false }) }
-  | LPAREN q=query RPAREN alias=alias
+  | LPAREN q=query RPAREN alias=alias_or_q
     { make_from_one $startpos $endpos (F_select { select = q; alias; cluster_name = None }) }
-  | CLUSTER LPAREN cluster_name=cluster_name COMMA VIEW LPAREN q=query RPAREN RPAREN alias=alias
+  | CLUSTER LPAREN cluster_name=cluster_name COMMA VIEW LPAREN q=query RPAREN RPAREN alias=alias_or_q
     { make_from_one $startpos $endpos (F_select { select = q; alias; cluster_name = Some cluster_name }) }
 
 cluster_name:
