@@ -1,7 +1,7 @@
 test IN expression with subquery:
   $ ./compile_and_run '
-  > let users = [%query "SELECT users.x AS x FROM public.users WHERE users.id IN (SELECT users.id FROM public.users)"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%expr "users.x"]
+  > let users = [%q "SELECT users.x AS x FROM public.users WHERE users.id IN (SELECT users.id FROM public.users)"];;
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -39,8 +39,8 @@ test IN expression with subquery:
 
 test IN expression with expression::
   $ ./compile_and_run '
-  > let users = [%query "SELECT users.x AS x FROM public.users WHERE users.id IN [1, 2]"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%expr "users.x"]
+  > let users = [%q "SELECT users.x AS x FROM public.users WHERE users.id IN [1, 2]"];;
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -68,7 +68,7 @@ test IN expression with expression::
 
 test IN expression with parameter:
   $ ./compile_and_run '
-  > let users ~ids = [%query "SELECT users.x AS x FROM public.users WHERE users.id IN ?ids"];;
+  > let users ~ids = [%q "SELECT users.x AS x FROM public.users WHERE users.id IN ?ids"];;
   > #show users
   > '
   >>> PREPROCESSING

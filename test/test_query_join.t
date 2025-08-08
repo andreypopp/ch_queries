@@ -1,6 +1,6 @@
 select from a JOIN:
   $ ./compile_and_run '
-  > let q = [%query "SELECT u.id, p.name FROM public.users AS u JOIN public.profiles AS p ON u.id = p.user_id WHERE u.is_active"]
+  > let q = [%q "SELECT u.id, p.name FROM public.users AS u JOIN public.profiles AS p ON u.id = p.user_id WHERE u.is_active"]
   > '
   >>> PREPROCESSING
   let q =
@@ -24,7 +24,7 @@ select from a JOIN:
 
 select from a LEFT JOIN:
   $ ./compile_and_run '
-  > let q = [%query "
+  > let q = [%q "
   >   SELECT u.id AS user_id, p.name AS user_name
   >   FROM public.users AS u
   >   LEFT JOIN public.profiles AS p
@@ -56,7 +56,7 @@ select from a LEFT JOIN:
 
 select from an OCaml value with JOIN:
   $ ./compile_and_run '
-  > let q profiles = [%query "
+  > let q profiles = [%q "
   >   SELECT u.id AS user_id, p.name AS user_name
   >   FROM public.users AS u
   >   LEFT JOIN ?profiles AS p
@@ -100,7 +100,7 @@ select from an OCaml value with JOIN:
 
 splicing ocaml values into JOIN-ON:
   $ ./compile_and_run '
-  > let q cond = [%query "
+  > let q cond = [%q "
   >   SELECT 1 as one
   >   FROM public.users AS u
   >   LEFT JOIN public.profiles AS p ON ?cond

@@ -1,7 +1,7 @@
 
 basic form:
   $ ./compile_and_run '
-  > let x users = [%expr "users.x"]
+  > let x users = [%e "users.x"]
   > '
   >>> PREPROCESSING
   let x users = users#query (fun users -> users#x)
@@ -9,7 +9,7 @@ basic form:
 
 function calls of the form `FUNCTION_NAME(..)` resolve to `Queries.Expr.FUNCTION_NAME ..`:
   $ ./compile_and_run '
-  > let x users = [%expr "coalesce(users.x, 1)"]
+  > let x users = [%e "coalesce(users.x, 1)"]
   > '
   >>> PREPROCESSING
   let x users =
@@ -18,7 +18,7 @@ function calls of the form `FUNCTION_NAME(..)` resolve to `Queries.Expr.FUNCTION
 
 AND/OR operators:
   $ ./compile_and_run '
-  > let x users = [%expr "users.is_active OR users.is_deleted AND users.x"]
+  > let x users = [%e "users.is_active OR users.is_deleted AND users.x"]
   > '
   >>> PREPROCESSING
   let x users =
@@ -31,28 +31,28 @@ AND/OR operators:
 
 arrays:
   $ ./compile_and_run '
-  > let x = [%expr "[1,2,3]"]
+  > let x = [%e "[1,2,3]"]
   > '
   >>> PREPROCESSING
   let x = Queries.array [ Queries.int 1; Queries.int 2; Queries.int 3 ]
   >>> RUNNING
 
   $ ./compile_and_run '
-  > let x = [%expr "[]"]
+  > let x = [%e "[]"]
   > '
   >>> PREPROCESSING
   let x = Queries.array []
   >>> RUNNING
 
   $ ./compile_and_run '
-  > let x = [%expr "[toNullable(1)]"]
+  > let x = [%e "[toNullable(1)]"]
   > '
   >>> PREPROCESSING
   let x = Queries.array [ Queries.Expr.toNullable (Queries.int 1) ]
   >>> RUNNING
 
   $ ./compile_and_run '
-  > let x = [%expr "[1, true]"]
+  > let x = [%e "[1, true]"]
   > ' 2>&1 | rg -v File
   >>> PREPROCESSING
   let x = Queries.array [ Queries.int 1; Queries.bool true ]
@@ -64,7 +64,7 @@ arrays:
 
 parameter expressions:
   $ ./compile_and_run '
-  > let x ~param = [%expr "?param"]
+  > let x ~param = [%e "?param"]
   > '
   >>> PREPROCESSING
   let x ~param = param
@@ -72,7 +72,7 @@ parameter expressions:
 
 parameter expressions with type annotation:
   $ ./compile_and_run '
-  > let x ~param = [%expr "?param:String"]
+  > let x ~param = [%e "?param:String"]
   > '
   >>> PREPROCESSING
   let x ~param = (param : (Queries.non_null, string) Queries.expr)
@@ -80,21 +80,21 @@ parameter expressions with type annotation:
 
 parameter expressions with numeric types:
   $ ./compile_and_run '
-  > let x ~param = [%expr "?param:Int32"]
+  > let x ~param = [%e "?param:Int32"]
   > '
   >>> PREPROCESSING
   let x ~param = (param : (Queries.non_null, int Queries.number) Queries.expr)
   >>> RUNNING
 
   $ ./compile_and_run '
-  > let x ~param = [%expr "?param:Int64"]
+  > let x ~param = [%e "?param:Int64"]
   > '
   >>> PREPROCESSING
   let x ~param = (param : (Queries.non_null, int64 Queries.number) Queries.expr)
   >>> RUNNING
 
   $ ./compile_and_run '
-  > let x ~param = [%expr "?param:Float64"]
+  > let x ~param = [%e "?param:Float64"]
   > '
   >>> PREPROCESSING
   let x ~param = (param : (Queries.non_null, float Queries.number) Queries.expr)
@@ -102,14 +102,14 @@ parameter expressions with numeric types:
 
 parameter expressions with nullable types:
   $ ./compile_and_run '
-  > let x ~param = [%expr "?param:Nullable(String)"]
+  > let x ~param = [%e "?param:Nullable(String)"]
   > '
   >>> PREPROCESSING
   let x ~param = (param : (Queries.null, string) Queries.expr)
   >>> RUNNING
 
   $ ./compile_and_run '
-  > let x ~param = [%expr "?param:Nullable(Int32)"]
+  > let x ~param = [%e "?param:Nullable(Int32)"]
   > '
   >>> PREPROCESSING
   let x ~param = (param : (Queries.null, int Queries.number) Queries.expr)
@@ -117,7 +117,7 @@ parameter expressions with nullable types:
 
 parameter expressions with array types:
   $ ./compile_and_run '
-  > let x ~param = [%expr "?param:Array(String)"]
+  > let x ~param = [%e "?param:Array(String)"]
   > '
   >>> PREPROCESSING
   let x ~param =
@@ -126,7 +126,7 @@ parameter expressions with array types:
   >>> RUNNING
 
   $ ./compile_and_run '
-  > let x ~param = [%expr "?param:Array(Int32)"]
+  > let x ~param = [%e "?param:Array(Int32)"]
   > '
   >>> PREPROCESSING
   let x ~param =
@@ -138,7 +138,7 @@ parameter expressions with array types:
 
 parameter expressions with nested complex types:
   $ ./compile_and_run '
-  > let x ~param = [%expr "?param:Array(Nullable(String))"]
+  > let x ~param = [%e "?param:Array(Nullable(String))"]
   > '
   >>> PREPROCESSING
   let x ~param =

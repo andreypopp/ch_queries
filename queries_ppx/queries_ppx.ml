@@ -543,12 +543,12 @@ let expand_typ ~ctxt:_ expr =
   | _ -> Location.raise_errorf "expected a string literal for [%%typ ...]"
 
 let select_extension =
-  Extension.V3.declare "query" Extension.Context.expression
+  Extension.V3.declare "q" Extension.Context.expression
     Ast_pattern.(single_expr_payload __)
     expand_select
 
 let expr_extension =
-  Extension.V3.declare "expr" Extension.Context.expression
+  Extension.V3.declare "e" Extension.Context.expression
     Ast_pattern.(single_expr_payload __)
     expand_expr
 
@@ -558,7 +558,7 @@ let typ_extension =
     expand_typ
 
 let uexpr_extension =
-  Extension.V3.declare "uexpr" Extension.Context.expression
+  Extension.V3.declare "eu" Extension.Context.expression
     Ast_pattern.(single_expr_payload __)
     expand_uexpr
 

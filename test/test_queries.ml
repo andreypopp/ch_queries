@@ -32,17 +32,16 @@ end
 
 [@@@ocaml.warning "-27"]
 
-let ( && ) x y = {%expr|?x AND ?y|}
+let ( && ) x y = {%e|?x AND ?y|}
 
 let users ~condition =
-  {%query|SELECT u.x AS x, u.id AS id FROM public.users as u WHERE ?condition|}
+  {%q|SELECT u.x AS x, u.id AS id FROM public.users as u WHERE ?condition|}
 
 let x =
   let users =
-    users ~condition:(fun u -> {%expr|u.is_active OR true|})
-    |> Queries.from_select
+    users ~condition:(fun u -> {%e|u.is_active OR true|}) |> Queries.from_select
   in
-  {%query|SELECT u.x AS name, p.name as pname
+  {%q|SELECT u.x AS name, p.name as pname
           FROM ?users as u
           LEFT JOIN public.profiles as p
           ON u.id = p.user_id and p.name = 'Alice'
@@ -68,21 +67,21 @@ type 'f stats =
 let select_metric : type t sqlt.
     _ Queries.scope -> (t, sqlt) metric -> (_, sqlt) Queries.expr =
  fun users -> function
-  | Metric_count -> {%expr|count(1)|}
-  | Metric_sum_id -> {%expr|sum(users.id)|}
-  | Metric_true -> {%expr|true|}
+  | Metric_count -> {%e|count(1)|}
+  | Metric_sum_id -> {%e|sum(users.id)|}
+  | Metric_true -> {%e|true|}
 
 (** this function merges metric state into final metric value. *)
 let merge_metric : type a sqlt.
     _ stats Queries.scope -> (a, sqlt) metric -> (_, sqlt) Queries.expr =
- fun stats m -> {%expr|stats.metric(?m)|}
+ fun stats m -> {%e|stats.metric(?{m})|}
 
 (** this function defines how to query/parse a metric from a query. *)
 let query_metric : type t sqlt.
     _ stats Queries.scope -> (t, sqlt) metric -> t Queries.Row.t =
  fun stats m ->
   let open Queries.Row in
-  let metric m = {%expr|stats.metric(?m)|} in
+  let metric m = {%e|stats.metric(?{m})|} in
   match m with
   | Metric_count -> int (metric m)
   | Metric_sum_id -> int (metric m)
@@ -97,11 +96,11 @@ let users_stats =
           select_metric users
       end
     in
-    {%query|SELECT ?select... FROM public.users|} |> Queries.from_select
+    {%q|SELECT ?select... FROM public.users|} |> Queries.from_select
   in
   let select (stats : _ stats Queries.scope) : _ stats =
     object
-      method oops = {%expr|toNullable('hello')|}
+      method oops = {%e|toNullable('hello')|}
 
       method metric : type a sqlt. (a, sqlt) metric -> (_, sqlt) Queries.expr =
         merge_metric stats
@@ -109,9 +108,9 @@ let users_stats =
   in
   let having (stats : _ stats Queries.scope) =
     let is_true = stats#query @@ fun stats -> stats#metric Metric_true in
-    {%expr|?is_true|}
+    {%e|?is_true|}
   in
-  {%query|SELECT ?select... FROM ?stats AS stats HAVING ?having|}
+  {%q|SELECT ?select... FROM ?stats AS stats HAVING ?having|}
 
 let sql, parse_row =
   Queries.query users_stats (fun (stats : _ stats Queries.scope) ->
@@ -119,6 +118,6 @@ let sql, parse_row =
       let+ x = query_metric stats Metric_count
       and+ y = query_metric stats Metric_true
       and+ z = query_metric stats Metric_sum_id
-      and+ z' = bool @@ {%expr|stats.metric(?{Metric_true})|}
-      and+ s = string_opt {%expr|stats.oops|} in
+      and+ z' = bool @@ {%e|stats.metric(?{Metric_true})|}
+      and+ s = string_opt {%e|stats.oops|} in
       (x, y, z, s))

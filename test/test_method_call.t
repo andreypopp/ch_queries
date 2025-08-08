@@ -1,6 +1,6 @@
 Method call syntax:
   $ ./compile_and_run '
-  > let q table = [%expr "table.compute(42, 43)"]
+  > let q table = [%e "table.compute(42, 43)"]
   > '
   >>> PREPROCESSING
   let q table =
@@ -9,7 +9,7 @@ Method call syntax:
 
 Method call in query:
   $ ./compile_and_run '
-  > let q users = [%query "SELECT users.count() FROM ?users"]
+  > let q users = [%q "SELECT users.count() FROM ?users"]
   > '
   >>> PREPROCESSING
   let q users =

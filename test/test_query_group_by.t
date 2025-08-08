@@ -1,7 +1,7 @@
 GROUP BY single column:
   $ ./compile_and_run '
-  > let users = [%query "SELECT users.x AS x FROM public.users GROUP BY users.x"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%expr "users.x"]
+  > let users = [%q "SELECT users.x AS x FROM public.users GROUP BY users.x"];;
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -26,8 +26,8 @@ GROUP BY single column:
 
 GROUP BY multiple columns:
   $ ./compile_and_run '
-  > let users = [%query "SELECT users.x AS x FROM public.users GROUP BY users.x, users.id"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%expr "users.x"]
+  > let users = [%q "SELECT users.x AS x FROM public.users GROUP BY users.x, users.id"];;
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -58,7 +58,7 @@ GROUP BY multiple columns:
 
 GROUP BY with a parameter:
   $ ./compile_and_run '
-  > let users ~dimension = [%query "SELECT users.x AS x FROM public.users GROUP BY users.id, ?dimension..."];;
+  > let users ~dimension = [%q "SELECT users.x AS x FROM public.users GROUP BY users.id, ?dimension..."];;
   > #show users;;
   > '
   >>> PREPROCESSING

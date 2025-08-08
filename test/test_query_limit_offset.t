@@ -1,7 +1,7 @@
 LIMIT with literal value:
   $ ./compile_and_run '
-  > let users = [%query "SELECT users.x FROM public.users LIMIT 1"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%expr "users._1"]
+  > let users = [%q "SELECT users.x FROM public.users LIMIT 1"];;
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users._1"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -24,7 +24,7 @@ LIMIT with literal value:
 
 LIMIT with parameter:
   $ ./compile_and_run '
-  > let users ~n = [%query "SELECT users.x FROM public.users LIMIT ?n"];;
+  > let users ~n = [%q "SELECT users.x FROM public.users LIMIT ?n"];;
   > #show users;;
   > '
   >>> PREPROCESSING
@@ -49,8 +49,8 @@ LIMIT with parameter:
 
 OFFSET with literal value:
   $ ./compile_and_run '
-  > let users = [%query "SELECT users.x FROM public.users OFFSET 1"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%expr "users._1"]
+  > let users = [%q "SELECT users.x FROM public.users OFFSET 1"];;
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users._1"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -73,7 +73,7 @@ OFFSET with literal value:
 
 OFFSET with parameter:
   $ ./compile_and_run '
-  > let users ~n = [%query "SELECT users.x FROM public.users OFFSET ?n"];;
+  > let users ~n = [%q "SELECT users.x FROM public.users OFFSET ?n"];;
   > #show users;;
   > '
   >>> PREPROCESSING

@@ -1,7 +1,7 @@
 basic form:
   $ ./compile_and_run '
-  > let users = [%query "SELECT users.x AS x FROM public.users WHERE users.is_active"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%expr "users.x"]
+  > let users = [%q "SELECT users.x AS x FROM public.users WHERE users.is_active"];;
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -27,8 +27,8 @@ basic form:
 
 select from a subquery:
   $ ./compile_and_run '
-  > let users = [%query "SELECT q.x AS x FROM (SELECT users.x AS x, users.is_active AS is_active FROM public.users) AS q WHERE q.is_active"];;
-  > let sql, _parse_row = Queries.(query users @@ fun users -> Row.string [%expr "users.x"])
+  > let users = [%q "SELECT q.x AS x FROM (SELECT users.x AS x, users.is_active AS is_active FROM public.users) AS q WHERE q.is_active"];;
+  > let sql, _parse_row = Queries.(query users @@ fun users -> Row.string [%e "users.x"])
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -68,7 +68,7 @@ select from a subquery:
 
 select from an OCaml value:
   $ ./compile_and_run '
-  > let users t = [%query "SELECT q.x FROM ?t AS q WHERE q.is_active"]
+  > let users t = [%q "SELECT q.x FROM ?t AS q WHERE q.is_active"]
   > let (_ : _ Queries.select) = users (Database.Public.users ~final:false)
   > '
   >>> PREPROCESSING
@@ -86,7 +86,7 @@ select from an OCaml value:
 
 splicing ocaml values into WHERE:
   $ ./compile_and_run '
-  > let users ~where = [%query "SELECT users.x AS x FROM public.users WHERE ?where"];;
+  > let users ~where = [%q "SELECT users.x AS x FROM public.users WHERE ?where"];;
   > #show users
   > '
   >>> PREPROCESSING
@@ -111,7 +111,7 @@ splicing ocaml values into WHERE:
 
 splicing ocaml values into WHERE:
   $ ./compile_and_run '
-  > let users ~where = [%query "SELECT users.x AS x FROM public.users WHERE ?where:Bool"];;
+  > let users ~where = [%q "SELECT users.x AS x FROM public.users WHERE ?where:Bool"];;
   > #show users
   > '
   >>> PREPROCESSING
@@ -137,7 +137,7 @@ splicing ocaml values into WHERE:
 
 splicing ocaml values into SELECT:
   $ ./compile_and_run '
-  > let users ~what = [%query "SELECT ?what AS field FROM public.users"];;
+  > let users ~what = [%q "SELECT ?what AS field FROM public.users"];;
   > #show users
   > '
   >>> PREPROCESSING
@@ -160,7 +160,7 @@ splicing ocaml values into SELECT:
 
 splicing ocaml values into SELECT as scope:
   $ ./compile_and_run '
-  > let users ~what = [%query "SELECT ?what... FROM public.users"];;
+  > let users ~what = [%q "SELECT ?what... FROM public.users"];;
   > #show users
   > '
   >>> PREPROCESSING
@@ -180,8 +180,8 @@ splicing ocaml values into SELECT as scope:
 
 select from table with FINAL keyword:
   $ ./compile_and_run '
-  > let users = [%query "SELECT users.x AS x FROM public.users AS users FINAL WHERE users.is_active"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%expr "users.x"]
+  > let users = [%q "SELECT users.x AS x FROM public.users AS users FINAL WHERE users.is_active"];;
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -208,8 +208,8 @@ select from table with FINAL keyword:
 
 select with PREWHERE clause:
   $ ./compile_and_run '
-  > let users = [%query "SELECT users.x AS x FROM public.users PREWHERE users.is_active WHERE users.id = 10"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%expr "users.x"]
+  > let users = [%q "SELECT users.x AS x FROM public.users PREWHERE users.is_active WHERE users.id = 10"];;
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -240,8 +240,8 @@ select with PREWHERE clause:
 
 expressions referenced multiple times result in a single column added to teh subquery:
   $ ./compile_and_run '
-  > let users = [%query "SELECT q.is_active AS is_active FROM (SELECT users.is_active AS is_active FROM public.users) AS q WHERE q.is_active"];;
-  > let sql, _parse_row = Queries.(query users @@ fun users -> Row.bool [%expr "users.is_active"])
+  > let users = [%q "SELECT q.is_active AS is_active FROM (SELECT users.is_active AS is_active FROM public.users) AS q WHERE q.is_active"];;
+  > let sql, _parse_row = Queries.(query users @@ fun users -> Row.bool [%e "users.is_active"])
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING

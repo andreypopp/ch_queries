@@ -1,12 +1,12 @@
 optional join with a table (elimination):
   $ ./compile_and_run '
-  > let q = {%query|
+  > let q = {%q|
   >   SELECT u.id AS user_id, p.name AS user_name
   >   FROM public.users AS u
   >   LEFT JOIN OPTIONAL public.profiles AS p
   >   ON u.id = p.user_id
   > |};;
-  > let sql, _parse_row = Queries.(query q @@ fun q -> Row.int [%expr "q.user_id"]);;
+  > let sql, _parse_row = Queries.(query q @@ fun q -> Row.int [%e "q.user_id"]);;
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -36,13 +36,13 @@ optional join with a table (elimination):
 
 optional join with a table (in use):
   $ ./compile_and_run '
-  > let q = {%query|
+  > let q = {%q|
   >   SELECT u.id AS user_id, p.name AS user_name
   >   FROM public.users AS u
   >   LEFT JOIN OPTIONAL public.profiles AS p
   >   ON u.id = p.user_id
   > |};;
-  > let sql, _parse_row = Queries.(query q @@ fun q -> Row.string_opt {%expr|q.user_name|});;
+  > let sql, _parse_row = Queries.(query q @@ fun q -> Row.string_opt {%e|q.user_name|});;
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -76,13 +76,13 @@ optional join with a table (in use):
 
 optional join with a subquery (elimination):
   $ ./compile_and_run '
-  > let q = {%query|
+  > let q = {%q|
   >   SELECT u.id AS user_id, p.name AS user_name
   >   FROM public.users AS u
   >   LEFT JOIN OPTIONAL (SELECT p.user_id AS user_id, p.name AS name FROM public.profiles AS p) AS p
   >   ON u.id = p.user_id
   > |};;
-  > let sql, _parse_row = Queries.(query q @@ fun q -> Row.int [%expr "q.user_id"]);;
+  > let sql, _parse_row = Queries.(query q @@ fun q -> Row.int [%e "q.user_id"]);;
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -122,13 +122,13 @@ optional join with a subquery (elimination):
 
 optional join with a subquery (in use):
   $ ./compile_and_run '
-  > let q = {%query|
+  > let q = {%q|
   >   SELECT u.id AS user_id, p.name AS user_name
   >   FROM public.users AS u
   >   LEFT JOIN OPTIONAL (SELECT p.user_id AS user_id, p.name AS name FROM public.profiles AS p) AS p
   >   ON u.id = p.user_id
   > |};;
-  > let sql, _parse_row = Queries.(query q @@ fun q -> Row.string_opt [%expr "q.user_name"]);;
+  > let sql, _parse_row = Queries.(query q @@ fun q -> Row.string_opt [%e "q.user_name"]);;
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING

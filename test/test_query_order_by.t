@@ -1,7 +1,7 @@
 ORDER BY single column (default ASC):
   $ ./compile_and_run '
-  > let users = [%query "SELECT users.x FROM public.users ORDER BY users.x"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%expr "users._1"]
+  > let users = [%q "SELECT users.x FROM public.users ORDER BY users.x"];;
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users._1"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -27,8 +27,8 @@ ORDER BY single column (default ASC):
 
 ORDER BY with DESC:
   $ ./compile_and_run '
-  > let users = [%query "SELECT users.x FROM public.users ORDER BY users.x DESC"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%expr "users._1"]
+  > let users = [%q "SELECT users.x FROM public.users ORDER BY users.x DESC"];;
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users._1"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -55,8 +55,8 @@ ORDER BY with DESC:
 
 ORDER BY multiple columns:
   $ ./compile_and_run '
-  > let users = [%query "SELECT users.x FROM public.users ORDER BY users.x, users.id DESC"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%expr "users._1"]
+  > let users = [%q "SELECT users.x FROM public.users ORDER BY users.x, users.id DESC"];;
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users._1"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -88,7 +88,7 @@ ORDER BY multiple columns:
 
 ORDER BY with a parameter:
   $ ./compile_and_run '
-  > let users ~ord = [%query "SELECT users.x FROM public.users ORDER BY ?ord..."];;
+  > let users ~ord = [%q "SELECT users.x FROM public.users ORDER BY ?ord..."];;
   > #show users;;
   > '
   >>> PREPROCESSING

@@ -1,7 +1,7 @@
 test cluster syntax parsing:
   $ ./compile_and_run '
-  > let users = [%query "SELECT users.x AS x FROM cluster(my_cluster, view(SELECT users.x AS x, users.is_active AS is_active FROM public.users)) AS users WHERE users.is_active"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%expr "users.x"]
+  > let users = [%q "SELECT users.x AS x FROM cluster(my_cluster, view(SELECT users.x AS x, users.is_active AS is_active FROM public.users)) AS users WHERE users.is_active"];;
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -42,8 +42,8 @@ test cluster syntax parsing:
 
 test parameterized cluster syntax:
   $ ./compile_and_run '
-  > let users cluster_name = [%query "SELECT users.x AS x FROM cluster(?cluster_name, view(SELECT users.x AS x, users.is_active AS is_active FROM public.users)) AS users WHERE users.is_active"];;
-  > let sql, _parse_row = Queries.query (users "test_cluster") @@ fun users -> Queries.Row.string [%expr "users.x"]
+  > let users cluster_name = [%q "SELECT users.x AS x FROM cluster(?cluster_name, view(SELECT users.x AS x, users.is_active AS is_active FROM public.users)) AS users WHERE users.is_active"];;
+  > let sql, _parse_row = Queries.query (users "test_cluster") @@ fun users -> Queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING

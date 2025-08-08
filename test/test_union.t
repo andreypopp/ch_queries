@@ -1,9 +1,9 @@
 Programmatic union
   $ ./compile_and_run '
-  > let users1 = [%query "SELECT 1 AS x FROM public.users"];;
-  > let users2 = [%query "SELECT 2 AS x FROM public.users"];;
-  > let users = [%query "?users1 UNION ?users2"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.int [%expr "users.x"]
+  > let users1 = [%q "SELECT 1 AS x FROM public.users"];;
+  > let users2 = [%q "SELECT 2 AS x FROM public.users"];;
+  > let users = [%q "?users1 UNION ?users2"];;
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.int [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -39,8 +39,8 @@ Programmatic union
 
 UNION syntax:
   $ ./compile_and_run '
-  > let users = [%query "SELECT 1 AS x FROM public.users UNION SELECT 2 AS x FROM public.users"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.int [%expr "users.x"]
+  > let users = [%q "SELECT 1 AS x FROM public.users UNION SELECT 2 AS x FROM public.users"];;
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.int [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
