@@ -1,6 +1,6 @@
 # queries
 
-A library to generate SQL queries in a typesafe way with OCaml.
+A library to generate ClickHouse SQL queries in a typesafe way with OCaml.
 
 ## queries.ppx
 
@@ -23,10 +23,12 @@ let users ~where = {%query|
 |}
 ```
 
-There's also expressions syntax:
-
+There's also expressions syntax, so one can define expressions that can be
+spliced into a query later:
 ```ocaml
 let ok users = {%expr|users.is_active|}
 
 let using_functions users = {%expr|farmHash(users.name)|}
 ```
+
+For now that's all, see `tests/` directory for more features and examples.
