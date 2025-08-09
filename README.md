@@ -23,6 +23,8 @@ let users ~where = {%q|
 |}
 ```
 
+## `%e` - expressions
+
 There's also expressions syntax, so one can define expressions that can be
 spliced into a query later:
 ```ocaml
@@ -30,5 +32,16 @@ let ok users = {%e|users.is_active|}
 
 let using_functions users = {%e|farmHash(users.name)|}
 ```
+
+## `%eu` - expressions, unsafely
+
+Sometimes you need to construct an expression using syntax which is not
+supported by queries.ppx. In this case you can use the `%eu` syntax:
+```ocaml
+let expr = {%eu|users.name || ' ' || users.surname|}
+```
+
+Such syntax recognizes only `q.name` and `?param` constructs and passes the rest
+as-is.
 
 For now that's all, see `tests/` directory for more features and examples.

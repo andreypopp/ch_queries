@@ -5,6 +5,7 @@
 
   let string_of_token : Uparser.token -> string = function
     | Uparser.PARAM s -> Printf.sprintf "PARAM(%s)" s
+    | Uparser.COLUMN (x, y) -> Printf.sprintf "COLUMN(%s %s)" x y
     | Uparser.SQL s -> Printf.sprintf "SQL(%s)" s
     | Uparser.EOF -> "EOF"
 }
@@ -17,11 +18,12 @@ let id_char = letter | digit | '_'
 let id = (letter | '_') id_char*
 
 rule token = parse
-  | whitespace+         { token lexbuf }
-  | newline             { Lexing.new_line lexbuf; token lexbuf }
-  | "?" (id as param)   { PARAM param }
-  | eof                 { EOF }
-  | _ as c              { 
+  | whitespace+             { token lexbuf }
+  | newline                 { Lexing.new_line lexbuf; token lexbuf }
+  | "?" (id as param)       { PARAM param }
+  | (id as x) "." (id as y) { COLUMN (x, y) }
+  | eof                     { EOF }
+  | _ as c                  { 
     (* Collect SQL fragment starting from this character *)
     let lex_start_p = Lexing.lexeme_start_p lexbuf in
     let buf = Buffer.create 32 in
@@ -35,6 +37,13 @@ and sql_fragment buf = parse
     {
     (* Put back the parameter token for next parsing *)
     let len = String.length ("?" ^ param) in
+    lexbuf.Lexing.lex_curr_pos <- lexbuf.Lexing.lex_curr_pos - len;
+    Buffer.contents buf
+    }
+  | (id as x) "." (id as y) 
+    {
+    (* Put back the parameter token for next parsing *)
+    let len = String.length (x ^ "." ^ y) in
     lexbuf.Lexing.lex_curr_pos <- lexbuf.Lexing.lex_curr_pos - len;
     Buffer.contents buf
     }

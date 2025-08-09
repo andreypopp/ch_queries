@@ -6,54 +6,41 @@ let set_position lexbuf loc =
   Lexing.set_position lexbuf
     { loc.Location.loc_start with pos_cnum = loc.Location.loc_start.pos_cnum }
 
-let raise_parse_errorf ?msg lexbuf =
+let raise_parse_errorf ?msg name lexbuf =
   let loc_start = Lexing.lexeme_start_p lexbuf in
   let loc_end = Lexing.lexeme_end_p lexbuf in
   let loc = { Location.loc_start; loc_end; loc_ghost = false } in
   match msg with
-  | None -> Location.raise_errorf ~loc "%%query: Parse error"
-  | Some msg -> Location.raise_errorf ~loc "%%query: Parse error: %s" msg
+  | None -> Location.raise_errorf ~loc "%%%s: parse error" name
+  | Some msg -> Location.raise_errorf ~loc "%%%s: parse error: %s" name msg
 
 let parse_query ~loc s =
   let lexbuf = Lexing.from_string s in
   set_position lexbuf loc;
   try Parser.a_query Lexer.token lexbuf with
-  | Parser.Error -> raise_parse_errorf lexbuf
-  | Lexer.Error msg -> raise_parse_errorf ~msg lexbuf
+  | Parser.Error -> raise_parse_errorf "q" lexbuf
+  | Lexer.Error msg -> raise_parse_errorf ~msg "q" lexbuf
 
 let parse_expr ~loc s =
   let lexbuf = Lexing.from_string s in
   set_position lexbuf loc;
-  try Parser.a_expr Lexer.token lexbuf
-  with exn ->
-    let error_loc =
-      let offset = lexbuf.lex_curr_pos in
-      let start =
-        {
-          loc.Location.loc_start with
-          pos_cnum = loc.Location.loc_start.pos_cnum + offset;
-        }
-      in
-      { Location.loc_start = start; loc_end = start; loc_ghost = false }
-    in
-    let msg =
-      Printf.sprintf "Failed to parse expression: %s" (Printexc.to_string exn)
-    in
-    Location.Error.raise (Location.Error.make ~loc:error_loc ~sub:[] msg)
+  try Parser.a_expr Lexer.token lexbuf with
+  | Parser.Error -> raise_parse_errorf "e" lexbuf
+  | Lexer.Error msg -> raise_parse_errorf ~msg "e" lexbuf
 
 let parse_typ ~loc s =
   let lexbuf = Lexing.from_string s in
   set_position lexbuf loc;
   try Parser.a_typ Lexer.token lexbuf with
-  | Parser.Error -> raise_parse_errorf lexbuf ~msg:"type parse error"
-  | Lexer.Error msg -> raise_parse_errorf ~msg lexbuf
+  | Parser.Error -> raise_parse_errorf "t" lexbuf
+  | Lexer.Error msg -> raise_parse_errorf "t" ~msg lexbuf
 
 let parse_uexpr ~loc s =
   let lexbuf = Lexing.from_string s in
   set_position lexbuf loc;
   try Uparser.a_uexpr Ulexer.token lexbuf with
-  | Uparser.Error -> raise_parse_errorf lexbuf ~msg:"uexpr parse error"
-  | Ulexer.Error msg -> raise_parse_errorf ~msg lexbuf
+  | Uparser.Error -> raise_parse_errorf "eu" lexbuf
+  | Ulexer.Error msg -> raise_parse_errorf "eu" ~msg lexbuf
 
 let to_location ({ loc = { start_pos; end_pos }; _ } : _ Syntax.node) : location
     =
@@ -518,21 +505,21 @@ let expand_select ~ctxt:_ expr =
   | Pexp_constant (Pconst_string (txt, loc, _)) ->
       let query = parse_query ~loc txt in
       stage_query query
-  | _ -> Location.raise_errorf "expected a string literal for the '%%query"
+  | _ -> Location.raise_errorf "expected a string literal for the '%%q"
 
 let expand_expr ~ctxt:_ expr =
   match expr.pexp_desc with
   | Pexp_constant (Pconst_string (txt, loc, _)) ->
       let expr = parse_expr ~loc txt in
       stage_expr ~from:None expr
-  | _ -> Location.raise_errorf "expected a string literal for the '%%expr'"
+  | _ -> Location.raise_errorf "expected a string literal for the '%%e"
 
 let expand_uexpr ~ctxt:_ expr =
   match expr.pexp_desc with
   | Pexp_constant (Pconst_string (txt, loc, _)) ->
       let expr = parse_uexpr ~loc txt in
       stage_expr ~from:None expr
-  | _ -> Location.raise_errorf "expected a string literal for the '%%uexpr'"
+  | _ -> Location.raise_errorf "expected a string literal for the '%%eu"
 
 let expand_typ ~ctxt:_ expr =
   match expr.pexp_desc with
@@ -540,7 +527,7 @@ let expand_typ ~ctxt:_ expr =
       let typ = parse_typ ~loc txt in
       let n, t = typ_to_ocaml_type ~loc typ in
       [%type: ([%t n], [%t t]) Queries.expr]
-  | _ -> Location.raise_errorf "expected a string literal for [%%typ ...]"
+  | _ -> Location.raise_errorf "expected a string literal for [%%t ...]"
 
 let select_extension =
   Extension.V3.declare "q" Extension.Context.expression
@@ -553,7 +540,7 @@ let expr_extension =
     expand_expr
 
 let typ_extension =
-  Extension.V3.declare "typ" Extension.Context.core_type
+  Extension.V3.declare "t" Extension.Context.core_type
     Ast_pattern.(single_expr_payload __)
     expand_typ
 

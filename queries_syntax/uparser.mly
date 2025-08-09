@@ -8,6 +8,7 @@
   let make_expr start_pos end_pos node = make_expr ~loc:(make_loc start_pos end_pos) node
 %}
 
+%token <string * string> COLUMN
 %token <string> PARAM
 %token <string> SQL
 %token EOF
@@ -35,6 +36,12 @@ uexpr_item:
     param=PARAM { 
       let id = make_id $startpos $endpos param in
       make_expr $startpos $endpos (E_param (id, None)) 
+    }
+  | col=COLUMN { 
+      let x, y = col in
+      let x = make_id $startpos $endpos x in
+      let y = make_id $startpos $endpos y in
+      make_expr $startpos $endpos (E_col (x, y)) 
     }
   | sql=SQL { 
       let sql = make_id $startpos $endpos sql in

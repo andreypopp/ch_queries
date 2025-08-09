@@ -2,23 +2,23 @@ Test ClickHouse type syntax expansion
 
   $ ./compile_and_run '
   > (* Test basic types *)
-  > type test_string = [%typ "String"]
-  > type test_int32 = [%typ "Int32"] 
-  > type test_uint32 = [%typ "UInt32"]
-  > type test_int64 = [%typ "Int64"]
-  > type test_uint64 = [%typ "UInt64"]
-  > type test_float32 = [%typ "Float32"]
+  > type test_string = [%t "String"]
+  > type test_int32 = [%t "Int32"] 
+  > type test_uint32 = [%t "UInt32"]
+  > type test_int64 = [%t "Int64"]
+  > type test_uint64 = [%t "UInt64"]
+  > type test_float32 = [%t "Float32"]
   > 
   > (* Test nullable types *)
-  > type test_nullable_string = [%typ "Nullable(String)"]
-  > type test_nullable_int32 = [%typ "Nullable(Int32)"]
+  > type test_nullable_string = [%t "Nullable(String)"]
+  > type test_nullable_int32 = [%t "Nullable(Int32)"]
   > 
   > (* Test array types *)
-  > type test_array_string = [%typ "Array(String)"]
-  > type test_array_nullable_string = [%typ "Array(Nullable(String))"]
+  > type test_array_string = [%t "Array(String)"]
+  > type test_array_nullable_string = [%t "Array(Nullable(String))"]
   > 
   > (* Test nested types *)
-  > type test_nullable_array_nullable_string = [%typ "Nullable(Array(Nullable(String)))"]
+  > type test_nullable_array_nullable_string = [%t "Nullable(Array(Nullable(String)))"]
   > '
   >>> PREPROCESSING
   type test_string = (Queries.non_null, string) Queries.expr
