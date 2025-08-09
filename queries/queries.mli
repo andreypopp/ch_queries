@@ -174,6 +174,8 @@ module Row : sig
   val bool_opt : ([< null ], bool) expr -> bool option t
   val int : (non_null, int number) expr -> int t
   val int_opt : ([< null ], int number) expr -> int option t
+  val int64 : (non_null, int64 number) expr -> int64 t
+  val int64_opt : ([< null ], int64 number) expr -> int64 option t
   val float : (non_null, float number) expr -> float t
   val float_opt : ([< null ], float number) expr -> float option t
 

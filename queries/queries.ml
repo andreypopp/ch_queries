@@ -463,6 +463,14 @@ module Row = struct
     | `Int i -> i
     | _ -> parse_error "expected an integer"
 
+  let int64_of_json = function
+    | `Int i -> Int64.of_int i
+    | `String s -> (
+        match Int64.of_string_opt s with
+        | Some i -> i
+        | None -> parse_error "expected an integer")
+    | _ -> parse_error "expected an integer"
+
   let float_of_json = function
     | `Float f -> f
     | _ -> parse_error "expected a float"
@@ -489,6 +497,8 @@ module Row = struct
   let bool_opt expr = Row_col_opt (expr, bool_of_json)
   let int expr = Row_col_number (expr, int_of_json)
   let int_opt expr = Row_col_number_opt (expr, int_of_json)
+  let int64 expr = Row_col_number (expr, int64_of_json)
+  let int64_opt expr = Row_col_number_opt (expr, int64_of_json)
   let float expr = Row_col_number (expr, float_of_json)
   let float_opt expr = Row_col_number_opt (expr, float_of_json)
 
