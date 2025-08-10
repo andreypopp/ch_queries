@@ -1,5 +1,7 @@
 # ch_queries
 
+**WARNING: EXPERIMENTAL, DO NOT USE**
+
 A library to generate ClickHouse SQL queries in a typesafe way with OCaml.
 
 ## ch_queries.ppx
