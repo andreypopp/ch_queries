@@ -4,7 +4,8 @@ Method call syntax:
   > '
   >>> PREPROCESSING
   let q table =
-    table#query (fun table -> table#compute (Queries.int 42) (Queries.int 43))
+    table#query (fun table ->
+        table#compute (Ch_queries.int 42) (Ch_queries.int 43))
   >>> RUNNING
 
 Method call in query:
@@ -13,9 +14,9 @@ Method call in query:
   > '
   >>> PREPROCESSING
   let q users =
-    Queries.select ()
-      ~from:(Queries.from (users ~alias:"users"))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (users ~alias:"users"))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method _1 = users#query (fun users -> users#count)
         end)

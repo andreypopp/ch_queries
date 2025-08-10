@@ -1,0 +1,6 @@
+(library
+ (name ch_queries)
+ (public_name ch_queries)
+ (flags
+  (:standard -open ContainersLabels))
+ (libraries containers ch_queries.syntax))

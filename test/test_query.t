@@ -1,23 +1,23 @@
 basic form:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x AS x FROM public.users WHERE users.is_active"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun users -> Ch_queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
   let users =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
         end)
-      ~where:(fun (users : _ Queries.scope) ->
+      ~where:(fun (users : _ Ch_queries.scope) ->
         users#query (fun users -> users#is_active))
   
   let sql, _parse_row =
-    Queries.query users @@ fun users ->
-    Queries.Row.string (users#query (fun users -> users#x))
+    Ch_queries.query users @@ fun users ->
+    Ch_queries.Row.string (users#query (fun users -> users#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -28,23 +28,23 @@ basic form:
 unqualified columns are resolved if possible:
   $ ./compile_and_run '
   > let users = [%q "SELECT x AS x FROM public.users WHERE is_active"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun users -> Ch_queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
   let users =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
         end)
-      ~where:(fun (users : _ Queries.scope) ->
+      ~where:(fun (users : _ Ch_queries.scope) ->
         users#query (fun users -> users#is_active))
   
   let sql, _parse_row =
-    Queries.query users @@ fun users ->
-    Queries.Row.string (users#query (fun users -> users#x))
+    Ch_queries.query users @@ fun users ->
+    Ch_queries.Row.string (users#query (fun users -> users#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -55,7 +55,7 @@ unqualified columns are resolved if possible:
 otherwise, an error is raised:
   $ ./compile_and_run '
   > let users = [%q "SELECT x AS x FROM public.users JOIN public.users AS u2 ON users.id = u2.id"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun users -> Ch_queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -69,33 +69,33 @@ otherwise, an error is raised:
 select from a subquery:
   $ ./compile_and_run '
   > let users = [%q "SELECT q.x AS x FROM (SELECT users.x AS x, users.is_active AS is_active FROM public.users) AS q WHERE q.is_active"];;
-  > let sql, _parse_row = Queries.(query users @@ fun users -> Row.string [%e "users.x"])
+  > let sql, _parse_row = Ch_queries.(query users @@ fun users -> Row.string [%e "users.x"])
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
   let users =
-    Queries.select ()
+    Ch_queries.select ()
       ~from:
-        (Queries.from
-           (Queries.from_select
-              (Queries.select ()
+        (Ch_queries.from
+           (Ch_queries.from_select
+              (Ch_queries.select ()
                  ~from:
-                   (Queries.from
+                   (Ch_queries.from
                       (Database.Public.users ~alias:"users" ~final:false))
-                 ~select:(fun (users : _ Queries.scope) ->
+                 ~select:(fun (users : _ Ch_queries.scope) ->
                    object
                      method x = users#query (fun users -> users#x)
                      method is_active = users#query (fun users -> users#is_active)
                    end))
               ~alias:"q"))
-      ~select:(fun (q : _ Queries.scope) ->
+      ~select:(fun (q : _ Ch_queries.scope) ->
         object
           method x = q#query (fun q -> q#x)
         end)
-      ~where:(fun (q : _ Queries.scope) -> q#query (fun q -> q#is_active))
+      ~where:(fun (q : _ Ch_queries.scope) -> q#query (fun q -> q#is_active))
   
   let sql, _parse_row =
-    let open Queries in
+    let open Ch_queries in
     query users @@ fun users -> Row.string (users#query (fun users -> users#x))
   
   let () = print_endline sql
@@ -110,33 +110,33 @@ select from a subquery:
 select from a subquery (no alias default to "q"):
   $ ./compile_and_run '
   > let users = [%q "SELECT q.x AS x FROM (SELECT users.x AS x, users.is_active AS is_active FROM public.users) WHERE q.is_active"];;
-  > let sql, _parse_row = Queries.(query users @@ fun users -> Row.string [%e "users.x"])
+  > let sql, _parse_row = Ch_queries.(query users @@ fun users -> Row.string [%e "users.x"])
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
   let users =
-    Queries.select ()
+    Ch_queries.select ()
       ~from:
-        (Queries.from
-           (Queries.from_select
-              (Queries.select ()
+        (Ch_queries.from
+           (Ch_queries.from_select
+              (Ch_queries.select ()
                  ~from:
-                   (Queries.from
+                   (Ch_queries.from
                       (Database.Public.users ~alias:"users" ~final:false))
-                 ~select:(fun (users : _ Queries.scope) ->
+                 ~select:(fun (users : _ Ch_queries.scope) ->
                    object
                      method x = users#query (fun users -> users#x)
                      method is_active = users#query (fun users -> users#is_active)
                    end))
               ~alias:"q"))
-      ~select:(fun (q : _ Queries.scope) ->
+      ~select:(fun (q : _ Ch_queries.scope) ->
         object
           method x = q#query (fun q -> q#x)
         end)
-      ~where:(fun (q : _ Queries.scope) -> q#query (fun q -> q#is_active))
+      ~where:(fun (q : _ Ch_queries.scope) -> q#query (fun q -> q#is_active))
   
   let sql, _parse_row =
-    let open Queries in
+    let open Ch_queries in
     query users @@ fun users -> Row.string (users#query (fun users -> users#x))
   
   let () = print_endline sql
@@ -155,19 +155,20 @@ select from an OCaml value (parameter syntax):
   > '
   >>> PREPROCESSING
   let users t =
-    Queries.select ()
-      ~from:(Queries.from (t ~alias:"q"))
-      ~select:(fun (q : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (t ~alias:"q"))
+      ~select:(fun (q : _ Ch_queries.scope) ->
         object
           method x = q#query (fun q -> q#x)
         end)
-      ~where:(fun (q : _ Queries.scope) -> q#query (fun q -> q#is_active))
+      ~where:(fun (q : _ Ch_queries.scope) -> q#query (fun q -> q#is_active))
   >>> RUNNING
   val users :
     (alias:string ->
-     < is_active : ('a, bool) Queries.expr; x : ('b, 'c) Queries.expr; .. >
-     Queries.scope Queries.from_one) ->
-    < x : ('b, 'c) Queries.expr > Queries.scope Queries.select
+     < is_active : ('a, bool) Ch_queries.expr; x : ('b, 'c) Ch_queries.expr;
+       .. >
+     Ch_queries.scope Ch_queries.from_one) ->
+    < x : ('b, 'c) Ch_queries.expr > Ch_queries.scope Ch_queries.select
 
 select from an OCaml value (id syntax):
   $ ./compile_and_run '
@@ -176,19 +177,20 @@ select from an OCaml value (id syntax):
   > '
   >>> PREPROCESSING
   let users t =
-    Queries.select ()
-      ~from:(Queries.from (t ~alias:"t"))
-      ~select:(fun (t : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (t ~alias:"t"))
+      ~select:(fun (t : _ Ch_queries.scope) ->
         object
           method x = t#query (fun t -> t#x)
         end)
-      ~where:(fun (t : _ Queries.scope) -> t#query (fun t -> t#is_active))
+      ~where:(fun (t : _ Ch_queries.scope) -> t#query (fun t -> t#is_active))
   >>> RUNNING
   val users :
     (alias:string ->
-     < is_active : ('a, bool) Queries.expr; x : ('b, 'c) Queries.expr; .. >
-     Queries.scope Queries.from_one) ->
-    < x : ('b, 'c) Queries.expr > Queries.scope Queries.select
+     < is_active : ('a, bool) Ch_queries.expr; x : ('b, 'c) Ch_queries.expr;
+       .. >
+     Ch_queries.scope Ch_queries.from_one) ->
+    < x : ('b, 'c) Ch_queries.expr > Ch_queries.scope Ch_queries.select
 
 splicing ocaml values into WHERE:
   $ ./compile_and_run '
@@ -197,23 +199,24 @@ splicing ocaml values into WHERE:
   > '
   >>> PREPROCESSING
   let users ~where =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
         end)
-      ~where:(fun (users : _ Queries.scope) -> where users)
+      ~where:(fun (users : _ Ch_queries.scope) -> where users)
   >>> RUNNING
   val users :
-    where:(< id : (Queries.non_null, int Queries.number) Queries.expr;
-             is_active : (Queries.non_null, bool) Queries.expr;
-             x : (Queries.non_null, string) Queries.expr;
-             xs : (Queries.non_null, (Queries.non_null, string) Queries.array)
-                  Queries.expr >
-           Queries.scope -> ('a, bool) Queries.expr) ->
-    < x : (Queries.non_null, string) Queries.expr > Queries.scope
-    Queries.select
+    where:(< id : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr;
+             is_active : (Ch_queries.non_null, bool) Ch_queries.expr;
+             x : (Ch_queries.non_null, string) Ch_queries.expr;
+             xs : (Ch_queries.non_null,
+                   (Ch_queries.non_null, string) Ch_queries.array)
+                  Ch_queries.expr >
+           Ch_queries.scope -> ('a, bool) Ch_queries.expr) ->
+    < x : (Ch_queries.non_null, string) Ch_queries.expr > Ch_queries.scope
+    Ch_queries.select
 
 splicing ocaml values into WHERE:
   $ ./compile_and_run '
@@ -222,24 +225,25 @@ splicing ocaml values into WHERE:
   > '
   >>> PREPROCESSING
   let users ~where =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
         end)
-      ~where:(fun (users : _ Queries.scope) ->
-        (where users : (Queries.non_null, bool) Queries.expr))
+      ~where:(fun (users : _ Ch_queries.scope) ->
+        (where users : (Ch_queries.non_null, bool) Ch_queries.expr))
   >>> RUNNING
   val users :
-    where:(< id : (Queries.non_null, int Queries.number) Queries.expr;
-             is_active : (Queries.non_null, bool) Queries.expr;
-             x : (Queries.non_null, string) Queries.expr;
-             xs : (Queries.non_null, (Queries.non_null, string) Queries.array)
-                  Queries.expr >
-           Queries.scope -> (Queries.non_null, bool) Queries.expr) ->
-    < x : (Queries.non_null, string) Queries.expr > Queries.scope
-    Queries.select
+    where:(< id : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr;
+             is_active : (Ch_queries.non_null, bool) Ch_queries.expr;
+             x : (Ch_queries.non_null, string) Ch_queries.expr;
+             xs : (Ch_queries.non_null,
+                   (Ch_queries.non_null, string) Ch_queries.array)
+                  Ch_queries.expr >
+           Ch_queries.scope -> (Ch_queries.non_null, bool) Ch_queries.expr) ->
+    < x : (Ch_queries.non_null, string) Ch_queries.expr > Ch_queries.scope
+    Ch_queries.select
 
 splicing ocaml values into SELECT:
   $ ./compile_and_run '
@@ -248,21 +252,22 @@ splicing ocaml values into SELECT:
   > '
   >>> PREPROCESSING
   let users ~what =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method field = what users
         end)
   >>> RUNNING
   val users :
-    what:(< id : (Queries.non_null, int Queries.number) Queries.expr;
-            is_active : (Queries.non_null, bool) Queries.expr;
-            x : (Queries.non_null, string) Queries.expr;
-            xs : (Queries.non_null, (Queries.non_null, string) Queries.array)
-                 Queries.expr >
-          Queries.scope -> 'a) ->
-    < field : 'a > Queries.scope Queries.select
+    what:(< id : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr;
+            is_active : (Ch_queries.non_null, bool) Ch_queries.expr;
+            x : (Ch_queries.non_null, string) Ch_queries.expr;
+            xs : (Ch_queries.non_null,
+                  (Ch_queries.non_null, string) Ch_queries.array)
+                 Ch_queries.expr >
+          Ch_queries.scope -> 'a) ->
+    < field : 'a > Ch_queries.scope Ch_queries.select
 
 splicing ocaml values into SELECT as scope:
   $ ./compile_and_run '
@@ -271,39 +276,40 @@ splicing ocaml values into SELECT as scope:
   > '
   >>> PREPROCESSING
   let users ~what =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:what
   >>> RUNNING
   val users :
-    what:(< id : (Queries.non_null, int Queries.number) Queries.expr;
-            is_active : (Queries.non_null, bool) Queries.expr;
-            x : (Queries.non_null, string) Queries.expr;
-            xs : (Queries.non_null, (Queries.non_null, string) Queries.array)
-                 Queries.expr >
-          Queries.scope -> 'a) ->
-    'a Queries.scope Queries.select
+    what:(< id : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr;
+            is_active : (Ch_queries.non_null, bool) Ch_queries.expr;
+            x : (Ch_queries.non_null, string) Ch_queries.expr;
+            xs : (Ch_queries.non_null,
+                  (Ch_queries.non_null, string) Ch_queries.array)
+                 Ch_queries.expr >
+          Ch_queries.scope -> 'a) ->
+    'a Ch_queries.scope Ch_queries.select
 
 select from table with FINAL keyword:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x AS x FROM public.users AS users FINAL WHERE users.is_active"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun users -> Ch_queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
   let users =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:true))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:true))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
         end)
-      ~where:(fun (users : _ Queries.scope) ->
+      ~where:(fun (users : _ Ch_queries.scope) ->
         users#query (fun users -> users#is_active))
   
   let sql, _parse_row =
-    Queries.query users @@ fun users ->
-    Queries.Row.string (users#query (fun users -> users#x))
+    Ch_queries.query users @@ fun users ->
+    Ch_queries.Row.string (users#query (fun users -> users#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -315,25 +321,27 @@ select from table with FINAL keyword:
 select with PREWHERE clause:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x AS x FROM public.users PREWHERE users.is_active WHERE users.id = 10"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun users -> Ch_queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
   let users =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
         end)
-      ~prewhere:(fun (users : _ Queries.scope) ->
+      ~prewhere:(fun (users : _ Ch_queries.scope) ->
         users#query (fun users -> users#is_active))
-      ~where:(fun (users : _ Queries.scope) ->
-        Queries.Expr.( = ) (users#query (fun users -> users#id)) (Queries.int 10))
+      ~where:(fun (users : _ Ch_queries.scope) ->
+        Ch_queries.Expr.( = )
+          (users#query (fun users -> users#id))
+          (Ch_queries.int 10))
   
   let sql, _parse_row =
-    Queries.query users @@ fun users ->
-    Queries.Row.string (users#query (fun users -> users#x))
+    Ch_queries.query users @@ fun users ->
+    Ch_queries.Row.string (users#query (fun users -> users#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -347,32 +355,32 @@ select with PREWHERE clause:
 expressions referenced multiple times result in a single column added to teh subquery:
   $ ./compile_and_run '
   > let users = [%q "SELECT q.is_active AS is_active FROM (SELECT users.is_active AS is_active FROM public.users) AS q WHERE q.is_active"];;
-  > let sql, _parse_row = Queries.(query users @@ fun users -> Row.bool [%e "users.is_active"])
+  > let sql, _parse_row = Ch_queries.(query users @@ fun users -> Row.bool [%e "users.is_active"])
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
   let users =
-    Queries.select ()
+    Ch_queries.select ()
       ~from:
-        (Queries.from
-           (Queries.from_select
-              (Queries.select ()
+        (Ch_queries.from
+           (Ch_queries.from_select
+              (Ch_queries.select ()
                  ~from:
-                   (Queries.from
+                   (Ch_queries.from
                       (Database.Public.users ~alias:"users" ~final:false))
-                 ~select:(fun (users : _ Queries.scope) ->
+                 ~select:(fun (users : _ Ch_queries.scope) ->
                    object
                      method is_active = users#query (fun users -> users#is_active)
                    end))
               ~alias:"q"))
-      ~select:(fun (q : _ Queries.scope) ->
+      ~select:(fun (q : _ Ch_queries.scope) ->
         object
           method is_active = q#query (fun q -> q#is_active)
         end)
-      ~where:(fun (q : _ Queries.scope) -> q#query (fun q -> q#is_active))
+      ~where:(fun (q : _ Ch_queries.scope) -> q#query (fun q -> q#is_active))
   
   let sql, _parse_row =
-    let open Queries in
+    let open Ch_queries in
     query users @@ fun users ->
     Row.bool (users#query (fun users -> users#is_active))
   

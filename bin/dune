@@ -1,5 +1,5 @@
 (executable
- (public_name queries)
- (package queries)
+ (public_name ch_queries)
+ (package ch_queries)
  (name main)
- (libraries queries queries.syntax cmdliner))
+ (libraries ch_queries ch_queries.syntax cmdliner))

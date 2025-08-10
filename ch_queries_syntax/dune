@@ -4,8 +4,8 @@
  (modules parser uparser))
 
 (library
- (name queries_syntax)
- (public_name queries.syntax)
+ (name ch_queries_syntax)
+ (public_name ch_queries.syntax)
  (preprocess
   (pps ppx_hash ppx_compare))
  (flags

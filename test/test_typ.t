@@ -21,21 +21,32 @@ Test ClickHouse type syntax expansion
   > type test_nullable_array_nullable_string = [%t "Nullable(Array(Nullable(String)))"]
   > '
   >>> PREPROCESSING
-  type test_string = (Queries.non_null, string) Queries.expr
-  type test_int32 = (Queries.non_null, int Queries.number) Queries.expr
-  type test_uint32 = (Queries.non_null, int Queries.number) Queries.expr
-  type test_int64 = (Queries.non_null, int64 Queries.number) Queries.expr
-  type test_uint64 = (Queries.non_null, int64 Queries.number) Queries.expr
-  type test_float32 = (Queries.non_null, float Queries.number) Queries.expr
-  type test_nullable_string = (Queries.null, string) Queries.expr
-  type test_nullable_int32 = (Queries.null, int Queries.number) Queries.expr
+  type test_string = (Ch_queries.non_null, string) Ch_queries.expr
+  type test_int32 = (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr
+  type test_uint32 = (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr
+  type test_int64 = (Ch_queries.non_null, int64 Ch_queries.number) Ch_queries.expr
+  
+  type test_uint64 =
+    (Ch_queries.non_null, int64 Ch_queries.number) Ch_queries.expr
+  
+  type test_float32 =
+    (Ch_queries.non_null, float Ch_queries.number) Ch_queries.expr
+  
+  type test_nullable_string = (Ch_queries.null, string) Ch_queries.expr
+  
+  type test_nullable_int32 =
+    (Ch_queries.null, int Ch_queries.number) Ch_queries.expr
   
   type test_array_string =
-    (Queries.non_null, (Queries.non_null, string) Queries.array) Queries.expr
+    ( Ch_queries.non_null,
+      (Ch_queries.non_null, string) Ch_queries.array )
+    Ch_queries.expr
   
   type test_array_nullable_string =
-    (Queries.non_null, (Queries.null, string) Queries.array) Queries.expr
+    ( Ch_queries.non_null,
+      (Ch_queries.null, string) Ch_queries.array )
+    Ch_queries.expr
   
   type test_nullable_array_nullable_string =
-    (Queries.null, (Queries.null, string) Queries.array) Queries.expr
+    (Ch_queries.null, (Ch_queries.null, string) Ch_queries.array) Ch_queries.expr
   >>> RUNNING

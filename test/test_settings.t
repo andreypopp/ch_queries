@@ -1,14 +1,14 @@
 SETTINGS with literal values:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x FROM public.users SETTINGS max_threads=4, use_cache='"'"'true'"'"'"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun users -> Ch_queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
   let users =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
         end)
@@ -17,8 +17,8 @@ SETTINGS with literal values:
            [ [ ("max_threads", `Int 4) ]; [ ("use_cache", `String "true") ] ])
   
   let sql, _parse_row =
-    Queries.query users @@ fun users ->
-    Queries.Row.string (users#query (fun users -> users#x))
+    Ch_queries.query users @@ fun users ->
+    Ch_queries.Row.string (users#query (fun users -> users#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -35,9 +35,9 @@ SETTINGS with parameter:
   > '
   >>> PREPROCESSING
   let users ~max_threads =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
         end)
@@ -45,8 +45,8 @@ SETTINGS with parameter:
   >>> RUNNING
   val users :
     max_threads:[ `Bool of bool | `Int of int | `String of string ] ->
-    < x : (Queries.non_null, string) Queries.expr > Queries.scope
-    Queries.select
+    < x : (Ch_queries.non_null, string) Ch_queries.expr > Ch_queries.scope
+    Ch_queries.select
 
 SETTINGS with splice:
   $ ./compile_and_run '
@@ -55,9 +55,9 @@ SETTINGS with splice:
   > '
   >>> PREPROCESSING
   let users ~settings =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
         end)
@@ -66,8 +66,8 @@ SETTINGS with splice:
   val users :
     settings:(string * [ `Bool of bool | `Int of int | `String of string ])
              list ->
-    < x : (Queries.non_null, string) Queries.expr > Queries.scope
-    Queries.select
+    < x : (Ch_queries.non_null, string) Ch_queries.expr > Ch_queries.scope
+    Ch_queries.select
 
 SETTINGS with mixed literal and splice:
   $ ./compile_and_run '
@@ -76,9 +76,9 @@ SETTINGS with mixed literal and splice:
   > '
   >>> PREPROCESSING
   let users ~extra_settings =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
         end)
@@ -94,8 +94,8 @@ SETTINGS with mixed literal and splice:
     extra_settings:(string *
                     [ `Bool of bool | `Int of int | `String of string ])
                    list ->
-    < x : (Queries.non_null, string) Queries.expr > Queries.scope
-    Queries.select
+    < x : (Ch_queries.non_null, string) Ch_queries.expr > Ch_queries.scope
+    Ch_queries.select
 
 SETTINGS with multiple splices:
   $ ./compile_and_run '
@@ -104,9 +104,9 @@ SETTINGS with multiple splices:
   > '
   >>> PREPROCESSING
   let users ~perf_settings ~cache_settings =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
         end)
@@ -119,20 +119,20 @@ SETTINGS with multiple splices:
     cache_settings:(string *
                     [ `Bool of bool | `Int of int | `String of string ])
                    list ->
-    < x : (Queries.non_null, string) Queries.expr > Queries.scope
-    Queries.select
+    < x : (Ch_queries.non_null, string) Ch_queries.expr > Ch_queries.scope
+    Ch_queries.select
 
 SETTINGS with boolean values (rendered as ints):
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x FROM public.users SETTINGS enable_analyzer=false, use_cache=true"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun users -> Ch_queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
   let users =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
         end)
@@ -141,8 +141,8 @@ SETTINGS with boolean values (rendered as ints):
            [ [ ("enable_analyzer", `Bool false) ]; [ ("use_cache", `Bool true) ] ])
   
   let sql, _parse_row =
-    Queries.query users @@ fun users ->
-    Queries.Row.string (users#query (fun users -> users#x))
+    Ch_queries.query users @@ fun users ->
+    Ch_queries.Row.string (users#query (fun users -> users#x))
   
   let () = print_endline sql
   >>> RUNNING

@@ -1,23 +1,23 @@
 GROUP BY single column:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x AS x FROM public.users GROUP BY users.x"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun users -> Ch_queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
   let users =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
         end)
-      ~group_by:(fun (users : _ Queries.scope) ->
-        List.concat [ [ Queries.A_expr (users#query (fun users -> users#x)) ] ])
+      ~group_by:(fun (users : _ Ch_queries.scope) ->
+        List.concat [ [ Ch_queries.A_expr (users#query (fun users -> users#x)) ] ])
   
   let sql, _parse_row =
-    Queries.query users @@ fun users ->
-    Queries.Row.string (users#query (fun users -> users#x))
+    Ch_queries.query users @@ fun users ->
+    Ch_queries.Row.string (users#query (fun users -> users#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -27,27 +27,27 @@ GROUP BY single column:
 GROUP BY multiple columns:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x AS x FROM public.users GROUP BY users.x, users.id"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun users -> Ch_queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
   let users =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
         end)
-      ~group_by:(fun (users : _ Queries.scope) ->
+      ~group_by:(fun (users : _ Ch_queries.scope) ->
         List.concat
           [
-            [ Queries.A_expr (users#query (fun users -> users#x)) ];
-            [ Queries.A_expr (users#query (fun users -> users#id)) ];
+            [ Ch_queries.A_expr (users#query (fun users -> users#x)) ];
+            [ Ch_queries.A_expr (users#query (fun users -> users#id)) ];
           ])
   
   let sql, _parse_row =
-    Queries.query users @@ fun users ->
-    Queries.Row.string (users#query (fun users -> users#x))
+    Ch_queries.query users @@ fun users ->
+    Ch_queries.Row.string (users#query (fun users -> users#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -63,26 +63,27 @@ GROUP BY with a parameter:
   > '
   >>> PREPROCESSING
   let users ~dimension =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
         end)
-      ~group_by:(fun (users : _ Queries.scope) ->
+      ~group_by:(fun (users : _ Ch_queries.scope) ->
         List.concat
           [
-            [ Queries.A_expr (users#query (fun users -> users#id)) ];
+            [ Ch_queries.A_expr (users#query (fun users -> users#id)) ];
             dimension users;
           ])
   >>> RUNNING
   val users :
-    dimension:(< id : (Queries.non_null, int Queries.number) Queries.expr;
-                 is_active : (Queries.non_null, bool) Queries.expr;
-                 x : (Queries.non_null, string) Queries.expr;
-                 xs : (Queries.non_null,
-                       (Queries.non_null, string) Queries.array)
-                      Queries.expr >
-               Queries.scope -> Queries.a_expr list) ->
-    < x : (Queries.non_null, string) Queries.expr > Queries.scope
-    Queries.select
+    dimension:(< id : (Ch_queries.non_null, int Ch_queries.number)
+                      Ch_queries.expr;
+                 is_active : (Ch_queries.non_null, bool) Ch_queries.expr;
+                 x : (Ch_queries.non_null, string) Ch_queries.expr;
+                 xs : (Ch_queries.non_null,
+                       (Ch_queries.non_null, string) Ch_queries.array)
+                      Ch_queries.expr >
+               Ch_queries.scope -> Ch_queries.a_expr list) ->
+    < x : (Ch_queries.non_null, string) Ch_queries.expr > Ch_queries.scope
+    Ch_queries.select

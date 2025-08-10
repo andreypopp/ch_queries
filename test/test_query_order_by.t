@@ -1,24 +1,24 @@
 ORDER BY single column (default ASC):
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x FROM public.users ORDER BY users.x"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun users -> Ch_queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
   let users =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
         end)
-      ~order_by:(fun (users : _ Queries.scope) ->
+      ~order_by:(fun (users : _ Ch_queries.scope) ->
         List.concat
-          [ [ (Queries.A_expr (users#query (fun users -> users#x)), `ASC) ] ])
+          [ [ (Ch_queries.A_expr (users#query (fun users -> users#x)), `ASC) ] ])
   
   let sql, _parse_row =
-    Queries.query users @@ fun users ->
-    Queries.Row.string (users#query (fun users -> users#x))
+    Ch_queries.query users @@ fun users ->
+    Ch_queries.Row.string (users#query (fun users -> users#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -28,24 +28,24 @@ ORDER BY single column (default ASC):
 ORDER BY with DESC:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x FROM public.users ORDER BY users.x DESC"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun users -> Ch_queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
   let users =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
         end)
-      ~order_by:(fun (users : _ Queries.scope) ->
+      ~order_by:(fun (users : _ Ch_queries.scope) ->
         List.concat
-          [ [ (Queries.A_expr (users#query (fun users -> users#x)), `DESC) ] ])
+          [ [ (Ch_queries.A_expr (users#query (fun users -> users#x)), `DESC) ] ])
   
   let sql, _parse_row =
-    Queries.query users @@ fun users ->
-    Queries.Row.string (users#query (fun users -> users#x))
+    Ch_queries.query users @@ fun users ->
+    Ch_queries.Row.string (users#query (fun users -> users#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -56,27 +56,27 @@ ORDER BY with DESC:
 ORDER BY multiple columns:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x FROM public.users ORDER BY users.x, users.id DESC"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun users -> Ch_queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
   let users =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
         end)
-      ~order_by:(fun (users : _ Queries.scope) ->
+      ~order_by:(fun (users : _ Ch_queries.scope) ->
         List.concat
           [
-            [ (Queries.A_expr (users#query (fun users -> users#x)), `ASC) ];
-            [ (Queries.A_expr (users#query (fun users -> users#id)), `DESC) ];
+            [ (Ch_queries.A_expr (users#query (fun users -> users#x)), `ASC) ];
+            [ (Ch_queries.A_expr (users#query (fun users -> users#id)), `DESC) ];
           ])
   
   let sql, _parse_row =
-    Queries.query users @@ fun users ->
-    Queries.Row.string (users#query (fun users -> users#x))
+    Ch_queries.query users @@ fun users ->
+    Ch_queries.Row.string (users#query (fun users -> users#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -93,20 +93,21 @@ ORDER BY with a parameter:
   > '
   >>> PREPROCESSING
   let users ~ord =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
         end)
-      ~order_by:(fun (users : _ Queries.scope) -> List.concat [ ord users ])
+      ~order_by:(fun (users : _ Ch_queries.scope) -> List.concat [ ord users ])
   >>> RUNNING
   val users :
-    ord:(< id : (Queries.non_null, int Queries.number) Queries.expr;
-           is_active : (Queries.non_null, bool) Queries.expr;
-           x : (Queries.non_null, string) Queries.expr;
-           xs : (Queries.non_null, (Queries.non_null, string) Queries.array)
-                Queries.expr >
-         Queries.scope -> (Queries.a_expr * [ `ASC | `DESC ]) list) ->
-    < x : (Queries.non_null, string) Queries.expr > Queries.scope
-    Queries.select
+    ord:(< id : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr;
+           is_active : (Ch_queries.non_null, bool) Ch_queries.expr;
+           x : (Ch_queries.non_null, string) Ch_queries.expr;
+           xs : (Ch_queries.non_null,
+                 (Ch_queries.non_null, string) Ch_queries.array)
+                Ch_queries.expr >
+         Ch_queries.scope -> (Ch_queries.a_expr * [ `ASC | `DESC ]) list) ->
+    < x : (Ch_queries.non_null, string) Ch_queries.expr > Ch_queries.scope
+    Ch_queries.select

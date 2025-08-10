@@ -1,4 +1,4 @@
-module Syntax = Queries_syntax.Syntax
+module Syntax = Ch_queries_syntax.Syntax
 
 type null = [ `null | `not_null ]
 type non_null = [ `not_null ]
@@ -19,7 +19,7 @@ and 'a scope = < query : 'n 'e. ('a -> ('n, 'e) expr) -> ('n, 'e) expr >
 and 'a nullable_scope =
   < query : 'n 'e. ('a -> ('n, 'e) expr) -> (null, 'e) expr >
 
-and a_field = A_field : Queries_syntax.Syntax.expr * string -> a_field
+and a_field = A_field : Ch_queries_syntax.Syntax.expr * string -> a_field
 
 and 'scope select0 =
   | Select of {
@@ -177,7 +177,7 @@ let left_join ?(optional = false) from (join : 'a scope from_one) ~on () =
     }
 
 module To_syntax = struct
-  open Queries_syntax
+  open Ch_queries_syntax
 
   let rec group_by_to_syntax dimensions =
     List.map dimensions ~f:(fun (A_expr expr) -> Syntax.Dimension_expr expr)
@@ -262,8 +262,7 @@ module To_syntax = struct
                  alias = Syntax.make_id alias;
                  cluster_name =
                    Option.map
-                     (fun name ->
-                       Queries_syntax.Syntax.Cluster_name (Syntax.make_id name))
+                     (fun name -> Syntax.Cluster_name (Syntax.make_id name))
                      cluster_name;
                })
     and from_to_syntax : type a. a from0 -> Syntax.from = function
@@ -395,8 +394,7 @@ let rec add_field expr select =
   | Select s -> (
       match
         List.find_map s.fields ~f:(function
-          | A_field (expr', alias)
-            when Queries_syntax.Syntax.equal_expr expr expr' ->
+          | A_field (expr', alias) when Syntax.equal_expr expr expr' ->
               Some alias
           | _ -> None)
       with
@@ -570,23 +568,18 @@ let query q f =
   let row = f scope in
   let fields = Row.fields row in
   let fields =
-    List.map fields ~f:(fun (A_expr expr) ->
-        { Queries_syntax.Syntax.expr; alias = None })
+    List.map fields ~f:(fun (A_expr expr) -> { Syntax.expr; alias = None })
   in
   let select = To_syntax.to_syntax q in
   let select =
-    Queries_syntax.Syntax.Q_select
+    Syntax.Q_select
       {
         from =
-          Queries_syntax.Syntax.make_from
+          Syntax.make_from
             (F
-               (Queries_syntax.Syntax.make_from_one
+               (Syntax.make_from_one
                   (F_select
-                     {
-                       select;
-                       alias = Queries_syntax.Syntax.make_id "q";
-                       cluster_name = None;
-                     })));
+                     { select; alias = Syntax.make_id "q"; cluster_name = None })));
         select = Select_fields fields;
         prewhere = None;
         where = None;
@@ -599,8 +592,6 @@ let query q f =
         settings = [];
       }
   in
-  let sql =
-    Queries_syntax.Printer.print_query (Queries_syntax.Syntax.make_query select)
-  in
+  let sql = Ch_queries_syntax.Printer.print_query (Syntax.make_query select) in
   let parse_row = Row.parse row in
   (sql, parse_row)

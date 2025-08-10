@@ -1,11 +1,11 @@
 (library
- (name test_queries)
+ (name test_ch_queries)
  (preprocess
-  (pps queries.ppx))
- (libraries queries))
+  (pps ch_queries.ppx))
+ (libraries ch_queries))
 
 (cram
  (deps
   ./test_queries.ml
   ./compile_and_run
-  (package queries)))
+  (package ch_queries)))

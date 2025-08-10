@@ -1,7 +1,7 @@
 open ContainersLabels
 open Ppxlib
 open Ast_builder.Default
-open Queries_syntax
+open Ch_queries_syntax
 
 let set_position lexbuf loc =
   Lexing.set_position lexbuf
@@ -79,20 +79,20 @@ let rec from_scope_pattern ?kind from =
   match from.node with
   | F from_one ->
       let p = from_one_scope_pattern from_one in
-      [%pat? ([%p p] : _ Queries.scope)]
+      [%pat? ([%p p] : _ Ch_queries.scope)]
   | F_join { from; join; kind = kind'; _ } ->
       let x = from_scope_pattern from in
       let y =
         let kind = Option.value kind ~default:kind' in
         match kind with
         | `INNER_JOIN ->
-            [%pat? ([%p from_one_scope_pattern join] : _ Queries.scope)]
+            [%pat? ([%p from_one_scope_pattern join] : _ Ch_queries.scope)]
         | `LEFT_JOIN ->
             [%pat?
-              ([%p from_one_scope_pattern join] : _ Queries.nullable_scope)]
+              ([%p from_one_scope_pattern join] : _ Ch_queries.nullable_scope)]
         | `LEFT_JOIN_OPTIONAL ->
             [%pat?
-              ([%p from_one_scope_pattern join] : _ Queries.nullable_scope)]
+              ([%p from_one_scope_pattern join] : _ Ch_queries.nullable_scope)]
       in
       [%pat? [%p x], [%p y]]
 
@@ -108,14 +108,19 @@ let rec typ_to_ocaml_type ~loc typ =
   match typ.node with
   | T id -> (
       match id.node with
-      | "String" -> ([%type: Queries.non_null], [%type: string])
-      | "Bool" -> ([%type: Queries.non_null], [%type: bool])
-      | "Int32" -> ([%type: Queries.non_null], [%type: int Queries.number])
-      | "UInt32" -> ([%type: Queries.non_null], [%type: int Queries.number])
-      | "Int64" -> ([%type: Queries.non_null], [%type: int64 Queries.number])
-      | "UInt64" -> ([%type: Queries.non_null], [%type: int64 Queries.number])
-      | "Float32" -> ([%type: Queries.non_null], [%type: float Queries.number])
-      | "Float64" -> ([%type: Queries.non_null], [%type: float Queries.number])
+      | "String" -> ([%type: Ch_queries.non_null], [%type: string])
+      | "Bool" -> ([%type: Ch_queries.non_null], [%type: bool])
+      | "Int32" -> ([%type: Ch_queries.non_null], [%type: int Ch_queries.number])
+      | "UInt32" ->
+          ([%type: Ch_queries.non_null], [%type: int Ch_queries.number])
+      | "Int64" ->
+          ([%type: Ch_queries.non_null], [%type: int64 Ch_queries.number])
+      | "UInt64" ->
+          ([%type: Ch_queries.non_null], [%type: int64 Ch_queries.number])
+      | "Float32" ->
+          ([%type: Ch_queries.non_null], [%type: float Ch_queries.number])
+      | "Float64" ->
+          ([%type: Ch_queries.non_null], [%type: float Ch_queries.number])
       | t ->
           let loc = to_location id in
           Location.raise_errorf ~loc "unknown ClickHouse type: %s" t)
@@ -125,7 +130,7 @@ let rec typ_to_ocaml_type ~loc typ =
           match args with
           | [ inner_typ ] ->
               let _, t = typ_to_ocaml_type ~loc inner_typ in
-              ([%type: Queries.null], t)
+              ([%type: Ch_queries.null], t)
           | _ ->
               let loc = to_location id in
               Location.raise_errorf ~loc
@@ -134,8 +139,8 @@ let rec typ_to_ocaml_type ~loc typ =
           match args with
           | [ element_typ ] ->
               let n, t = typ_to_ocaml_type ~loc element_typ in
-              ( [%type: Queries.non_null],
-                [%type: ([%t n], [%t t]) Queries.array] )
+              ( [%type: Ch_queries.non_null],
+                [%type: ([%t n], [%t t]) Ch_queries.array] )
           | _ ->
               let loc = to_location id in
               Location.raise_errorf ~loc
@@ -150,12 +155,12 @@ let rec stage_expr ~params ~from expr =
   | Syntax.E_unsafe_concat xs ->
       let xs =
         List.map xs ~f:(fun e ->
-            [%expr Queries.A_expr [%e stage_expr ~params ~from e]])
+            [%expr Ch_queries.A_expr [%e stage_expr ~params ~from e]])
       in
-      [%expr Queries.unsafe_concat [%e elist ~loc xs]]
+      [%expr Ch_queries.unsafe_concat [%e elist ~loc xs]]
   | Syntax.E_unsafe id ->
       let loc = to_location id in
-      [%expr Queries.unsafe [%e estring ~loc id.node]]
+      [%expr Ch_queries.unsafe [%e estring ~loc id.node]]
   | Syntax.E_col (scope, id) ->
       let e = evar ~loc scope.node in
       let e' = pexp_send ~loc e (Located.mk ~loc "query") in
@@ -164,7 +169,7 @@ let rec stage_expr ~params ~from expr =
         [%e e'] (fun [%p p] -> [%e pexp_send ~loc e (Located.mk ~loc id.node)])]
   | Syntax.E_id id -> (
       match CCList.mem id params ~eq:Syntax.equal_id with
-      | true -> [%expr Queries.unsafe [%e estring ~loc id.node]]
+      | true -> [%expr Ch_queries.unsafe [%e estring ~loc id.node]]
       | false -> (
           match Option.bind from non_ambigius_from with
           | None ->
@@ -176,16 +181,16 @@ let rec stage_expr ~params ~from expr =
               [%expr
                 [%e e'] (fun [%p p] ->
                     [%e pexp_send ~loc e (Located.mk ~loc id.node)])]))
-  | Syntax.E_lit (L_int n) -> [%expr Queries.int [%e eint ~loc n]]
+  | Syntax.E_lit (L_int n) -> [%expr Ch_queries.int [%e eint ~loc n]]
   | Syntax.E_lit (L_float n) ->
-      [%expr Queries.float [%e efloat ~loc (string_of_float n)]]
-  | Syntax.E_lit L_null -> [%expr Queries.null]
-  | Syntax.E_lit (L_bool b) -> [%expr Queries.bool [%e ebool ~loc b]]
-  | Syntax.E_lit (L_string s) -> [%expr Queries.string [%e estring ~loc s]]
+      [%expr Ch_queries.float [%e efloat ~loc (string_of_float n)]]
+  | Syntax.E_lit L_null -> [%expr Ch_queries.null]
+  | Syntax.E_lit (L_bool b) -> [%expr Ch_queries.bool [%e ebool ~loc b]]
+  | Syntax.E_lit (L_string s) -> [%expr Ch_queries.string [%e estring ~loc s]]
   | Syntax.E_window (name, args, { partition_by; order_by }) ->
       let f =
         let loc = to_location name in
-        evar ~loc ("Queries.Expr." ^ name.node)
+        evar ~loc ("Ch_queries.Expr." ^ name.node)
       in
       let args =
         List.map args ~f:(fun arg -> (Nolabel, stage_expr ~params ~from arg))
@@ -208,14 +213,14 @@ let rec stage_expr ~params ~from expr =
       match func with
       | Func { node = "["; _ } ->
           let xs = elist ~loc (List.map args ~f:(stage_expr ~params ~from)) in
-          [%expr Queries.array [%e xs]]
+          [%expr Ch_queries.array [%e xs]]
       | Func name ->
           let f =
             let loc = to_location name in
             match name.node with
-            | "OR" -> [%expr Queries.Expr.( || )]
-            | "AND" -> [%expr Queries.Expr.( && )]
-            | _ -> evar ~loc ("Queries.Expr." ^ name.node)
+            | "OR" -> [%expr Ch_queries.Expr.( || )]
+            | "AND" -> [%expr Ch_queries.Expr.( && )]
+            | _ -> evar ~loc ("Ch_queries.Expr." ^ name.node)
           in
           eapply ~loc f (List.map args ~f:(stage_expr ~params ~from))
       | Func_method (table, method_name) ->
@@ -246,7 +251,9 @@ let rec stage_expr ~params ~from expr =
       | None -> e_with_scope
       | Some t ->
           let n, ocaml_t = typ_to_ocaml_type ~loc t in
-          let typed_expr_type = [%type: ([%t n], [%t ocaml_t]) Queries.expr] in
+          let typed_expr_type =
+            [%type: ([%t n], [%t ocaml_t]) Ch_queries.expr]
+          in
           [%expr ([%e e_with_scope] : [%t typed_expr_type])])
   | Syntax.E_ocaml_expr ocaml_code -> (
       (* Parse the OCaml expression and adjust location for error reporting *)
@@ -279,21 +286,21 @@ let rec stage_expr ~params ~from expr =
       match in_query with
       | Syntax.In_query query ->
           let query = stage_query query in
-          [%expr Queries.in_ [%e expr] (Queries.In_query [%e query])]
+          [%expr Ch_queries.in_ [%e expr] (Ch_queries.In_query [%e query])]
       | Syntax.In_expr { node = E_param (param, _typ); _ } ->
           (* special for [E in ?param], we don't treat it as expression *)
           let loc = to_location param in
           let param = param.node in
           let param = evar ~loc param in
-          [%expr Queries.in_ [%e expr] [%e param]]
+          [%expr Ch_queries.in_ [%e expr] [%e param]]
       | Syntax.In_expr expr' ->
           let expr' = stage_expr ~params ~from expr' in
-          [%expr Queries.in_ [%e expr] (Queries.In_array [%e expr'])])
+          [%expr Ch_queries.in_ [%e expr] (Ch_queries.In_array [%e expr'])])
   | Syntax.E_lambda (param, body) ->
       let param_name = param.node in
       let body_expr = stage_expr ~params:(param :: params) ~from body in
       [%expr
-        Queries.lambda [%e estring ~loc param_name] (fun x -> [%e body_expr])]
+        Ch_queries.lambda [%e estring ~loc param_name] (fun x -> [%e body_expr])]
 
 and stage_dimensions ~loc ~from dimensions =
   let body =
@@ -303,7 +310,7 @@ and stage_dimensions ~loc ~from dimensions =
           stage_expr ~params:[] ~from e
       | Syntax.Dimension_expr expr ->
           let expr = stage_expr ~params:[] ~from expr in
-          [%expr [ Queries.A_expr [%e expr] ]])
+          [%expr [ Ch_queries.A_expr [%e expr] ]])
   in
   [%expr List.concat [%e elist ~loc body]]
 
@@ -318,7 +325,7 @@ and stage_order_by ~loc ~from order_by =
           let dir =
             match dir with `ASC -> [%expr `ASC] | `DESC -> [%expr `DESC]
           in
-          [%expr [ (Queries.A_expr [%e expr], [%e dir]) ]])
+          [%expr [ (Ch_queries.A_expr [%e expr], [%e dir]) ]])
   in
   [%expr List.concat [%e elist ~loc xs]]
 
@@ -379,7 +386,7 @@ and stage_query ({ node; _ } as q) =
       let loc = to_location q in
       let q1 = stage_query q1 in
       let q2 = stage_query q2 in
-      pexp_apply ~loc [%expr Queries.union] [ (Nolabel, q1); (Nolabel, q2) ]
+      pexp_apply ~loc [%expr Ch_queries.union] [ (Nolabel, q1); (Nolabel, q2) ]
   | Q_param id ->
       let loc = to_location id in
       evar ~loc id.node
@@ -510,20 +517,20 @@ and stage_query ({ node; _ } as q) =
             let settings_expr = stage_settings ~loc settings in
             (Labelled "settings", settings_expr) :: args
       in
-      pexp_apply ~loc [%expr Queries.select]
+      pexp_apply ~loc [%expr Ch_queries.select]
         ((Nolabel, [%expr ()]) :: List.rev args)
 
 and stage_from from =
   let open Syntax in
   let loc = to_location from in
   match from.node with
-  | F from_one -> [%expr Queries.from [%e stage_from_one from_one]]
+  | F from_one -> [%expr Ch_queries.from [%e stage_from_one from_one]]
   | F_join { kind; from = base; join; on } ->
       let f =
         match kind with
-        | `INNER_JOIN -> [%expr Queries.join]
-        | `LEFT_JOIN -> [%expr Queries.left_join]
-        | `LEFT_JOIN_OPTIONAL -> [%expr Queries.left_join ~optional:true]
+        | `INNER_JOIN -> [%expr Ch_queries.join]
+        | `LEFT_JOIN -> [%expr Ch_queries.left_join]
+        | `LEFT_JOIN_OPTIONAL -> [%expr Ch_queries.left_join ~optional:true]
       in
       let on =
         pexp_fun ~loc Nolabel None
@@ -558,12 +565,12 @@ and stage_from_one from_one =
             evar ~loc id.node
       in
       [%expr
-        Queries.from_select ~cluster_name:[%e cluster_name_expr]
+        Ch_queries.from_select ~cluster_name:[%e cluster_name_expr]
           [%e select_expr] ~alias:[%e alias_expr]]
   | F_select { select; alias; cluster_name = None } ->
       let select_expr = stage_query select in
       let alias_expr = estring ~loc alias.node in
-      [%expr Queries.from_select [%e select_expr] ~alias:[%e alias_expr]]
+      [%expr Ch_queries.from_select [%e select_expr] ~alias:[%e alias_expr]]
   | F_param { id; alias } ->
       let loc = to_location id in
       [%expr [%e evar ~loc id.node] ~alias:[%e estring ~loc alias.node]]
@@ -594,7 +601,7 @@ let expand_typ ~ctxt:_ expr =
   | Pexp_constant (Pconst_string (txt, loc, _)) ->
       let typ = parse_typ ~loc txt in
       let n, t = typ_to_ocaml_type ~loc typ in
-      [%type: ([%t n], [%t t]) Queries.expr]
+      [%type: ([%t n], [%t t]) Ch_queries.expr]
   | _ -> Location.raise_errorf "expected a string literal for [%%t ...]"
 
 let select_extension =

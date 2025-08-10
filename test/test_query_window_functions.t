@@ -5,28 +5,29 @@ basic window functions:
   > '
   >>> PREPROCESSING
   let users =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method _1 =
-            Queries.Expr.count
+            Ch_queries.Expr.count
               ~order_by:
                 (List.concat
                    [
                      [
-                       (Queries.A_expr (users#query (fun users -> users#x)), `ASC);
+                       ( Ch_queries.A_expr (users#query (fun users -> users#x)),
+                         `ASC );
                      ];
                    ])
               ~partition_by:
                 (List.concat
-                   [ [ Queries.A_expr (users#query (fun users -> users#x)) ] ])
-              (Queries.int 1)
+                   [ [ Ch_queries.A_expr (users#query (fun users -> users#x)) ] ])
+              (Ch_queries.int 1)
         end)
   >>> RUNNING
   val users :
-    < _1 : (Queries.non_null, int Queries.number) Queries.expr > Queries.scope
-    Queries.select
+    < _1 : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr >
+    Ch_queries.scope Ch_queries.select
 
 window functions / param in PARTITION BY:
   $ ./compile_and_run '
@@ -35,32 +36,34 @@ window functions / param in PARTITION BY:
   > '
   >>> PREPROCESSING
   let users ~g =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method _1 =
-            Queries.Expr.count
+            Ch_queries.Expr.count
               ~order_by:
                 (List.concat
                    [
                      [
-                       (Queries.A_expr (users#query (fun users -> users#x)), `ASC);
+                       ( Ch_queries.A_expr (users#query (fun users -> users#x)),
+                         `ASC );
                      ];
                    ])
               ~partition_by:(List.concat [ g users ])
-              (Queries.int 1)
+              (Ch_queries.int 1)
         end)
   >>> RUNNING
   val users :
-    g:(< id : (Queries.non_null, int Queries.number) Queries.expr;
-         is_active : (Queries.non_null, bool) Queries.expr;
-         x : (Queries.non_null, string) Queries.expr;
-         xs : (Queries.non_null, (Queries.non_null, string) Queries.array)
-              Queries.expr >
-       Queries.scope -> Queries.a_expr list) ->
-    < _1 : (Queries.non_null, int Queries.number) Queries.expr > Queries.scope
-    Queries.select
+    g:(< id : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr;
+         is_active : (Ch_queries.non_null, bool) Ch_queries.expr;
+         x : (Ch_queries.non_null, string) Ch_queries.expr;
+         xs : (Ch_queries.non_null,
+               (Ch_queries.non_null, string) Ch_queries.array)
+              Ch_queries.expr >
+       Ch_queries.scope -> Ch_queries.a_expr list) ->
+    < _1 : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr >
+    Ch_queries.scope Ch_queries.select
 
 window functions / param in ORDER BY:
   $ ./compile_and_run '
@@ -69,23 +72,25 @@ window functions / param in ORDER BY:
   > '
   >>> PREPROCESSING
   let users ~o =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method _1 =
-            Queries.Expr.count
+            Ch_queries.Expr.count
               ~order_by:(List.concat [ o users ])
-              ~partition_by:(List.concat [ [ Queries.A_expr (Queries.int 1) ] ])
-              (Queries.int 1)
+              ~partition_by:
+                (List.concat [ [ Ch_queries.A_expr (Ch_queries.int 1) ] ])
+              (Ch_queries.int 1)
         end)
   >>> RUNNING
   val users :
-    o:(< id : (Queries.non_null, int Queries.number) Queries.expr;
-         is_active : (Queries.non_null, bool) Queries.expr;
-         x : (Queries.non_null, string) Queries.expr;
-         xs : (Queries.non_null, (Queries.non_null, string) Queries.array)
-              Queries.expr >
-       Queries.scope -> (Queries.a_expr * [ `ASC | `DESC ]) list) ->
-    < _1 : (Queries.non_null, int Queries.number) Queries.expr > Queries.scope
-    Queries.select
+    o:(< id : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr;
+         is_active : (Ch_queries.non_null, bool) Ch_queries.expr;
+         x : (Ch_queries.non_null, string) Ch_queries.expr;
+         xs : (Ch_queries.non_null,
+               (Ch_queries.non_null, string) Ch_queries.array)
+              Ch_queries.expr >
+       Ch_queries.scope -> (Ch_queries.a_expr * [ `ASC | `DESC ]) list) ->
+    < _1 : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr >
+    Ch_queries.scope Ch_queries.select

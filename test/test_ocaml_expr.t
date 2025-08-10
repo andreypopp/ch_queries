@@ -27,9 +27,9 @@ OCaml expression in query:
   let x = 42
   
   let q users =
-    Queries.select ()
-      ~from:(Queries.from (users ~alias:"users"))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (users ~alias:"users"))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = x + 1
         end)

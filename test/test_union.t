@@ -3,31 +3,31 @@ Programmatic union
   > let users1 = [%q "SELECT 1 AS x FROM public.users"];;
   > let users2 = [%q "SELECT 2 AS x FROM public.users"];;
   > let users = [%q "?users1 UNION ?users2"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.int [%e "users.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun users -> Ch_queries.Row.int [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
   let users1 =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
-          method x = Queries.int 1
+          method x = Ch_queries.int 1
         end)
   
   let users2 =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
-          method x = Queries.int 2
+          method x = Ch_queries.int 2
         end)
   
-  let users = Queries.union users1 users2
+  let users = Ch_queries.union users1 users2
   
   let sql, _parse_row =
-    Queries.query users @@ fun users ->
-    Queries.Row.int (users#query (fun users -> users#x))
+    Ch_queries.query users @@ fun users ->
+    Ch_queries.Row.int (users#query (fun users -> users#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -40,28 +40,30 @@ Programmatic union
 UNION syntax:
   $ ./compile_and_run '
   > let users = [%q "SELECT 1 AS x FROM public.users UNION SELECT 2 AS x FROM public.users"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.int [%e "users.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun users -> Ch_queries.Row.int [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
   let users =
-    Queries.union
-      (Queries.select ()
-         ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-         ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.union
+      (Ch_queries.select ()
+         ~from:
+           (Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+         ~select:(fun (users : _ Ch_queries.scope) ->
            object
-             method x = Queries.int 1
+             method x = Ch_queries.int 1
            end))
-      (Queries.select ()
-         ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-         ~select:(fun (users : _ Queries.scope) ->
+      (Ch_queries.select ()
+         ~from:
+           (Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+         ~select:(fun (users : _ Ch_queries.scope) ->
            object
-             method x = Queries.int 2
+             method x = Ch_queries.int 2
            end))
   
   let sql, _parse_row =
-    Queries.query users @@ fun users ->
-    Queries.Row.int (users#query (fun users -> users#x))
+    Ch_queries.query users @@ fun users ->
+    Ch_queries.Row.int (users#query (fun users -> users#x))
   
   let () = print_endline sql
   >>> RUNNING

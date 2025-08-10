@@ -1,22 +1,22 @@
 LIMIT with literal value:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x FROM public.users LIMIT 1"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun users -> Ch_queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
   let users =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
         end)
-      ~limit:(fun (users : _ Queries.scope) -> Queries.int 1)
+      ~limit:(fun (users : _ Ch_queries.scope) -> Ch_queries.int 1)
   
   let sql, _parse_row =
-    Queries.query users @@ fun users ->
-    Queries.Row.string (users#query (fun users -> users#x))
+    Ch_queries.query users @@ fun users ->
+    Ch_queries.Row.string (users#query (fun users -> users#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -29,43 +29,44 @@ LIMIT with parameter:
   > '
   >>> PREPROCESSING
   let users ~n =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
         end)
-      ~limit:(fun (users : _ Queries.scope) -> n users)
+      ~limit:(fun (users : _ Ch_queries.scope) -> n users)
   >>> RUNNING
   val users :
-    n:(< id : (Queries.non_null, int Queries.number) Queries.expr;
-         is_active : (Queries.non_null, bool) Queries.expr;
-         x : (Queries.non_null, string) Queries.expr;
-         xs : (Queries.non_null, (Queries.non_null, string) Queries.array)
-              Queries.expr >
-       Queries.scope -> ('a, int Queries.number) Queries.expr) ->
-    < x : (Queries.non_null, string) Queries.expr > Queries.scope
-    Queries.select
+    n:(< id : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr;
+         is_active : (Ch_queries.non_null, bool) Ch_queries.expr;
+         x : (Ch_queries.non_null, string) Ch_queries.expr;
+         xs : (Ch_queries.non_null,
+               (Ch_queries.non_null, string) Ch_queries.array)
+              Ch_queries.expr >
+       Ch_queries.scope -> ('a, int Ch_queries.number) Ch_queries.expr) ->
+    < x : (Ch_queries.non_null, string) Ch_queries.expr > Ch_queries.scope
+    Ch_queries.select
 
 OFFSET with literal value:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x FROM public.users OFFSET 1"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun users -> Ch_queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
   let users =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
         end)
-      ~offset:(fun (users : _ Queries.scope) -> Queries.int 1)
+      ~offset:(fun (users : _ Ch_queries.scope) -> Ch_queries.int 1)
   
   let sql, _parse_row =
-    Queries.query users @@ fun users ->
-    Queries.Row.string (users#query (fun users -> users#x))
+    Ch_queries.query users @@ fun users ->
+    Ch_queries.Row.string (users#query (fun users -> users#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -78,20 +79,21 @@ OFFSET with parameter:
   > '
   >>> PREPROCESSING
   let users ~n =
-    Queries.select ()
-      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Queries.scope) ->
+    Ch_queries.select ()
+      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
         end)
-      ~offset:(fun (users : _ Queries.scope) -> n users)
+      ~offset:(fun (users : _ Ch_queries.scope) -> n users)
   >>> RUNNING
   val users :
-    n:(< id : (Queries.non_null, int Queries.number) Queries.expr;
-         is_active : (Queries.non_null, bool) Queries.expr;
-         x : (Queries.non_null, string) Queries.expr;
-         xs : (Queries.non_null, (Queries.non_null, string) Queries.array)
-              Queries.expr >
-       Queries.scope -> ('a, int Queries.number) Queries.expr) ->
-    < x : (Queries.non_null, string) Queries.expr > Queries.scope
-    Queries.select
+    n:(< id : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr;
+         is_active : (Ch_queries.non_null, bool) Ch_queries.expr;
+         x : (Ch_queries.non_null, string) Ch_queries.expr;
+         xs : (Ch_queries.non_null,
+               (Ch_queries.non_null, string) Ch_queries.array)
+              Ch_queries.expr >
+       Ch_queries.scope -> ('a, int Ch_queries.number) Ch_queries.expr) ->
+    < x : (Ch_queries.non_null, string) Ch_queries.expr > Ch_queries.scope
+    Ch_queries.select

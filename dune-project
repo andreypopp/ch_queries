@@ -2,27 +2,24 @@
 
 (using menhir 3.0)
 
-(name queries)
+(name ch_queries)
 
 (generate_opam_files true)
 
 (source
- (github username/reponame))
+ (github andreypopp/ch_queries))
 
-(authors "Author Name <author@example.com>")
+(authors "Andrey Popp <me@andreypopp.com>")
 
-(maintainers "Maintainer Name <maintainer@example.com>")
+(maintainers "Andrey Popp <me@andreypopp.com>")
 
 (license LICENSE)
 
 (documentation https://url/to/documentation)
 
 (package
- (name queries)
- (synopsis "A short synopsis")
- (description "A longer description")
+ (name ch_queries)
+ (synopsis "Type safe queries for ClickHouse")
  (depends ocaml menhir pprint ppxlib cmdliner containers)
  (tags
-  ("add topics" "to describe" your project)))
-
-; See the complete stanza docs at https://dune.readthedocs.io/en/stable/reference/dune-project/index.html
+  (database sql dsl clickhouse)))
