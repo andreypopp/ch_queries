@@ -1,11 +1,14 @@
-# queries
+# ch_queries
 
 A library to generate ClickHouse SQL queries in a typesafe way with OCaml.
 
-## queries.ppx
+## ch_queries.ppx
 
-The main mode of using queries is through the `queries.ppx` preprocessor. It
-allows you to write queries in SQL-like syntax:
+The main mode of using ch_queries is through the `ch_queries.ppx` preprocessor. It
+allows you to write queries in SQL-like syntax.
+
+## `%q` - queries
+
 ```ocaml
 let users = {%q|
     SELECT users.id, users.name
@@ -36,7 +39,7 @@ let using_functions users = {%e|farmHash(users.name)|}
 ## `%eu` - expressions, unsafely
 
 Sometimes you need to construct an expression using syntax which is not
-supported by queries.ppx. In this case you can use the `%eu` syntax:
+supported by ch_queries.ppx. In this case you can use the `%eu` syntax:
 ```ocaml
 let expr = {%eu|users.name || ' ' || users.surname|}
 ```
@@ -44,4 +47,8 @@ let expr = {%eu|users.name || ' ' || users.surname|}
 Such syntax recognizes only `q.name` and `?param` constructs and passes the rest
 as-is.
 
-For now that's all, see `tests/` directory for more features and examples.
+## `%t` - types
+
+```ocaml
+type ch_uint64 = {%t|UInt64|}
+```
