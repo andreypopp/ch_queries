@@ -14,6 +14,8 @@ depends: [
   "menhir"
   "pprint"
   "ppxlib"
+  "ppx_hash"
+  "ppx_compare"
   "cmdliner"
   "containers"
   "odoc" {with-doc}
