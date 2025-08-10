@@ -488,9 +488,11 @@ module Row = struct
         -> 'a option t
     | Row_both : 'a t * 'b t -> ('a * 'b) t
     | Row_map : ('a -> 'b) * 'a t -> 'b t
+    | Row_val : 'a -> 'a t
 
   let ( let+ ) x f = Row_map (f, x)
   let ( and+ ) x y = Row_both (x, y)
+  let return x = Row_val x
   let string expr = Row_col (expr, string_of_json)
   let string_opt expr = Row_col_opt (expr, string_of_json)
   let bool expr = Row_col (expr, bool_of_json)
@@ -506,6 +508,7 @@ module Row = struct
     let rec aux : type a. a t -> json list -> a * json list =
      fun rowspec row ->
       match (rowspec, row) with
+      | Row_val x, row -> (x, row)
       | Row_col (_, _parse), [] -> parse_error "missing a column"
       | Row_col (_, parse), col :: row -> (parse col, row)
       | Row_col_opt (_, _parse), `Null :: row -> (None, row)
@@ -533,6 +536,7 @@ module Row = struct
     let rec aux : type a. a t -> a_expr list -> a_expr list =
      fun rowspec acc ->
       match rowspec with
+      | Row_val _ -> acc
       | Row_col (expr, _) -> A_expr expr :: acc
       | Row_col_opt (expr, _) -> A_expr expr :: acc
       | Row_col_number (expr, _) -> A_expr expr :: acc

@@ -168,6 +168,9 @@ module Row : sig
       [let+ x = P1 and+ y = P2 in E] parses with [P1] and [P2] and makes results
       available as a tuple [x] and [y] in an expression [E]. *)
 
+  val return : 'a -> 'a t
+  (** Return a constant value. *)
+
   val string : (non_null, string) expr -> string t
   val string_opt : ([< null ], string) expr -> string option t
   val bool : (non_null, bool) expr -> bool t
