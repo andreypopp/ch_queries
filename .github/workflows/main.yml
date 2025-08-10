@@ -16,7 +16,7 @@ jobs:
         os:
           - ubuntu-latest
         ocaml-compiler:
-          - "4.14"
+          # - "4.14" # not testing because of ocamlformat differences
           - "5.3"
 
     runs-on: ${{ matrix.os }}
