@@ -57,10 +57,10 @@ arrays:
   >>> PREPROCESSING
   let x = Queries.array [ Queries.int 1; Queries.bool true ]
   >>> RUNNING
-  Error: This expression has type (Queries.non_null, bool) Queries.expr
+  Error: This expression has type "(Queries.non_null, bool) Queries.expr"
          but an expression was expected of type
-           (Queries.non_null, int Queries.number) Queries.expr
-         Type bool is not compatible with type int Queries.number
+           "(Queries.non_null, int Queries.number) Queries.expr"
+         Type "bool" is not compatible with type "int Queries.number"
 
 parameter expressions:
   $ ./compile_and_run '

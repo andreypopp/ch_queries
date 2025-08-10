@@ -15,6 +15,7 @@
 %token <string> ID
 %token <string> PARAM
 %token <string> PARAM_SPLICE
+%token <string> CH_PARAM
 %token <string> OCAML_EXPR
 %token <string> STRING
 %token <int> NUMBER
@@ -216,6 +217,8 @@ expr:
     { make_expr $startpos $endpos (E_param (param, Some typ)) }
   | ocaml_expr=OCAML_EXPR
     { make_expr $startpos $endpos (E_ocaml_expr ocaml_expr) }
+  | param_type=CH_PARAM
+    { make_expr $startpos $endpos (E_unsafe (make_id $startpos $endpos param_type)) }
   | e=expr IN LPAREN q=query_no_param RPAREN
     { make_expr $startpos $endpos (E_in (e, In_query q)) }
   | e=expr IN e_rhs=expr
