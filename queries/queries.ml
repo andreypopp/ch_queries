@@ -33,6 +33,8 @@ and 'scope select0 =
       order_by : (a_expr * [ `ASC | `DESC ]) list option;
       limit : a_expr option;
       offset : a_expr option;
+      settings :
+        (string * [ `Int of int | `String of string | `Bool of bool ]) list;
       mutable fields : a_field list;
           (** list of fields build within the SELECT *)
     }
@@ -198,6 +200,7 @@ module To_syntax = struct
             order_by;
             limit;
             offset;
+            settings;
             fields;
             scope = _;
           } ->
@@ -215,6 +218,16 @@ module To_syntax = struct
           let order_by = Option.map order_by_to_syntax order_by in
           let limit = Option.map (fun (A_expr expr) -> expr) limit in
           let offset = Option.map (fun (A_expr expr) -> expr) offset in
+          let settings =
+            List.map settings ~f:(fun (id, value) ->
+                let setting_value =
+                  match value with
+                  | `Int n -> Syntax.Setting_lit (L_int n)
+                  | `String s -> Syntax.Setting_lit (L_string s)
+                  | `Bool b -> Syntax.Setting_lit (L_bool b)
+                in
+                Syntax.Setting_item (Syntax.make_id id, setting_value))
+          in
           let from = from_to_syntax from in
           Q_select
             {
@@ -228,6 +241,7 @@ module To_syntax = struct
               order_by;
               limit;
               offset;
+              settings;
             }
       | Union { x; y } -> Q_union (to_syntax x, to_syntax y)
     and from_one_to_syntax : type a. a from_one0 -> Syntax.from_one = function
@@ -398,7 +412,7 @@ let rec add_field expr select =
       alias
 
 let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit
-    ?offset ~select () ~alias =
+    ?offset ?(settings = []) ~select () ~alias =
   let from = from () in
   let inner_scope = scope_from from in
   let scope' = select inner_scope in
@@ -435,6 +449,7 @@ let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit
            order_by;
            limit;
            offset;
+           settings;
            fields = [];
          })
   in
@@ -581,6 +596,7 @@ let query q f =
         order_by = None;
         limit = None;
         offset = None;
+        settings = [];
       }
   in
   let sql =

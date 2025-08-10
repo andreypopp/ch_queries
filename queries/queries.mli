@@ -70,6 +70,7 @@ val select :
   ?order_by:('from -> (a_expr * [ `ASC | `DESC ]) list) ->
   ?limit:('from -> (_, int number) expr) ->
   ?offset:('from -> (_, int number) expr) ->
+  ?settings:(string * [ `Int of int | `String of string | `Bool of bool ]) list ->
   select:('from -> 'select) ->
   unit ->
   'select scope select

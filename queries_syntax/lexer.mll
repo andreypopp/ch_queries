@@ -34,6 +34,7 @@
     ("FINAL", FINAL);
     ("IN", IN);
     ("UNION", UNION);
+    ("SETTINGS", SETTINGS);
   ]
 
   let keyword_table = Hashtbl.create 16
@@ -97,6 +98,7 @@
     | Parser.FINAL -> "FINAL"
     | Parser.IN -> "IN"
     | Parser.UNION -> "UNION"
+    | Parser.SETTINGS -> "SETTINGS"
     | Parser.ARROW -> "ARROW"
     | Parser.EOF -> "EOF"
 

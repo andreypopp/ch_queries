@@ -31,6 +31,7 @@
 %token CLUSTER VIEW FINAL
 %token IN
 %token UNION
+%token SETTINGS
 %token ARROW
 %token EOF
 
@@ -63,8 +64,8 @@ a_query:
     q=query EOF { q }
 
 query_no_param:
-    SELECT select=select FROM from=from prewhere=prewhere? where=where? qualify=qualify? group_by=group_by? having=having? order_by=order_by? limit=limit? offset=offset?
-    { make_query $startpos $endpos (Syntax.Q_select { select; from; prewhere; where; qualify; group_by; having; order_by; limit; offset }) }
+    SELECT select=select FROM from=from prewhere=prewhere? where=where? qualify=qualify? group_by=group_by? having=having? order_by=order_by? limit=limit? offset=offset? settings=settings?
+    { make_query $startpos $endpos (Syntax.Q_select { select; from; prewhere; where; qualify; group_by; having; order_by; limit; offset; settings = Option.value settings ~default:[] }) }
   | q1=query UNION q2=query
     { make_query $startpos $endpos (Syntax.Q_union (q1, q2)) }
 
@@ -137,6 +138,23 @@ limit:
 
 offset:
     OFFSET e=expr { e }
+
+settings:
+    SETTINGS items=separated_list(COMMA, setting_item) { items }
+
+setting_item:
+    id=id EQUALS value=setting_value { Setting_item (id, value) }
+  | splice=param_splice { Setting_splice splice }
+
+setting_value:
+    lit=setting_literal { Setting_lit lit }
+  | param=param { Setting_param param }
+
+setting_literal:
+    n=NUMBER { L_int n }
+  | s=STRING { L_string s }
+  | TRUE     { L_bool true }
+  | FALSE    { L_bool false }
 
 window_spec:
     partition_by=partition_by? order_by=order_by?

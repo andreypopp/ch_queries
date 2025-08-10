@@ -183,6 +183,7 @@ and pp_query { node; eq = _; loc = _ } =
         order_by;
         limit;
         offset;
+        settings;
       } ->
       let pp_fields =
         match select with
@@ -247,6 +248,30 @@ and pp_query { node; eq = _; loc = _ } =
         | None -> None
         | Some expr -> Some (group (string "OFFSET" ^/^ pp_expr expr))
       in
+      let settings =
+        match settings with
+        | [] -> None
+        | items ->
+            let pp_setting_item = function
+              | Setting_item (id, value) ->
+                  let pp_value =
+                    match value with
+                    | Setting_lit (L_int n) -> string (string_of_int n)
+                    | Setting_lit (L_string s) ->
+                        string (Printf.sprintf "'%s'" (escape_single_quoted s))
+                    | Setting_lit (L_float n) -> string (string_of_float n)
+                    | Setting_lit (L_bool b) -> string (if b then "1" else "0")
+                    | Setting_lit L_null -> string "NULL"
+                    | Setting_param param -> string "?" ^^ pp_id param
+                  in
+                  pp_id id ^^ string "=" ^^ pp_value
+              | Setting_splice id -> string "?" ^^ pp_id id ^^ string "..."
+            in
+            let pp_items =
+              separate (string ", ") (List.map ~f:pp_setting_item items)
+            in
+            Some (group (string "SETTINGS " ^^ pp_items))
+      in
       group
         (separate (break 1)
            (List.filter_map ~f:Fun.id
@@ -261,6 +286,7 @@ and pp_query { node; eq = _; loc = _ } =
                 order_by;
                 limit;
                 offset;
+                settings;
               ]))
 
 and pp_typ typ =

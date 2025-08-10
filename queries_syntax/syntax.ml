@@ -69,10 +69,13 @@ and querysyn =
       order_by : order_by list option;
       limit : expr option;
       offset : expr option;
+      settings : setting_item list;
     }
   | Q_union of query * query
   | Q_param of id
 
+and setting = Setting_lit of lit | Setting_param of id
+and setting_item = Setting_item of id * setting | Setting_splice of id
 and select = Select_fields of field list | Select_splice of id
 and from_one = from_onesyn node
 and from = fromsyn node

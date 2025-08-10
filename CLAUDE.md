@@ -31,7 +31,7 @@ The user typically runs dune build in watch mode outside Claude session):
 
 - **queries/** - core libary which implements typesafe DSL combinators for query generation
 - **queries_syntax/** - surface syntax + lexer/parser for the DSL
-    - **queries_syntax/syntax.ml** - lexer for the DSL (tokens are defined in the parser)
+    - **queries_syntax/syntax.ml** - AST types and data structures for the DSL
     - **queries_syntax/lexer.mll** - lexer for the DSL (tokens are defined in the parser)
     - **queries_syntax/parser.mly** - parser for the DSL
     - **queries_syntax/printer.ml** - printer for the syntax, uses pprint library
@@ -42,6 +42,24 @@ The user typically runs dune build in watch mode outside Claude session):
     - to run and promote the changes in expected vs current: `dune test --auto-promote`, only use when you've verified the changes are correct
 
 when exploring a project structure, it is fine to read entire files (they are small)
+
+## Adding new syntax features
+
+When adding new syntax to the query language, follow this pattern:
+
+1. **Add to syntax.ml**: Define the AST types for the new feature
+2. **Add to lexer.mll**: Add new keywords to the keywords table and handle in string_of_token
+3. **Add to parser.mly**: 
+   - Add token declarations
+   - Add parsing rules
+   - Include new fields in existing rules (e.g., SELECT queries)
+4. **Update printer.ml**: Add pretty-printing support for the new syntax
+5. **Update queries.ml**: Add the feature to the core DSL types and translation
+6. **Update queries.mli**: Add interface signatures for new functions
+7. **Update queries_ppx.ml**: Add PPX transformation support
+8. **Run `dune build`** and fix any build errors systematically
+
+Always check that interface files (.mli) match implementation files (.ml) when adding new optional parameters to functions.
 
 ## Code Style
 
@@ -73,3 +91,9 @@ By default, as we use `containers`, the `=` operator has the type `int -> int
 -> bool`. To compare values we need type specific operators, like
 `String.equal` or `List.equal` and etc. Same holds for `compare` function (and
 `>`, `<`, `>=`, `<=` operators).
+
+## Common patterns
+
+- **Record field access**: When the compiler can't infer types, use qualified access like `id.Syntax.node` instead of `id.node`
+- **Pattern matching**: Always handle all cases in pattern matches. Use `_` only when explicitly ignoring unused variants  
+- **Record construction**: When adding fields to existing record types, think first where the field values should come from (function arguments, extending other types), then consider default/empty values as a last resort

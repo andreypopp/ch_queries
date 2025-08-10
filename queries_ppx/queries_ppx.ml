@@ -322,6 +322,36 @@ and stage_order_by ~loc ~from order_by =
   in
   [%expr List.concat [%e elist ~loc xs]]
 
+and stage_settings ~loc settings =
+  let body =
+    List.map settings ~f:(function
+      | Syntax.Setting_item (id, value) ->
+          let id_str = [%expr [%e estring ~loc id.Syntax.node]] in
+          let value_expr =
+            match value with
+            | Syntax.Setting_lit (L_int n) -> [%expr `Int [%e eint ~loc n]]
+            | Syntax.Setting_lit (L_string s) ->
+                [%expr `String [%e estring ~loc s]]
+            | Syntax.Setting_lit (L_float _) ->
+                failwith
+                  "invariant violation: float is not supported in settings"
+            | Syntax.Setting_lit (L_bool b) -> [%expr `Bool [%e ebool ~loc b]]
+            | Syntax.Setting_lit L_null ->
+                failwith
+                  "invariant violation: NULL is not supported in settings"
+            | Syntax.Setting_param param ->
+                let e =
+                  Syntax.make_expr ~loc:param.loc (E_param (param, None))
+                in
+                stage_expr ~params:[] ~from:None e
+          in
+          [%expr [ ([%e id_str], [%e value_expr]) ]]
+      | Syntax.Setting_splice id ->
+          let e = Syntax.make_expr ~loc:id.loc (E_param (id, None)) in
+          stage_expr ~params:[] ~from:None e)
+  in
+  [%expr List.concat [%e elist ~loc body]]
+
 and stage_field ~from idx { Syntax.expr; alias } =
   let idx = idx + 1 in
   let loc = to_location expr in
@@ -365,6 +395,7 @@ and stage_query ({ node; _ } as q) =
         order_by;
         limit;
         offset;
+        settings;
       } ->
       let loc = to_location q in
       let select =
@@ -470,6 +501,14 @@ and stage_query ({ node; _ } as q) =
                 (stage_expr ~params:[] ~from:(Some from) expr)
             in
             (Labelled "offset", offset) :: args
+      in
+      let args =
+        match settings with
+        | [] -> args
+        | settings ->
+            let loc = to_location q in
+            let settings_expr = stage_settings ~loc settings in
+            (Labelled "settings", settings_expr) :: args
       in
       pexp_apply ~loc [%expr Queries.select]
         ((Nolabel, [%expr ()]) :: List.rev args)
