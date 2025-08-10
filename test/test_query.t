@@ -25,6 +25,47 @@ basic form:
   FROM (
     SELECT users.x AS _1 FROM public.users AS users WHERE users.is_active) AS q
 
+unqualified columns are resolved if possible:
+  $ ./compile_and_run '
+  > let users = [%q "SELECT x AS x FROM public.users WHERE is_active"];;
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
+  > let () = print_endline sql;;
+  > '
+  >>> PREPROCESSING
+  let users =
+    Queries.select ()
+      ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Queries.scope) ->
+        object
+          method x = users#query (fun users -> users#x)
+        end)
+      ~where:(fun (users : _ Queries.scope) ->
+        users#query (fun users -> users#is_active))
+  
+  let sql, _parse_row =
+    Queries.query users @@ fun users ->
+    Queries.Row.string (users#query (fun users -> users#x))
+  
+  let () = print_endline sql
+  >>> RUNNING
+  SELECT q._1
+  FROM (
+    SELECT users.x AS _1 FROM public.users AS users WHERE users.is_active) AS q
+
+otherwise, an error is raised:
+  $ ./compile_and_run '
+  > let users = [%q "SELECT x AS x FROM public.users JOIN public.users AS u2 ON users.id = u2.id"];;
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
+  > let () = print_endline sql;;
+  > '
+  >>> PREPROCESSING
+  File "-", line 2, characters 24-25:
+  Error: ambiguous column reference
+  >>> RUNNING
+  File "./test_query.ml", line 8, characters 24-25:
+  Error: ambiguous column reference
+  [2]
+
 select from a subquery:
   $ ./compile_and_run '
   > let users = [%q "SELECT q.x AS x FROM (SELECT users.x AS x, users.is_active AS is_active FROM public.users) AS q WHERE q.is_active"];;
@@ -118,7 +159,7 @@ select from an OCaml value (parameter syntax):
       ~from:(Queries.from (t ~alias:"q"))
       ~select:(fun (q : _ Queries.scope) ->
         object
-          method _1 = q#query (fun q -> q#x)
+          method x = q#query (fun q -> q#x)
         end)
       ~where:(fun (q : _ Queries.scope) -> q#query (fun q -> q#is_active))
   >>> RUNNING
@@ -126,7 +167,7 @@ select from an OCaml value (parameter syntax):
     (alias:string ->
      < is_active : ('a, bool) Queries.expr; x : ('b, 'c) Queries.expr; .. >
      Queries.scope Queries.from_one) ->
-    < _1 : ('b, 'c) Queries.expr > Queries.scope Queries.select
+    < x : ('b, 'c) Queries.expr > Queries.scope Queries.select
 
 select from an OCaml value (id syntax):
   $ ./compile_and_run '
@@ -139,7 +180,7 @@ select from an OCaml value (id syntax):
       ~from:(Queries.from (t ~alias:"t"))
       ~select:(fun (t : _ Queries.scope) ->
         object
-          method _1 = t#query (fun t -> t#x)
+          method x = t#query (fun t -> t#x)
         end)
       ~where:(fun (t : _ Queries.scope) -> t#query (fun t -> t#is_active))
   >>> RUNNING
@@ -147,7 +188,7 @@ select from an OCaml value (id syntax):
     (alias:string ->
      < is_active : ('a, bool) Queries.expr; x : ('b, 'c) Queries.expr; .. >
      Queries.scope Queries.from_one) ->
-    < _1 : ('b, 'c) Queries.expr > Queries.scope Queries.select
+    < x : ('b, 'c) Queries.expr > Queries.scope Queries.select
 
 splicing ocaml values into WHERE:
   $ ./compile_and_run '

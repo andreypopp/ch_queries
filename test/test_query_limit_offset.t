@@ -1,7 +1,7 @@
 LIMIT with literal value:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x FROM public.users LIMIT 1"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users._1"]
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -10,13 +10,13 @@ LIMIT with literal value:
       ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Queries.scope) ->
         object
-          method _1 = users#query (fun users -> users#x)
+          method x = users#query (fun users -> users#x)
         end)
       ~limit:(fun (users : _ Queries.scope) -> Queries.int 1)
   
   let sql, _parse_row =
     Queries.query users @@ fun users ->
-    Queries.Row.string (users#query (fun users -> users#_1))
+    Queries.Row.string (users#query (fun users -> users#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -33,7 +33,7 @@ LIMIT with parameter:
       ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Queries.scope) ->
         object
-          method _1 = users#query (fun users -> users#x)
+          method x = users#query (fun users -> users#x)
         end)
       ~limit:(fun (users : _ Queries.scope) -> n users)
   >>> RUNNING
@@ -44,13 +44,13 @@ LIMIT with parameter:
          xs : (Queries.non_null, (Queries.non_null, string) Queries.array)
               Queries.expr >
        Queries.scope -> ('a, int Queries.number) Queries.expr) ->
-    < _1 : (Queries.non_null, string) Queries.expr > Queries.scope
+    < x : (Queries.non_null, string) Queries.expr > Queries.scope
     Queries.select
 
 OFFSET with literal value:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x FROM public.users OFFSET 1"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users._1"]
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -59,13 +59,13 @@ OFFSET with literal value:
       ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Queries.scope) ->
         object
-          method _1 = users#query (fun users -> users#x)
+          method x = users#query (fun users -> users#x)
         end)
       ~offset:(fun (users : _ Queries.scope) -> Queries.int 1)
   
   let sql, _parse_row =
     Queries.query users @@ fun users ->
-    Queries.Row.string (users#query (fun users -> users#_1))
+    Queries.Row.string (users#query (fun users -> users#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -82,7 +82,7 @@ OFFSET with parameter:
       ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Queries.scope) ->
         object
-          method _1 = users#query (fun users -> users#x)
+          method x = users#query (fun users -> users#x)
         end)
       ~offset:(fun (users : _ Queries.scope) -> n users)
   >>> RUNNING
@@ -93,5 +93,5 @@ OFFSET with parameter:
          xs : (Queries.non_null, (Queries.non_null, string) Queries.array)
               Queries.expr >
        Queries.scope -> ('a, int Queries.number) Queries.expr) ->
-    < _1 : (Queries.non_null, string) Queries.expr > Queries.scope
+    < x : (Queries.non_null, string) Queries.expr > Queries.scope
     Queries.select

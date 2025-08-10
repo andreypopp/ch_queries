@@ -1,6 +1,6 @@
 test IN expression with subquery:
   $ ./compile_and_run '
-  > let users = [%q "SELECT users.x AS x FROM public.users WHERE users.id IN (SELECT users.id FROM public.users)"];;
+  > let users = [%q "SELECT users.x AS x FROM public.users WHERE users.id IN (SELECT users.id AS _1 FROM public.users)"];;
   > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '

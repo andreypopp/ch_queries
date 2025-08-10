@@ -174,10 +174,10 @@ join_kind:
   | LEFT  JOIN OPTIONAL { `LEFT_JOIN_OPTIONAL }
 
 expr:
-    ns=id DOT id=id
+    id=id
+    { make_expr $startpos $endpos (E_id id) }
+  | ns=id DOT id=id
     { make_expr $startpos $endpos (E_col (ns, id)) }
-  | id=id
-    { make_expr $startpos $endpos (E_unsafe id) }
   | n=NUMBER
     { make_expr $startpos $endpos (E_lit (L_int n)) }
   | s=STRING

@@ -15,8 +15,8 @@ select from a JOIN:
                (p#query (fun p -> p#user_id))))
       ~select:(fun ((u : _ Queries.scope), (p : _ Queries.scope)) ->
         object
-          method _1 = u#query (fun u -> u#id)
-          method _2 = p#query (fun p -> p#name)
+          method id = u#query (fun u -> u#id)
+          method name = p#query (fun p -> p#name)
         end)
       ~where:(fun ((u : _ Queries.scope), (p : _ Queries.scope)) ->
         u#query (fun u -> u#is_active))

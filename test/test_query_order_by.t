@@ -1,7 +1,7 @@
 ORDER BY single column (default ASC):
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x FROM public.users ORDER BY users.x"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users._1"]
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -10,7 +10,7 @@ ORDER BY single column (default ASC):
       ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Queries.scope) ->
         object
-          method _1 = users#query (fun users -> users#x)
+          method x = users#query (fun users -> users#x)
         end)
       ~order_by:(fun (users : _ Queries.scope) ->
         List.concat
@@ -18,7 +18,7 @@ ORDER BY single column (default ASC):
   
   let sql, _parse_row =
     Queries.query users @@ fun users ->
-    Queries.Row.string (users#query (fun users -> users#_1))
+    Queries.Row.string (users#query (fun users -> users#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -28,7 +28,7 @@ ORDER BY single column (default ASC):
 ORDER BY with DESC:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x FROM public.users ORDER BY users.x DESC"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users._1"]
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -37,7 +37,7 @@ ORDER BY with DESC:
       ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Queries.scope) ->
         object
-          method _1 = users#query (fun users -> users#x)
+          method x = users#query (fun users -> users#x)
         end)
       ~order_by:(fun (users : _ Queries.scope) ->
         List.concat
@@ -45,7 +45,7 @@ ORDER BY with DESC:
   
   let sql, _parse_row =
     Queries.query users @@ fun users ->
-    Queries.Row.string (users#query (fun users -> users#_1))
+    Queries.Row.string (users#query (fun users -> users#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -56,7 +56,7 @@ ORDER BY with DESC:
 ORDER BY multiple columns:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x FROM public.users ORDER BY users.x, users.id DESC"];;
-  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users._1"]
+  > let sql, _parse_row = Queries.query users @@ fun users -> Queries.Row.string [%e "users.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -65,7 +65,7 @@ ORDER BY multiple columns:
       ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Queries.scope) ->
         object
-          method _1 = users#query (fun users -> users#x)
+          method x = users#query (fun users -> users#x)
         end)
       ~order_by:(fun (users : _ Queries.scope) ->
         List.concat
@@ -76,7 +76,7 @@ ORDER BY multiple columns:
   
   let sql, _parse_row =
     Queries.query users @@ fun users ->
-    Queries.Row.string (users#query (fun users -> users#_1))
+    Queries.Row.string (users#query (fun users -> users#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -97,7 +97,7 @@ ORDER BY with a parameter:
       ~from:(Queries.from (Database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Queries.scope) ->
         object
-          method _1 = users#query (fun users -> users#x)
+          method x = users#query (fun users -> users#x)
         end)
       ~order_by:(fun (users : _ Queries.scope) -> List.concat [ ord users ])
   >>> RUNNING
@@ -108,5 +108,5 @@ ORDER BY with a parameter:
            xs : (Queries.non_null, (Queries.non_null, string) Queries.array)
                 Queries.expr >
          Queries.scope -> (Queries.a_expr * [ `ASC | `DESC ]) list) ->
-    < _1 : (Queries.non_null, string) Queries.expr > Queries.scope
+    < x : (Queries.non_null, string) Queries.expr > Queries.scope
     Queries.select

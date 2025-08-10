@@ -19,6 +19,7 @@ let rec pp_expr expr =
   match expr.node with
   | E_unsafe_concat xs -> group (separate_map empty pp_expr xs)
   | E_unsafe id -> string id.node
+  | E_id id -> pp_id id
   | E_col (ns, id) -> string (Printf.sprintf "%s.%s" ns.node id.node)
   | E_lit (L_int n) -> string (string_of_int n)
   | E_lit (L_float n) -> string (string_of_float n)

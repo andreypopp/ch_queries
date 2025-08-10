@@ -14,6 +14,7 @@ type expr = exprsyn node [@@deriving hash, equal]
 
 and exprsyn =
   | E_col of id * id  (** column reference, e.g. `table.col` *)
+  | E_id of id
   | E_lit of lit  (** literal value, e.g. `42`, `true`, `'hello'` *)
   | E_call of func * expr list
       (** encodes function calls and operators as well *)
