@@ -56,7 +56,7 @@ arrays:
 
   $ ./compile_and_run '
   > let x = [%e "[1, true]"]
-  > ' 2>&1 | rg -v File
+  > ' 2>&1 | grep -v File
   >>> PREPROCESSING
   let x = Ch_queries.array [ Ch_queries.int 1; Ch_queries.bool true ]
   >>> RUNNING
