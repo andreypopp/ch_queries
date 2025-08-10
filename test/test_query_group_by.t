@@ -53,8 +53,8 @@ GROUP BY multiple columns:
   >>> RUNNING
   SELECT q._1
   FROM (
-    SELECT users.x AS _1 FROM public.users AS users GROUP BY users.x, users.id) AS
-  q
+    SELECT users.x AS _1 FROM public.users AS users GROUP BY users.x, users.id)
+    AS q
 
 GROUP BY with a parameter:
   $ ./compile_and_run '

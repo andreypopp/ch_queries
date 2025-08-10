@@ -3,7 +3,7 @@
   SELECT x.name FROM x AS x
 
   $ queries parse 'SELECT x.name FROM ?x WHERE x.age + 30'
-  SELECT x.name FROM x AS x WHERE x.age + 30
+  SELECT x.name FROM x AS x WHERE (x.age + 30)
 
   $ queries parse 'SELECT x.name FROM ?x WHERE x.is_active'
   SELECT x.name FROM x AS x WHERE x.is_active
@@ -13,11 +13,11 @@
 
 parsing AND:
   $ queries parse 'SELECT x.name FROM ?x WHERE true AND false'
-  SELECT x.name FROM x AS x WHERE true AND false
+  SELECT x.name FROM x AS x WHERE (true AND false)
 
 parsing OR:
   $ queries parse 'SELECT x.name FROM ?x WHERE true OR false'
-  SELECT x.name FROM x AS x WHERE true OR false
+  SELECT x.name FROM x AS x WHERE (true OR false)
 
 parsing splicing:
   $ queries parse 'SELECT x.name FROM ?x WHERE ?condition'
@@ -25,7 +25,7 @@ parsing splicing:
 
 parsing string literals:
   $ queries parse "SELECT x.name FROM ?x WHERE x.name = 'hello'"
-  SELECT x.name FROM x AS x WHERE x.name = 'hello'
+  SELECT x.name FROM x AS x WHERE (x.name = 'hello')
 
   $ queries parse "SELECT 'hello world' FROM ?x"
   SELECT 'hello world' FROM x AS x
@@ -76,23 +76,23 @@ parsing arrays:
 
 parsing lambda expressions:
   $ queries parse 'SELECT arrayMap(x -> x + 1, [1, 2, 3]) FROM db.table'
-  SELECT arrayMap(x -> x + 1, [1, 2, 3]) FROM db.table AS table
+  SELECT arrayMap(x -> (x + 1), [1, 2, 3]) FROM db.table AS table
 
   $ queries parse 'SELECT arrayFilter(item -> item + 1, t.numbers) FROM db.table AS t'
-  SELECT arrayFilter(item -> item + 1, t.numbers) FROM db.table AS t
+  SELECT arrayFilter(item -> (item + 1), t.numbers) FROM db.table AS t
 
   $ queries parse 'SELECT arrayReduce(x -> x * 2, t.arr) FROM db.table AS t'
-  SELECT arrayReduce(x -> x * 2, t.arr) FROM db.table AS t
+  SELECT arrayReduce(x -> (x * 2), t.arr) FROM db.table AS t
 
 parsing nested lambda expressions:
   $ queries parse 'SELECT arrayMap(x -> arrayMap(y -> x + y, [1, 2]), [3, 4]) FROM db.table'
-  SELECT arrayMap(x -> arrayMap(y -> x + y, [1, 2]), [3, 4])
+  SELECT arrayMap(x -> arrayMap(y -> (x + y), [1, 2]), [3, 4])
   FROM db.table AS table
 
 parsing lambda with complex body:
   $ queries parse 'SELECT arrayMap(x -> x * 2 + 1, t.nums) FROM db.table AS t'
-  SELECT arrayMap(x -> x * 2 + 1, t.nums) FROM db.table AS t
+  SELECT arrayMap(x -> ((x * 2) + 1), t.nums) FROM db.table AS t
 
 parsing lambda with parentheses:
   $ queries parse 'SELECT arrayMap((x -> x + 1), t.arr) FROM db.table AS t'
-  SELECT arrayMap(x -> x + 1, t.arr) FROM db.table AS t
+  SELECT arrayMap(x -> (x + 1), t.arr) FROM db.table AS t

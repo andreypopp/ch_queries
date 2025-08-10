@@ -36,8 +36,9 @@ test cluster syntax parsing:
   SELECT q._1
   FROM (
     SELECT users._2 AS _1
-    FROM cluster(my_cluster, view(SELECT users.is_active AS _1, users.x AS _2
-    FROM public.users AS users)) AS users
+    FROM cluster(my_cluster, view(
+      SELECT users.is_active AS _1, users.x AS _2 FROM public.users AS users))
+      AS users
     WHERE users._1) AS q
 
 test parameterized cluster syntax:
@@ -78,6 +79,7 @@ test parameterized cluster syntax:
   SELECT q._1
   FROM (
     SELECT users._2 AS _1
-    FROM cluster(test_cluster, view(SELECT users.is_active AS _1, users.x AS _2
-    FROM public.users AS users)) AS users
+    FROM cluster(test_cluster, view(
+      SELECT users.is_active AS _1, users.x AS _2 FROM public.users AS users))
+      AS users
     WHERE users._1) AS q

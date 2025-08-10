@@ -60,7 +60,7 @@ and from_one_scope_expr from_one =
   let open Syntax in
   let loc = to_location from_one in
   match from_one.node with
-  | F_table { alias; _ } | F_select { alias; _ } | F_value { alias; _ } ->
+  | F_table { alias; _ } | F_select { alias; _ } | F_param { alias; _ } ->
       evar ~loc alias.node
 
 let rec from_scope_pattern ?kind from =
@@ -90,7 +90,7 @@ and from_one_scope_pattern from_one =
   let open Syntax in
   let loc = to_location from_one in
   match from_one.node with
-  | F_table { alias; _ } | F_select { alias; _ } | F_value { alias; _ } ->
+  | F_table { alias; _ } | F_select { alias; _ } | F_param { alias; _ } ->
       pvar ~loc alias.node
 
 let rec typ_to_ocaml_type ~loc typ =
@@ -496,7 +496,7 @@ and stage_from_one from_one =
       let select_expr = stage_query select in
       let alias_expr = estring ~loc alias.node in
       [%expr Queries.from_select [%e select_expr] ~alias:[%e alias_expr]]
-  | F_value { id; alias } ->
+  | F_param { id; alias } ->
       let loc = to_location id in
       [%expr [%e evar ~loc id.node] ~alias:[%e estring ~loc alias.node]]
 

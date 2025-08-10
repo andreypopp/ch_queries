@@ -107,10 +107,10 @@ select from a subquery (no alias default to "q"):
       SELECT users.is_active AS _1, users.x AS _2 FROM public.users AS users) AS q
     WHERE q._1) AS q
 
-select from an OCaml value:
+select from an OCaml value (parameter syntax):
   $ ./compile_and_run '
-  > let users t = [%q "SELECT q.x FROM ?t AS q WHERE q.is_active"]
-  > let (_ : _ Queries.select) = users (Database.Public.users ~final:false)
+  > let users t = [%q "SELECT q.x FROM ?t AS q WHERE q.is_active"];;
+  > #show users
   > '
   >>> PREPROCESSING
   let users t =
@@ -121,9 +121,33 @@ select from an OCaml value:
           method _1 = q#query (fun q -> q#x)
         end)
       ~where:(fun (q : _ Queries.scope) -> q#query (fun q -> q#is_active))
-  
-  let (_ : _ Queries.select) = users (Database.Public.users ~final:false)
   >>> RUNNING
+  val users :
+    (alias:string ->
+     < is_active : ('a, bool) Queries.expr; x : ('b, 'c) Queries.expr; .. >
+     Queries.scope Queries.from_one) ->
+    < _1 : ('b, 'c) Queries.expr > Queries.scope Queries.select
+
+select from an OCaml value (id syntax):
+  $ ./compile_and_run '
+  > let users t = [%q "SELECT t.x FROM t WHERE t.is_active"];;
+  > #show users
+  > '
+  >>> PREPROCESSING
+  let users t =
+    Queries.select ()
+      ~from:(Queries.from (t ~alias:"t"))
+      ~select:(fun (t : _ Queries.scope) ->
+        object
+          method _1 = t#query (fun t -> t#x)
+        end)
+      ~where:(fun (t : _ Queries.scope) -> t#query (fun t -> t#is_active))
+  >>> RUNNING
+  val users :
+    (alias:string ->
+     < is_active : ('a, bool) Queries.expr; x : ('b, 'c) Queries.expr; .. >
+     Queries.scope Queries.from_one) ->
+    < _1 : ('b, 'c) Queries.expr > Queries.scope Queries.select
 
 splicing ocaml values into WHERE:
   $ ./compile_and_run '
@@ -244,8 +268,8 @@ select from table with FINAL keyword:
   >>> RUNNING
   SELECT q._1
   FROM (
-    SELECT users.x AS _1 FROM public.users AS users FINAL WHERE users.is_active) AS
-  q
+    SELECT users.x AS _1 FROM public.users AS users FINAL WHERE users.is_active)
+    AS q
 
 select with PREWHERE clause:
   $ ./compile_and_run '
@@ -277,7 +301,7 @@ select with PREWHERE clause:
     SELECT users.x AS _1
     FROM public.users AS users
     PREWHERE users.is_active
-    WHERE users.id = 10) AS q
+    WHERE (users.id = 10)) AS q
 
 expressions referenced multiple times result in a single column added to teh subquery:
   $ ./compile_and_run '

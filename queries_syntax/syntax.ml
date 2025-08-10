@@ -83,7 +83,7 @@ and from_onesyn =
       alias : id;
       cluster_name : cluster_name option;
     }
-  | F_value of { id : id; alias : id }
+  | F_param of { id : id; alias : id }
 
 and cluster_name = Cluster_name of id | Cluster_name_param of id
 

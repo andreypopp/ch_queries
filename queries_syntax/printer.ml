@@ -150,7 +150,7 @@ and pp_from_one from_one =
   | F_select { select; alias; cluster_name = None } ->
       group
         (lparen ^^ nest 2 (break 0 ^^ pp_query select ^^ rparen) ^^ pp_as alias)
-  | F_value { id; alias } -> group (pp_id id ^^ pp_as alias)
+  | F_param { id; alias } -> group (pp_id id ^^ pp_as alias)
 
 and pp_from from =
   match from.node with

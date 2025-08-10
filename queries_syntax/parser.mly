@@ -151,7 +151,8 @@ from:
     { make_from $startpos $endpos (F_join { kind; from; join; on }) }
 
 from_one:
-    id=param alias=alias? { make_from_one $startpos $endpos (F_value {id; alias = Option.value alias ~default:id}) }
+    id=param alias=alias? { make_from_one $startpos $endpos (F_param {id; alias = Option.value alias ~default:id}) }
+  | id=id alias=alias? { make_from_one $startpos $endpos (F_param {id; alias = Option.value alias ~default:id}) }
   | db=id DOT table=id alias=alias? final=final?
     { make_from_one $startpos $endpos (F_table { db; table; alias = Option.value alias ~default:table; final = Option.value final ~default:false }) }
   | LPAREN q=query RPAREN alias=alias_or_q
