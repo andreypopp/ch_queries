@@ -4,6 +4,7 @@ type null = [ `null | `not_null ]
 type non_null = [ `not_null ]
 type 'a nullable = [< null ] as 'a
 type 'a number = private A_number
+type date = private Date
 type ('null, 'a) array = private A_array
 
 type (+'null, +'typ) expr = Syntax.expr
@@ -331,6 +332,7 @@ module Expr = struct
   let not_ x = def "not" [ x ]
   let arrayFilter f x = def "arrayFilter" [ f; x ]
   let length x = def "length" [ x ]
+  let toDate x = def "toDate" [ x ]
 
   let make_window f ?partition_by ?order_by args =
     match (partition_by, order_by) with

@@ -1,3 +1,4 @@
+open Printf
 open PPrint
 open Syntax
 
@@ -73,23 +74,24 @@ let rec pp_expr expr =
   | E_call (func, args) -> (
       match func with
       | Func name -> (
+          let group_parens x = group (parens x) in
           match (name.node, args) with
           | "+", [ left; right ] ->
-              group (pp_expr left ^/^ string "+" ^/^ pp_expr right)
+              group_parens (pp_expr left ^/^ string "+" ^/^ pp_expr right)
           | "[", xs ->
               brackets (List.map ~f:pp_expr xs |> separate (string "," ^^ space))
           | "-", [ left; right ] ->
-              group (pp_expr left ^/^ string "-" ^/^ pp_expr right)
+              group_parens (pp_expr left ^/^ string "-" ^/^ pp_expr right)
           | "*", [ left; right ] ->
-              group (pp_expr left ^/^ string "*" ^/^ pp_expr right)
+              group_parens (pp_expr left ^/^ string "*" ^/^ pp_expr right)
           | "/", [ left; right ] ->
-              group (pp_expr left ^/^ string "/" ^/^ pp_expr right)
+              group_parens (pp_expr left ^/^ string "/" ^/^ pp_expr right)
           | "AND", [ left; right ] ->
-              group (pp_expr left ^/^ string "AND" ^/^ pp_expr right)
+              group_parens (pp_expr left ^/^ string "AND" ^/^ pp_expr right)
           | "OR", [ left; right ] ->
-              group (pp_expr left ^/^ string "OR" ^/^ pp_expr right)
+              group_parens (pp_expr left ^/^ string "OR" ^/^ pp_expr right)
           | "=", [ left; right ] ->
-              group (pp_expr left ^/^ string "=" ^/^ pp_expr right)
+              group_parens (pp_expr left ^/^ string "=" ^/^ pp_expr right)
           | _, _ ->
               let pp_args =
                 match args with
@@ -124,14 +126,16 @@ and pp_dimension = function
 and pp_field { expr; alias } =
   match alias with
   | None -> pp_expr expr
-  | Some alias_name -> group (pp_expr expr ^/^ string "AS" ^/^ pp_id alias_name)
+  | Some alias_name -> group (pp_expr expr ^^ pp_as alias_name)
+
+and pp_as id = group (nest 2 (break 1 ^^ string (sprintf "AS %s" id.node)))
 
 and pp_from_one from_one =
   match from_one.node with
   | F_table { db; table; alias; final } ->
       let base = pp_id db ^^ string "." ^^ pp_id table in
       let final_part = if final then string " FINAL" else empty in
-      group (base ^^ string " AS " ^^ pp_id alias ^^ final_part)
+      group (base ^^ pp_as alias ^^ final_part)
   | F_select { select; alias; cluster_name = Some cluster_name } ->
       let pp_cluster_name =
         match cluster_name with
@@ -140,14 +144,13 @@ and pp_from_one from_one =
       in
       group
         (string "cluster" ^^ lparen ^^ pp_cluster_name ^^ comma ^^ space
-       ^^ string "view" ^^ lparen ^^ pp_query select ^^ rparen ^^ rparen
-       ^^ space ^^ string "AS" ^^ space ^^ pp_id alias)
+       ^^ string "view" ^^ lparen
+        ^^ nest 2 (break 0 ^^ pp_query select)
+        ^^ rparen ^^ rparen ^^ pp_as alias)
   | F_select { select; alias; cluster_name = None } ->
       group
-        (lparen
-        ^^ nest 2 (break 0 ^^ pp_query select ^^ rparen)
-        ^^ group (string " AS" ^/^ pp_id alias))
-  | F_value { id; alias } -> group (pp_id id ^^ string " AS " ^^ pp_id alias)
+        (lparen ^^ nest 2 (break 0 ^^ pp_query select ^^ rparen) ^^ pp_as alias)
+  | F_value { id; alias } -> group (pp_id id ^^ pp_as alias)
 
 and pp_from from =
   match from.node with

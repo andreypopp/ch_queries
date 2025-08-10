@@ -8,6 +8,7 @@ type 'a nullable = 'a constraint 'a = [< null ]
 type 'a number = private A_number
 
 type ('null, 'a) array = private A_array
+type date = private Date
 
 type (+'null, +'typ) expr
 (** An SQL expression. *)
@@ -115,6 +116,7 @@ module Expr : sig
   val ( && ) : ('n, bool) expr -> ('n, bool) expr -> ('n, bool) expr
   val ( || ) : ('n, bool) expr -> ('n, bool) expr -> ('n, bool) expr
   val not_ : ('n, bool) expr -> ('n, bool) expr
+  val toDate : ('n, _ number) expr -> ('n, date) expr
 
   val arrayFilter :
     (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
