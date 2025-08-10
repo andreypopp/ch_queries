@@ -13,9 +13,7 @@
 
 (maintainers "Andrey Popp <me@andreypopp.com>")
 
-(license LICENSE)
-
-(documentation https://url/to/documentation)
+(license MIT)
 
 (package
  (name ch_queries)

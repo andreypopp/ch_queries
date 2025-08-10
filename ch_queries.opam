@@ -3,10 +3,9 @@ opam-version: "2.0"
 synopsis: "Type safe queries for ClickHouse"
 maintainer: ["Andrey Popp <me@andreypopp.com>"]
 authors: ["Andrey Popp <me@andreypopp.com>"]
-license: "LICENSE"
+license: "MIT"
 tags: ["database" "sql" "dsl" "clickhouse"]
 homepage: "https://github.com/andreypopp/ch_queries"
-doc: "https://url/to/documentation"
 bug-reports: "https://github.com/andreypopp/ch_queries/issues"
 depends: [
   "dune" {>= "3.19"}
