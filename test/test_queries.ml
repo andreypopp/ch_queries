@@ -42,7 +42,7 @@ let x =
     users ~condition:(fun u -> {%e|u.is_active OR true|}) |> Queries.from_select
   in
   {%q|SELECT u.x AS name, p.name as pname
-          FROM ?users as u
+          FROM users as u
           LEFT JOIN public.profiles as p
           ON u.id = p.user_id and p.name = 'Alice'
           WHERE p.name = toNullable('Alice') AND toNullable(false)|}
@@ -110,7 +110,7 @@ let users_stats =
     let is_true = stats#query @@ fun stats -> stats#metric Metric_true in
     {%e|?is_true|}
   in
-  {%q|SELECT ?select... FROM ?stats AS stats HAVING ?having|}
+  {%q|SELECT ?select... FROM stats HAVING ?having|}
 
 let sql, parse_row =
   Queries.query users_stats (fun (stats : _ stats Queries.scope) ->
