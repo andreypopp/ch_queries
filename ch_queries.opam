@@ -18,6 +18,7 @@ depends: [
   "ppx_compare"
   "cmdliner"
   "containers"
+  "ocamlformat" {with-test}
   "odoc" {with-doc}
 ]
 build: [
