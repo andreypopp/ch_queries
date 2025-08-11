@@ -17,10 +17,14 @@ and 'a in_rhs =
   | In_array : (_, (_, 'a) array) expr -> 'a in_rhs
 
 and a_expr = A_expr : _ expr -> a_expr
-and 'a scope = < query : 'n 'e. ('a -> ('n, 'e) expr) -> ('n, 'e) expr >
+
+and 'a scope =
+  < query : 'n 'e. ('a -> ('n, 'e) expr) -> ('n, 'e) expr
+  ; query_many : ('a -> a_expr list) -> a_expr list >
 
 and 'a nullable_scope =
-  < query : 'n 'e. ('a -> ('n, 'e) expr) -> (null, 'e) expr >
+  < query : 'n 'e. ('a -> ('n, 'e) expr) -> (null, 'e) expr
+  ; query_many : ('a -> a_expr list) -> a_expr list >
 
 and a_field = A_field : Ch_queries_syntax.Syntax.expr * string -> a_field
 
@@ -90,7 +94,7 @@ let from_select ?cluster_name ~alias select () =
   From_select { select = select ~alias; alias; cluster_name }
 
 let from_table ~db ~table scope =
- fun ~final ~alias () ->
+ fun ~final ~alias () : _ scope from_one0 ->
   let scope = scope ~alias in
   let rec t =
     lazy
@@ -102,6 +106,15 @@ let from_table ~db ~table scope =
            scope =
              object
                method query : 'n 'e. (_ -> ('n, 'e) expr) -> ('n, 'e) expr =
+                 fun f ->
+                   let () =
+                     match Lazy.force t with
+                     | From_table t -> t.used <- true
+                     | _ -> ()
+                   in
+                   f scope
+
+               method query_many =
                  fun f ->
                    let () =
                      match Lazy.force t with
@@ -128,6 +141,12 @@ let rec scope_from_select select : _ scope =
             let e_x = scope_x#query f in
             let _e_y : _ expr = scope_y#query f in
             e_x
+
+        method query_many : (_ -> a_expr list) -> a_expr list =
+          fun f ->
+            let xs = scope_x#query_many f in
+            let _ys : a_expr list = scope_y#query_many f in
+            xs
       end
 
 let scope_from_one = function
@@ -162,12 +181,16 @@ let left_join ?(optional = false) from (join : 'a scope from_one) ~on () =
     object
       method query : 'n 'e. (_ -> ('n, 'e) expr) -> ('n, 'e) expr =
         fun f -> (scope_from_one join)#query f
+
+      method query_many = fun f -> (scope_from_one join)#query_many f
     end
   in
   let scope_join : _ nullable_scope =
     object
       method query : 'n 'e. (_ -> ('n, 'e) expr) -> (null, 'e) expr =
         fun f -> scope_join'#query f
+
+      method query_many = fun f -> scope_join'#query_many f
     end
   in
   From_join
@@ -426,7 +449,7 @@ let rec add_field expr select =
       alias
 
 let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit
-    ?offset ?(settings = []) ~select () ~alias =
+    ?offset ?(settings = []) ~select () ~alias : _ scope select0 =
   let from = from () in
   let inner_scope = scope_from from in
   let scope' = select inner_scope in
@@ -454,6 +477,13 @@ let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit
                    let e = f scope' in
                    let c = add_field e (Lazy.force select) in
                    unsafe (Printf.sprintf "%s.%s" alias c)
+
+               method query_many =
+                 fun f ->
+                   let xs = f scope' in
+                   List.map xs ~f:(fun (A_expr e) ->
+                       let c = add_field e (Lazy.force select) in
+                       A_expr (unsafe (Printf.sprintf "%s.%s" alias c)))
              end;
            prewhere;
            where;

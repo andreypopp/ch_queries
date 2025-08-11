@@ -16,11 +16,18 @@ type datetime = private DateTime
 type (+'null, +'typ) expr
 (** An SQL expression. *)
 
-type 'a scope = < query : 'n 'e. ('a -> ('n, 'e) expr) -> ('n, 'e) expr >
+(** Used in cases where we don't care about the type of the expression (GROUP
+    BY, ORDER BY, etc.). *)
+type a_expr = A_expr : _ expr -> a_expr
+
+type 'a scope =
+  < query : 'n 'e. ('a -> ('n, 'e) expr) -> ('n, 'e) expr
+  ; query_many : ('a -> a_expr list) -> a_expr list >
 (** Represents a table's or a subquery's scope. *)
 
-type 'a nullable_scope =
-  < query : 'n 'e. ('a -> ('n, 'e) expr) -> (null, 'e) expr >
+and 'a nullable_scope =
+  < query : 'n 'e. ('a -> ('n, 'e) expr) -> (null, 'e) expr
+  ; query_many : ('a -> a_expr list) -> a_expr list >
 (** Represents a table's or a subquery's scope when one is used on the right
     side of a LEFT JOIN. *)
 
@@ -33,10 +40,6 @@ type 'a from_one
 type 'a from
 (** Represents the FROM clause of a query, which can contain multiple tables or
     subqueries. *)
-
-(** Used in cases where we don't care about the type of the expression (GROUP
-    BY, ORDER BY, etc.). *)
-type a_expr = A_expr : _ expr -> a_expr
 
 val int : int -> (non_null, int number) expr
 val string : string -> (non_null, string) expr
