@@ -109,6 +109,8 @@ let rec typ_to_ocaml_type ~loc typ =
   | T id -> (
       match id.node with
       | "Date" -> ([%type: Ch_queries.non_null], [%type: Ch_queries.date])
+      | "DateTime" ->
+          ([%type: Ch_queries.non_null], [%type: Ch_queries.datetime])
       | "String" -> ([%type: Ch_queries.non_null], [%type: string])
       | "Bool" -> ([%type: Ch_queries.non_null], [%type: bool])
       | "Int8" -> ([%type: Ch_queries.non_null], [%type: int Ch_queries.number])
