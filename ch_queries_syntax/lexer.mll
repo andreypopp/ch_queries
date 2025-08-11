@@ -156,13 +156,14 @@ rule token = parse
   | _ as c              { raise (Error ("Unexpected character: " ^ String.make 1 c)) }
 
 and string_literal buf = parse
-  | '\''                { Buffer.contents buf }
+  | '\'' '\''           { Buffer.add_char buf '\''; string_literal buf lexbuf }
   | '\\' '\\'           { Buffer.add_char buf '\\'; string_literal buf lexbuf }
   | '\\' '\''           { Buffer.add_char buf '\''; string_literal buf lexbuf }
   | '\\' 'n'            { Buffer.add_char buf '\n'; string_literal buf lexbuf }
   | '\\' 't'            { Buffer.add_char buf '\t'; string_literal buf lexbuf }
   | '\\' 'r'            { Buffer.add_char buf '\r'; string_literal buf lexbuf }
   | '\\' (_ as c)       { Buffer.add_char buf '\\'; Buffer.add_char buf c; string_literal buf lexbuf }
+  | '\''                { Buffer.contents buf }
   | newline             { Lexing.new_line lexbuf; Buffer.add_char buf '\n'; string_literal buf lexbuf }
   | _ as c              { Buffer.add_char buf c; string_literal buf lexbuf }
   | eof                 { raise (Error "Unterminated string literal") }

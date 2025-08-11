@@ -5,7 +5,7 @@ open Syntax
 let pp_id id = string id.node
 
 let escape_single_quoted s =
-  let buf = Buffer.create (String.length s) in
+  let buf = Buffer.create (String.length s + 10) in
   String.iter s ~f:(function
     | '\'' -> Buffer.add_string buf "\\'"
     | '\\' -> Buffer.add_string buf "\\\\"

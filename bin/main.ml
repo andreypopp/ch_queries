@@ -70,6 +70,8 @@ let tokenize_cmd =
 let main_cmd =
   let doc = "A SQL query parser" in
   let info = Cmd.info "queries" ~doc in
-  Cmd.group info [ version_cmd; parse_cmd; parse_expr_cmd; tokenize_cmd ]
+  let default = Term.(ret (const (`Help (`Pager, None)))) in
+  Cmd.group info ~default
+    [ version_cmd; parse_cmd; parse_expr_cmd; tokenize_cmd ]
 
 let () = exit (Cmd.eval main_cmd)
