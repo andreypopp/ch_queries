@@ -3,6 +3,7 @@
  (name ch_queries_ppx)
  (libraries ppxlib ch_queries.syntax)
  (kind ppx_rewriter)
+ (ppx_runtime_libraries ch_queries)
  (modules :standard \ main)
  (preprocess
   (pps ppxlib.metaquot)))
