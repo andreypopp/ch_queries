@@ -90,3 +90,70 @@ GROUP BY with a parameter:
                Ch_queries.scope -> Ch_queries.a_expr list) ->
     < x : (Ch_queries.non_null, string) Ch_queries.expr > Ch_queries.scope
     Ch_queries.select
+
+GROUP BY GROUPING SETS:
+  $ ./compile_and_run '
+  > let group_by u = Ch_queries.grouping_sets [];;
+  > let users = [%q "SELECT 1 as one FROM public.users GROUP BY ?group_by"];;
+  > let sql, _parse_row = Ch_queries.query users @@ fun users -> Ch_queries.Row.int [%e "users.one"]
+  > let () = print_endline sql;;
+  > '
+  >>> PREPROCESSING
+  let group_by u = Ch_queries.grouping_sets []
+  
+  let users =
+    Ch_queries.select ()
+      ~from:
+        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
+        object
+          method one = Ch_queries.int 1
+        end)
+      ~group_by:(fun (users : _ Ch_queries.scope) ->
+        List.concat [ [ Ch_queries.A_expr (group_by users) ] ])
+  
+  let sql, _parse_row =
+    Ch_queries.query users @@ fun users ->
+    Ch_queries.Row.int (users#query (fun users -> users#one))
+  
+  let () = print_endline sql
+  >>> RUNNING
+  SELECT q._1
+  FROM (SELECT 1 AS _1 FROM public.users AS users GROUP BY GROUPING SETS ()) AS q
+
+  $ ./compile_and_run '
+  > let group_by (u : _ Ch_queries.scope) = Ch_queries.grouping_sets [[A_expr {%e|u.x|}; A_expr {%e|u.id|}]; [A_expr {%e|u.id|}]];;
+  > let users = [%q "SELECT 1 as one FROM public.users GROUP BY ?group_by"];;
+  > let sql, _parse_row = Ch_queries.query users @@ fun users -> Ch_queries.Row.int [%e "users.one"]
+  > let () = print_endline sql;;
+  > '
+  >>> PREPROCESSING
+  let group_by (u : _ Ch_queries.scope) =
+    Ch_queries.grouping_sets
+      [
+        [ A_expr (u#query (fun u -> u#x)); A_expr (u#query (fun u -> u#id)) ];
+        [ A_expr (u#query (fun u -> u#id)) ];
+      ]
+  
+  let users =
+    Ch_queries.select ()
+      ~from:
+        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
+      ~select:(fun (users : _ Ch_queries.scope) ->
+        object
+          method one = Ch_queries.int 1
+        end)
+      ~group_by:(fun (users : _ Ch_queries.scope) ->
+        List.concat [ [ Ch_queries.A_expr (group_by users) ] ])
+  
+  let sql, _parse_row =
+    Ch_queries.query users @@ fun users ->
+    Ch_queries.Row.int (users#query (fun users -> users#one))
+  
+  let () = print_endline sql
+  >>> RUNNING
+  SELECT q._1
+  FROM (
+    SELECT 1 AS _1
+    FROM public.users AS users
+    GROUP BY GROUPING SETS ((users.x, users.id), (users.id))) AS q

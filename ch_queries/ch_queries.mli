@@ -84,6 +84,9 @@ val select :
 val union : 'a scope select -> 'a scope select -> 'a scope select
 (** UNION of two SELECT queries. *)
 
+val grouping_sets : a_expr list list -> _ expr
+(** GROUPING SETS for GROUP BY clause. *)
+
 val from : 'a scope from_one -> 'a scope from
 
 val join :
