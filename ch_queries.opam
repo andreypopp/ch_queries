@@ -18,6 +18,7 @@ depends: [
   "cmdliner"
   "containers"
   "ocamlformat" {with-test}
+  "mdx" {with-test}
   "odoc" {with-doc}
 ]
 build: [
