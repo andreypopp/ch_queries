@@ -108,8 +108,14 @@ let rec typ_to_ocaml_type ~loc typ =
   match typ.node with
   | T id -> (
       match id.node with
+      | "Date" -> ([%type: Ch_queries.non_null], [%type: Ch_queries.date])
       | "String" -> ([%type: Ch_queries.non_null], [%type: string])
       | "Bool" -> ([%type: Ch_queries.non_null], [%type: bool])
+      | "Int8" -> ([%type: Ch_queries.non_null], [%type: int Ch_queries.number])
+      | "UInt8" -> ([%type: Ch_queries.non_null], [%type: int Ch_queries.number])
+      | "Int16" -> ([%type: Ch_queries.non_null], [%type: int Ch_queries.number])
+      | "UInt16" ->
+          ([%type: Ch_queries.non_null], [%type: int Ch_queries.number])
       | "Int32" -> ([%type: Ch_queries.non_null], [%type: int Ch_queries.number])
       | "UInt32" ->
           ([%type: Ch_queries.non_null], [%type: int Ch_queries.number])
@@ -125,27 +131,34 @@ let rec typ_to_ocaml_type ~loc typ =
           let loc = to_location id in
           Location.raise_errorf ~loc "unknown ClickHouse type: %s" t)
   | T_app (id, args) -> (
-      match id.node with
-      | "Nullable" -> (
-          match args with
-          | [ inner_typ ] ->
-              let _, t = typ_to_ocaml_type ~loc inner_typ in
-              ([%type: Ch_queries.null], t)
-          | _ ->
-              let loc = to_location id in
-              Location.raise_errorf ~loc
-                "Nullable(..) requires exactly one argument")
-      | "Array" -> (
-          match args with
-          | [ element_typ ] ->
-              let n, t = typ_to_ocaml_type ~loc element_typ in
-              ( [%type: Ch_queries.non_null],
-                [%type: ([%t n], [%t t]) Ch_queries.array] )
-          | _ ->
-              let loc = to_location id in
-              Location.raise_errorf ~loc
-                "Array(..) requires exactly one argument")
-      | t ->
+      match (id.node, args) with
+      | "Nullable", [ t ] ->
+          let _, t = typ_to_ocaml_type ~loc t in
+          ([%type: Ch_queries.null], t)
+      | "Nullable", _ ->
+          let loc = to_location id in
+          Location.raise_errorf ~loc
+            "Nullable(..) requires exactly one argument"
+      | "Array", [ t ] ->
+          let n, t = typ_to_ocaml_type ~loc t in
+          ( [%type: Ch_queries.non_null],
+            [%type: ([%t n], [%t t]) Ch_queries.array] )
+      | "Array", _ ->
+          let loc = to_location id in
+          Location.raise_errorf ~loc "Array(..) requires exactly one argument"
+      | "Tuple", [ x; y ] ->
+          let xn, xt = typ_to_ocaml_type ~loc x in
+          let yn, yt = typ_to_ocaml_type ~loc y in
+          let loc = to_location id in
+          ( [%type: Ch_queries.non_null],
+            [%type:
+              ( ([%t xn], [%t xt]) Ch_queries.typ,
+                ([%t yn], [%t yt]) Ch_queries.typ )
+              Ch_queries.tuple2] )
+      | "Tuple", _ ->
+          let loc = to_location id in
+          Location.raise_errorf ~loc "only 2-element tuples are supported"
+      | t, _ ->
           let loc = to_location id in
           Location.raise_errorf ~loc "Unknown  ClickHouse type: %s" t)
 

@@ -8,6 +8,8 @@ type 'a nullable = 'a constraint 'a = [< null ]
 type 'a number = private A_number
 
 type ('null, 'a) array = private A_array
+type ('null, 'a) typ = private A_typ
+type ('x, 'y) tuple2 = private A_tuple2
 type date = private Date
 
 type (+'null, +'typ) expr
