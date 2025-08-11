@@ -182,6 +182,7 @@ from_one:
 cluster_name:
     id=id { Cluster_name id }
   | param=param { Cluster_name_param param }
+  | id=CH_PARAM { Cluster_name (make_id $startpos $endpos id) }
 
 final:
     FINAL { true }
