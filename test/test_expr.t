@@ -156,3 +156,32 @@ parameter expressions with nested complex types:
           (Ch_queries.null, string) Ch_queries.array )
         Ch_queries.expr)
   >>> RUNNING
+
+arithmetics:
+  $ ./compile_and_run '
+  > let x = {%e|1+2/4*2-1|}
+  > '
+  >>> PREPROCESSING
+  let x =
+    Ch_queries.Expr.( - )
+      (Ch_queries.Expr.( + ) (Ch_queries.int 1)
+         (Ch_queries.Expr.( * )
+            (Ch_queries.Expr.( / ) (Ch_queries.int 2) (Ch_queries.int 4))
+            (Ch_queries.int 2)))
+      (Ch_queries.int 1)
+  >>> RUNNING
+
+comparison:
+  $ ./compile_and_run '
+  > let x = {%e|1>2 and 2<3 and 5>=4 and 8<=5|}
+  > '
+  >>> PREPROCESSING
+  let x =
+    Ch_queries.Expr.( && )
+      (Ch_queries.Expr.( && )
+         (Ch_queries.Expr.( && )
+            (Ch_queries.Expr.( > ) (Ch_queries.int 1) (Ch_queries.int 2))
+            (Ch_queries.Expr.( < ) (Ch_queries.int 2) (Ch_queries.int 3)))
+         (Ch_queries.Expr.( >= ) (Ch_queries.int 5) (Ch_queries.int 4)))
+      (Ch_queries.Expr.( <= ) (Ch_queries.int 8) (Ch_queries.int 5))
+  >>> RUNNING

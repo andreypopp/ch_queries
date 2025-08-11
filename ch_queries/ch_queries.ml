@@ -336,6 +336,14 @@ module Expr = struct
   let assumeNotNull x = def "assumeNotNull" [ x ]
   let toNullable x = def "toNullable" [ x ]
   let coalesce x y = def "coalesce" [ x; y ]
+  let plus x y = def "+" [ x; y ]
+  let ( + ) = plus
+  let minus x y = def "-" [ x; y ]
+  let ( - ) = minus
+  let multiply x y = def "*" [ x; y ]
+  let ( * ) = multiply
+  let divide x y = def "/" [ x; y ]
+  let ( / ) = divide
   let eq x y = def "=" [ x; y ]
   let ( = ) = eq
   let gt x y = def ">" [ x; y ]
@@ -346,16 +354,13 @@ module Expr = struct
   let ( >= ) = ge
   let le x y = def "<=" [ x; y ]
   let ( <= ) = le
-  let add x y = def "+" [ x; y ]
-  let sub x y = def "-" [ x; y ]
-  let mul x y = def "*" [ x; y ]
-  let div x y = def "/" [ x; y ]
   let ( && ) x y = def "and" [ x; y ]
   let ( || ) x y = def "or" [ x; y ]
   let not_ x = def "not" [ x ]
   let arrayFilter f x = def "arrayFilter" [ f; x ]
   let length x = def "length" [ x ]
   let toDate x = def "toDate" [ x ]
+  let if_ c x y = def "if" [ c; x; y ]
 
   let make_window f ?partition_by ?order_by args =
     match (partition_by, order_by) with

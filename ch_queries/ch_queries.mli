@@ -120,14 +120,36 @@ module Expr : sig
   val ( >= ) : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
   val le : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
   val ( <= ) : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
-  val add : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
-  val sub : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
-  val mul : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
-  val div : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
+
+  val plus :
+    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
+
+  val ( + ) :
+    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
+
+  val minus :
+    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
+
+  val ( - ) :
+    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
+
+  val multiply :
+    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
+
+  val ( * ) :
+    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
+
+  val divide :
+    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
+
+  val ( / ) :
+    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
+
   val ( && ) : ('n, bool) expr -> ('n, bool) expr -> ('n, bool) expr
   val ( || ) : ('n, bool) expr -> ('n, bool) expr -> ('n, bool) expr
   val not_ : ('n, bool) expr -> ('n, bool) expr
   val toDate : ('n, _ number) expr -> ('n, date) expr
+  val if_ : ('n, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
 
   val arrayFilter :
     (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
