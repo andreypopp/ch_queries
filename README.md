@@ -8,8 +8,8 @@ A library to generate ClickHouse SQL queries in a typesafe way with OCaml.
 
 The main mode of using ch_queries is through the `ch_queries.ppx` preprocessor.
 It allows you to write queries in SQL-like syntax. The preprocessor will expand
-the queries into OCaml code which uses `Ch_queries` library which provides type
-safe combinators for query gen.
+the queries into OCaml code which uses the `Ch_queries` library which provides type
+safe combinators for query generation.
 
 ```ocaml
 # #require "ch_queries";;
@@ -50,8 +50,8 @@ val users :
 ```
 
 The `?param` syntax is used for parameters. If a parameter appears in the
-expression position, then it is expected to be a function which takes current
-scope and return an expression:
+expression position, then it is expected to be a function which takes the current
+scope and returns an expression:
 ```ocaml
 # let users ~where = {%q|
     SELECT users.id AS id, users.name AS name
@@ -67,7 +67,7 @@ val users :
   select = <fun>
 ```
 
-Finally to generate SQL from the query, one need to define what exactly to
+Finally to generate SQL from the query, one needs to define what exactly to
 select and how to parse each column:
 ```ocaml
 # let sql, parse_row = Ch_queries.query {%q|SELECT id FROM db.users|} Row.(fun q -> int {%e|q.id|});;
@@ -78,7 +78,7 @@ val parse_row : json list -> int = <fun>
 
 ## `%e` - expressions
 
-There's `%e` syntax form which allows to define standalone expressions, which
+There's a `%e` syntax form which allows you to define standalone expressions, which
 can be spliced into queries later:
 ```ocaml
 # let ok q = {%e|q.is_active|};;
@@ -101,7 +101,7 @@ as-is.
 
 ## `%t` - types
 
-Finally, `%t` syntax form is used as a shortcut to define DSL types:
+Finally, the `%t` syntax form is used as a shortcut to define DSL types:
 ```ocaml
 # type ch_uint64 = {%t|UInt64|};;
 type ch_uint64 = (non_null, int64 number) expr
