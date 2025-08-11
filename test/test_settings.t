@@ -7,7 +7,8 @@ SETTINGS with literal values:
   >>> PREPROCESSING
   let users =
     Ch_queries.select ()
-      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~from:
+        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
@@ -36,7 +37,8 @@ SETTINGS with parameter:
   >>> PREPROCESSING
   let users ~max_threads =
     Ch_queries.select ()
-      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~from:
+        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
@@ -56,7 +58,8 @@ SETTINGS with splice:
   >>> PREPROCESSING
   let users ~settings =
     Ch_queries.select ()
-      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~from:
+        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
@@ -77,7 +80,8 @@ SETTINGS with mixed literal and splice:
   >>> PREPROCESSING
   let users ~extra_settings =
     Ch_queries.select ()
-      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~from:
+        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
@@ -105,7 +109,8 @@ SETTINGS with multiple splices:
   >>> PREPROCESSING
   let users ~perf_settings ~cache_settings =
     Ch_queries.select ()
-      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~from:
+        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
@@ -131,7 +136,8 @@ SETTINGS with boolean values (rendered as ints):
   >>> PREPROCESSING
   let users =
     Ch_queries.select ()
-      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~from:
+        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)

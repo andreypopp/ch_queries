@@ -1,4 +1,4 @@
-module Database = struct
+module Ch_database = struct
   open Ch_queries
 
   module Public = struct

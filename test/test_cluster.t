@@ -13,7 +13,7 @@ test cluster syntax parsing:
               (Ch_queries.select ()
                  ~from:
                    (Ch_queries.from
-                      (Database.Public.users ~alias:"users" ~final:false))
+                      (Ch_database.Public.users ~alias:"users" ~final:false))
                  ~select:(fun (users : _ Ch_queries.scope) ->
                    object
                      method x = users#query (fun users -> users#x)
@@ -56,7 +56,7 @@ test parameterized cluster syntax:
               (Ch_queries.select ()
                  ~from:
                    (Ch_queries.from
-                      (Database.Public.users ~alias:"users" ~final:false))
+                      (Ch_database.Public.users ~alias:"users" ~final:false))
                  ~select:(fun (users : _ Ch_queries.scope) ->
                    object
                      method x = users#query (fun users -> users#x)

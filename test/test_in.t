@@ -7,7 +7,8 @@ test IN expression with subquery:
   >>> PREPROCESSING
   let users =
     Ch_queries.select ()
-      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~from:
+        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
@@ -19,7 +20,7 @@ test IN expression with subquery:
              (Ch_queries.select ()
                 ~from:
                   (Ch_queries.from
-                     (Database.Public.users ~alias:"users" ~final:false))
+                     (Ch_database.Public.users ~alias:"users" ~final:false))
                 ~select:(fun (users : _ Ch_queries.scope) ->
                   object
                     method _1 = users#query (fun users -> users#id)
@@ -46,7 +47,8 @@ test IN expression with expression::
   >>> PREPROCESSING
   let users =
     Ch_queries.select ()
-      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~from:
+        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
@@ -75,7 +77,8 @@ test IN expression with parameter:
   >>> PREPROCESSING
   let users ~ids =
     Ch_queries.select ()
-      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~from:
+        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)

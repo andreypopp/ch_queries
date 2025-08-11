@@ -7,8 +7,8 @@ select from a JOIN:
     Ch_queries.select ()
       ~from:
         (Ch_queries.join
-           (Ch_queries.from (Database.Public.users ~alias:"u" ~final:false))
-           (Database.Public.profiles ~alias:"p" ~final:false)
+           (Ch_queries.from (Ch_database.Public.users ~alias:"u" ~final:false))
+           (Ch_database.Public.profiles ~alias:"p" ~final:false)
            ~on:(fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.scope)) ->
              Ch_queries.Expr.( = )
                (u#query (fun u -> u#id))
@@ -37,8 +37,8 @@ select from a LEFT JOIN:
     Ch_queries.select ()
       ~from:
         (Ch_queries.left_join
-           (Ch_queries.from (Database.Public.users ~alias:"u" ~final:false))
-           (Database.Public.profiles ~alias:"p" ~final:false)
+           (Ch_queries.from (Ch_database.Public.users ~alias:"u" ~final:false))
+           (Ch_database.Public.profiles ~alias:"p" ~final:false)
            ~on:(fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.scope)) ->
              Ch_queries.Expr.( = )
                (u#query (fun u -> u#id))
@@ -64,7 +64,7 @@ select from an OCaml value with JOIN:
   >   ON u.id = p.user_id
   > "];;
   > #show q
-  > let q = q (Database.Public.profiles ~final:false);;
+  > let q = q (Ch_database.Public.profiles ~final:false);;
   > #show q
   > '
   >>> PREPROCESSING
@@ -72,7 +72,7 @@ select from an OCaml value with JOIN:
     Ch_queries.select ()
       ~from:
         (Ch_queries.left_join
-           (Ch_queries.from (Database.Public.users ~alias:"u" ~final:false))
+           (Ch_queries.from (Ch_database.Public.users ~alias:"u" ~final:false))
            (profiles ~alias:"p")
            ~on:(fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.scope)) ->
              Ch_queries.Expr.( = )
@@ -85,7 +85,7 @@ select from an OCaml value with JOIN:
           method user_name = p#query (fun p -> p#name)
         end)
   
-  let q = q (Database.Public.profiles ~final:false)
+  let q = q (Ch_database.Public.profiles ~final:false)
   >>> RUNNING
   val q :
     (alias:string ->
@@ -117,11 +117,11 @@ splicing ocaml values into JOIN-ON:
       ~from:
         (Ch_queries.left_join
            (Ch_queries.left_join
-              (Ch_queries.from (Database.Public.users ~alias:"u" ~final:false))
-              (Database.Public.profiles ~alias:"p" ~final:false)
+              (Ch_queries.from (Ch_database.Public.users ~alias:"u" ~final:false))
+              (Ch_database.Public.profiles ~alias:"p" ~final:false)
               ~on:(fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.scope)) ->
                 cond (u, p)))
-           (Database.Public.profiles ~alias:"p2" ~final:false)
+           (Ch_database.Public.profiles ~alias:"p2" ~final:false)
            ~on:(fun
                ( ((u : _ Ch_queries.scope), (p : _ Ch_queries.nullable_scope)),
                  (p2 : _ Ch_queries.scope) )

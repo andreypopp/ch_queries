@@ -9,7 +9,8 @@ Programmatic union
   >>> PREPROCESSING
   let users1 =
     Ch_queries.select ()
-      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~from:
+        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = Ch_queries.int 1
@@ -17,7 +18,8 @@ Programmatic union
   
   let users2 =
     Ch_queries.select ()
-      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~from:
+        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = Ch_queries.int 2
@@ -48,14 +50,16 @@ UNION syntax:
     Ch_queries.union
       (Ch_queries.select ()
          ~from:
-           (Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+           (Ch_queries.from
+              (Ch_database.Public.users ~alias:"users" ~final:false))
          ~select:(fun (users : _ Ch_queries.scope) ->
            object
              method x = Ch_queries.int 1
            end))
       (Ch_queries.select ()
          ~from:
-           (Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+           (Ch_queries.from
+              (Ch_database.Public.users ~alias:"users" ~final:false))
          ~select:(fun (users : _ Ch_queries.scope) ->
            object
              method x = Ch_queries.int 2

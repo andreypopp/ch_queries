@@ -14,8 +14,8 @@ optional join with a table (elimination):
     Ch_queries.select ()
       ~from:
         ((Ch_queries.left_join ~optional:true)
-           (Ch_queries.from (Database.Public.users ~alias:"u" ~final:false))
-           (Database.Public.profiles ~alias:"p" ~final:false)
+           (Ch_queries.from (Ch_database.Public.users ~alias:"u" ~final:false))
+           (Ch_database.Public.profiles ~alias:"p" ~final:false)
            ~on:(fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.scope)) ->
              Ch_queries.Expr.( = )
                (u#query (fun u -> u#id))
@@ -51,8 +51,8 @@ optional join with a table (in use):
     Ch_queries.select ()
       ~from:
         ((Ch_queries.left_join ~optional:true)
-           (Ch_queries.from (Database.Public.users ~alias:"u" ~final:false))
-           (Database.Public.profiles ~alias:"p" ~final:false)
+           (Ch_queries.from (Ch_database.Public.users ~alias:"u" ~final:false))
+           (Ch_database.Public.profiles ~alias:"p" ~final:false)
            ~on:(fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.scope)) ->
              Ch_queries.Expr.( = )
                (u#query (fun u -> u#id))
@@ -92,12 +92,12 @@ optional join with a subquery (elimination):
     Ch_queries.select ()
       ~from:
         ((Ch_queries.left_join ~optional:true)
-           (Ch_queries.from (Database.Public.users ~alias:"u" ~final:false))
+           (Ch_queries.from (Ch_database.Public.users ~alias:"u" ~final:false))
            (Ch_queries.from_select
               (Ch_queries.select ()
                  ~from:
                    (Ch_queries.from
-                      (Database.Public.profiles ~alias:"p" ~final:false))
+                      (Ch_database.Public.profiles ~alias:"p" ~final:false))
                  ~select:(fun (p : _ Ch_queries.scope) ->
                    object
                      method user_id = p#query (fun p -> p#user_id)
@@ -139,12 +139,12 @@ optional join with a subquery (in use):
     Ch_queries.select ()
       ~from:
         ((Ch_queries.left_join ~optional:true)
-           (Ch_queries.from (Database.Public.users ~alias:"u" ~final:false))
+           (Ch_queries.from (Ch_database.Public.users ~alias:"u" ~final:false))
            (Ch_queries.from_select
               (Ch_queries.select ()
                  ~from:
                    (Ch_queries.from
-                      (Database.Public.profiles ~alias:"p" ~final:false))
+                      (Ch_database.Public.profiles ~alias:"p" ~final:false))
                  ~select:(fun (p : _ Ch_queries.scope) ->
                    object
                      method user_id = p#query (fun p -> p#user_id)

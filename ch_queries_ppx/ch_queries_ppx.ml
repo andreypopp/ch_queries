@@ -545,7 +545,7 @@ and stage_from_one from_one =
   match from_one.node with
   | F_table { db; table; alias; final } ->
       let qname =
-        Printf.sprintf "Database.%s.%s"
+        Printf.sprintf "Ch_database.%s.%s"
           (String.capitalize_ascii db.node)
           table.node
       in

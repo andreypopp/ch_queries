@@ -23,7 +23,7 @@ from DDL or some other definition):
 ```ocaml
 open Ch_queries
 
-module Database = struct
+module Ch_database = struct
   module Db = struct
     let users =
       let scope ~alias =

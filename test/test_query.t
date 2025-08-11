@@ -7,7 +7,8 @@ basic form:
   >>> PREPROCESSING
   let users =
     Ch_queries.select ()
-      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~from:
+        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
@@ -34,7 +35,8 @@ unqualified columns are resolved if possible:
   >>> PREPROCESSING
   let users =
     Ch_queries.select ()
-      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~from:
+        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
@@ -81,7 +83,7 @@ select from a subquery:
               (Ch_queries.select ()
                  ~from:
                    (Ch_queries.from
-                      (Database.Public.users ~alias:"users" ~final:false))
+                      (Ch_database.Public.users ~alias:"users" ~final:false))
                  ~select:(fun (users : _ Ch_queries.scope) ->
                    object
                      method x = users#query (fun users -> users#x)
@@ -122,7 +124,7 @@ select from a subquery (no alias default to "q"):
               (Ch_queries.select ()
                  ~from:
                    (Ch_queries.from
-                      (Database.Public.users ~alias:"users" ~final:false))
+                      (Ch_database.Public.users ~alias:"users" ~final:false))
                  ~select:(fun (users : _ Ch_queries.scope) ->
                    object
                      method x = users#query (fun users -> users#x)
@@ -200,7 +202,8 @@ splicing ocaml values into WHERE:
   >>> PREPROCESSING
   let users ~where =
     Ch_queries.select ()
-      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~from:
+        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
@@ -226,7 +229,8 @@ splicing ocaml values into WHERE:
   >>> PREPROCESSING
   let users ~where =
     Ch_queries.select ()
-      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~from:
+        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
@@ -253,7 +257,8 @@ splicing ocaml values into SELECT:
   >>> PREPROCESSING
   let users ~what =
     Ch_queries.select ()
-      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~from:
+        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method field = what users
@@ -277,7 +282,8 @@ splicing ocaml values into SELECT as scope:
   >>> PREPROCESSING
   let users ~what =
     Ch_queries.select ()
-      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~from:
+        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
       ~select:what
   >>> RUNNING
   val users :
@@ -299,7 +305,8 @@ select from table with FINAL keyword:
   >>> PREPROCESSING
   let users =
     Ch_queries.select ()
-      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:true))
+      ~from:
+        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:true))
       ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
@@ -327,7 +334,8 @@ select with PREWHERE clause:
   >>> PREPROCESSING
   let users =
     Ch_queries.select ()
-      ~from:(Ch_queries.from (Database.Public.users ~alias:"users" ~final:false))
+      ~from:
+        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
       ~select:(fun (users : _ Ch_queries.scope) ->
         object
           method x = users#query (fun users -> users#x)
@@ -367,7 +375,7 @@ expressions referenced multiple times result in a single column added to teh sub
               (Ch_queries.select ()
                  ~from:
                    (Ch_queries.from
-                      (Database.Public.users ~alias:"users" ~final:false))
+                      (Ch_database.Public.users ~alias:"users" ~final:false))
                  ~select:(fun (users : _ Ch_queries.scope) ->
                    object
                      method is_active = users#query (fun users -> users#is_active)
