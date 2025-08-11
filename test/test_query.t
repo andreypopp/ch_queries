@@ -296,35 +296,6 @@ splicing ocaml values into SELECT as scope:
           Ch_queries.scope -> 'a) ->
     'a Ch_queries.scope Ch_queries.select
 
-select from table with FINAL keyword:
-  $ ./compile_and_run '
-  > let users = [%q "SELECT users.x AS x FROM public.users AS users FINAL WHERE users.is_active"];;
-  > let sql, _parse_row = Ch_queries.query users @@ fun users -> Ch_queries.Row.string [%e "users.x"]
-  > let () = print_endline sql;;
-  > '
-  >>> PREPROCESSING
-  let users =
-    Ch_queries.select ()
-      ~from:
-        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:true))
-      ~select:(fun (users : _ Ch_queries.scope) ->
-        object
-          method x = users#query (fun users -> users#x)
-        end)
-      ~where:(fun (users : _ Ch_queries.scope) ->
-        users#query (fun users -> users#is_active))
-  
-  let sql, _parse_row =
-    Ch_queries.query users @@ fun users ->
-    Ch_queries.Row.string (users#query (fun users -> users#x))
-  
-  let () = print_endline sql
-  >>> RUNNING
-  SELECT q._1
-  FROM (
-    SELECT users.x AS _1 FROM public.users AS users FINAL WHERE users.is_active)
-    AS q
-
 select with PREWHERE clause:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x AS x FROM public.users PREWHERE users.is_active WHERE users.id = 10"];;

@@ -135,8 +135,8 @@ and pp_from_one from_one =
   match from_one.node with
   | F_table { db; table; alias; final } ->
       let base = pp_id db ^^ string "." ^^ pp_id table in
-      let final_part = if final then string " FINAL" else empty in
-      group (base ^^ pp_as alias ^^ final_part)
+      let final = if final then string " FINAL" else empty in
+      group (base ^^ pp_as alias ^^ final)
   | F_select { select; alias; cluster_name = Some cluster_name } ->
       let pp_cluster_name =
         match cluster_name with
@@ -151,7 +151,9 @@ and pp_from_one from_one =
   | F_select { select; alias; cluster_name = None } ->
       group
         (lparen ^^ nest 2 (break 0 ^^ pp_query select ^^ rparen) ^^ pp_as alias)
-  | F_param { id; alias } -> group (pp_id id ^^ pp_as alias)
+  | F_param { id; alias; final } ->
+      let final = if final then string " FINAL" else empty in
+      group (pp_id id ^^ pp_as alias ^^ final)
 
 and pp_from from =
   match from.node with

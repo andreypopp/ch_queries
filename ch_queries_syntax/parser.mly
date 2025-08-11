@@ -170,10 +170,10 @@ from:
     { make_from $startpos $endpos (F_join { kind; from; join; on }) }
 
 from_one:
-    id=param alias=alias? { make_from_one $startpos $endpos (F_param {id; alias = Option.value alias ~default:id}) }
-  | id=id alias=alias? { make_from_one $startpos $endpos (F_param {id; alias = Option.value alias ~default:id}) }
-  | db=id DOT table=id alias=alias? final=final?
-    { make_from_one $startpos $endpos (F_table { db; table; alias = Option.value alias ~default:table; final = Option.value final ~default:false }) }
+    id=param alias=alias? final=final { make_from_one $startpos $endpos (F_param {id; alias = Option.value alias ~default:id; final;}) }
+  | id=id alias=alias? final=final { make_from_one $startpos $endpos (F_param {id; alias = Option.value alias ~default:id; final;}) }
+  | db=id DOT table=id alias=alias? final=final
+    { make_from_one $startpos $endpos (F_table { db; table; alias = Option.value alias ~default:table; final; }) }
   | LPAREN q=query RPAREN alias=alias_or_q
     { make_from_one $startpos $endpos (F_select { select = q; alias; cluster_name = None }) }
   | CLUSTER LPAREN cluster_name=cluster_name COMMA VIEW LPAREN q=query RPAREN RPAREN alias=alias_or_q
@@ -185,7 +185,8 @@ cluster_name:
   | id=CH_PARAM { Cluster_name (make_id $startpos $endpos id) }
 
 final:
-    FINAL { true }
+    { false }
+  | FINAL { true }
 
 join_kind:
           JOIN { `INNER_JOIN }
