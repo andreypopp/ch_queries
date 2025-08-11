@@ -233,6 +233,10 @@ let rec stage_expr ~params ~from expr =
             match name.node with
             | "OR" -> [%expr Ch_queries.Expr.( || )]
             | "AND" -> [%expr Ch_queries.Expr.( && )]
+            | ">" -> [%expr Ch_queries.Expr.( > )]
+            | "<" -> [%expr Ch_queries.Expr.( < )]
+            | ">=" -> [%expr Ch_queries.Expr.( >= )]
+            | "<=" -> [%expr Ch_queries.Expr.( <= )]
             | _ -> evar ~loc ("Ch_queries.Expr." ^ name.node)
           in
           eapply ~loc f (List.map args ~f:(stage_expr ~params ~from))

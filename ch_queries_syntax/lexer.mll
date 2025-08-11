@@ -75,6 +75,10 @@
     | Parser.STAR -> "STAR"
     | Parser.SLASH -> "SLASH"
     | Parser.EQUALS -> "EQUALS"
+    | Parser.GT -> "GT"
+    | Parser.LT -> "LT" 
+    | Parser.GE -> "GE"
+    | Parser.LE -> "LE"
     | Parser.AND -> "AND"
     | Parser.OR -> "OR"
     | Parser.INNER -> "INNER"
@@ -151,6 +155,10 @@ rule token = parse
   | '*'                 { STAR }
   | '/'                 { SLASH }
   | '='                 { EQUALS }
+  | '>'                 { GT }
+  | '<'                 { LT }
+  | ">="                { GE }
+  | "<="                { LE }
   | "->"                { ARROW }
   | eof                 { EOF }
   | _ as c              { raise (Error ("Unexpected character: " ^ String.make 1 c)) }

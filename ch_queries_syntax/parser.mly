@@ -22,7 +22,7 @@
 %token TRUE FALSE
 %token SELECT FROM PREWHERE WHERE AS DOT COLON
 %token LPAREN RPAREN LBRACKET RBRACKET COMMA
-%token PLUS MINUS STAR SLASH EQUALS
+%token PLUS MINUS STAR SLASH EQUALS GT LT GE LE
 %token AND OR
 %token INNER JOIN LEFT OPTIONAL ON
 %token GROUP BY HAVING ORDER ASC DESC
@@ -39,7 +39,7 @@
 %right ARROW
 %left OR
 %left AND
-%left EQUALS
+%left EQUALS GT LT GE LE
 %left PLUS MINUS
 %left STAR SLASH
 %left IN
@@ -225,6 +225,14 @@ expr:
     { make_expr $startpos $endpos (E_call (Func (make_id $startpos($2) $endpos($2) "OR"), [e1; e2])) }
   | e1=expr EQUALS e2=expr
     { make_expr $startpos $endpos (E_call (Func (make_id $startpos($2) $endpos($2) "="), [e1; e2])) }
+  | e1=expr GT e2=expr
+    { make_expr $startpos $endpos (E_call (Func (make_id $startpos($2) $endpos($2) ">"), [e1; e2])) }
+  | e1=expr LT e2=expr
+    { make_expr $startpos $endpos (E_call (Func (make_id $startpos($2) $endpos($2) "<"), [e1; e2])) }
+  | e1=expr GE e2=expr
+    { make_expr $startpos $endpos (E_call (Func (make_id $startpos($2) $endpos($2) ">="), [e1; e2])) }
+  | e1=expr LE e2=expr
+    { make_expr $startpos $endpos (E_call (Func (make_id $startpos($2) $endpos($2) "<="), [e1; e2])) }
   | fn=id LPAREN args=separated_list(COMMA, expr) RPAREN
     { make_expr $startpos $endpos (E_call (Func fn, args)) }
   | table=id DOT method_name=id LPAREN args=separated_list(COMMA, expr) RPAREN

@@ -93,6 +93,14 @@ let rec pp_expr expr =
               group_parens (pp_expr left ^/^ string "OR" ^/^ pp_expr right)
           | "=", [ left; right ] ->
               group_parens (pp_expr left ^/^ string "=" ^/^ pp_expr right)
+          | ">", [ left; right ] ->
+              group_parens (pp_expr left ^/^ string ">" ^/^ pp_expr right)
+          | "<", [ left; right ] ->
+              group_parens (pp_expr left ^/^ string "<" ^/^ pp_expr right)
+          | ">=", [ left; right ] ->
+              group_parens (pp_expr left ^/^ string ">=" ^/^ pp_expr right)
+          | "<=", [ left; right ] ->
+              group_parens (pp_expr left ^/^ string "<=" ^/^ pp_expr right)
           | _, _ ->
               let pp_args =
                 match args with

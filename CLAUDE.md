@@ -5,7 +5,7 @@ code in this repository.
 
 ## Project overview
 
-This is an OCaml project named "queries" using dune as the build system.
+This is an OCaml project named "ch_queries" using dune as the build system.
 
 ## Building and debugging the project
 
@@ -23,19 +23,19 @@ The user typically runs dune build in watch mode outside Claude session):
     - `dune test` runs all tests
     - `dune test <specific test>` runs a specific test
   do not run tests if watch mode is active, as it will conflict with the build.
-- When running an executable, use:
-    `DUNE_CONFIG__GLOBAL_LOCK=disabled dune exec COMMAND --no-build -- ARGS...`
+- When running an executable, use (only works when watch mode is not active):
+    `dune exec ch_queries -- ARGS...`
   so it doesn't conflict with the build running in watch mode.
 
 ## Project structure
 
-- **queries/** - core libary which implements typesafe DSL combinators for query generation
-- **queries_syntax/** - surface syntax + lexer/parser for the DSL
-    - **queries_syntax/syntax.ml** - AST types and data structures for the DSL
-    - **queries_syntax/lexer.mll** - lexer for the DSL (tokens are defined in the parser)
-    - **queries_syntax/parser.mly** - parser for the DSL
-    - **queries_syntax/printer.ml** - printer for the syntax, uses pprint library
-- **queries_ppx/** - a ppx rewriter which translates surface syntax to the typesafe DSL combinators
+- **ch_queries/** - core libary which implements typesafe DSL combinators for query generation
+- **ch_queries_syntax/** - surface syntax + lexer/parser for the DSL
+    - **ch_queries_syntax/syntax.ml** - AST types and data structures for the DSL
+    - **ch_queries_syntax/lexer.mll** - lexer for the DSL (tokens are defined in the parser)
+    - **ch_queries_syntax/parser.mly** - parser for the DSL
+    - **ch_queries_syntax/printer.ml** - printer for the syntax, uses pprint library
+- **ch_queries_ppx/** - a ppx rewriter which translates surface syntax to the typesafe DSL combinators
 - **bin/** - some debug UI
 - **test/** - tests in cram format (`*.t`)
     - to run: `dune test`
@@ -54,9 +54,9 @@ When adding new syntax to the query language, follow this pattern:
    - Add parsing rules
    - Include new fields in existing rules (e.g., SELECT queries)
 4. **Update printer.ml**: Add pretty-printing support for the new syntax
-5. **Update queries.ml**: Add the feature to the core DSL types and translation
-6. **Update queries.mli**: Add interface signatures for new functions
-7. **Update queries_ppx.ml**: Add PPX transformation support
+5. **Update ch_queries.ml**: Add the feature to the core DSL types and translation
+6. **Update ch_queries.mli**: Add interface signatures for new functions
+7. **Update ch_queries_ppx.ml**: Add PPX transformation support
 8. **Run `dune build`** and fix any build errors systematically
 
 Always check that interface files (.mli) match implementation files (.ml) when adding new optional parameters to functions.

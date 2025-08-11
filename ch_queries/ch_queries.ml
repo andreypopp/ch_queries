@@ -338,6 +338,14 @@ module Expr = struct
   let coalesce x y = def "coalesce" [ x; y ]
   let eq x y = def "=" [ x; y ]
   let ( = ) = eq
+  let gt x y = def ">" [ x; y ]
+  let ( > ) = gt
+  let lt x y = def "<" [ x; y ]
+  let ( < ) = lt
+  let ge x y = def ">=" [ x; y ]
+  let ( >= ) = ge
+  let le x y = def "<=" [ x; y ]
+  let ( <= ) = le
   let add x y = def "+" [ x; y ]
   let sub x y = def "-" [ x; y ]
   let mul x y = def "*" [ x; y ]
