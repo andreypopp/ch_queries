@@ -5,6 +5,7 @@ type non_null = [ `not_null ]
 type 'a nullable = [< null ] as 'a
 type 'a number = private A_number
 type date = private Date
+type datetime = private DateTime
 type ('null, 'a) array = private A_array
 type ('null, 'a) typ = private A_typ
 type ('x, 'y) tuple2 = private A_tuple2
