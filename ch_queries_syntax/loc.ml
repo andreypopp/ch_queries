@@ -1,3 +1,5 @@
+(** Location in the source code. *)
+
 type position = Lexing.position = {
   pos_fname : string;
   pos_lnum : int;
