@@ -77,6 +77,10 @@ Always check that interface files (.mli) match implementation files (.ml) when a
 - **Docs**: Terse first line, document invariants not obvious behavior
 - **Errors**: `function_name: what went wrong` format, fail fast
 - **Type annotations**: Avoid explicit types unless required by type checker
+- **Git Commits**:
+    - use imperative mood, e.g., "Add feature X", "Fix bug Y", "Refactor Z"
+    - be concise but descriptive
+    - no need to repeat everything you've done in the commit
 
 ## Developing with OCaml
 
