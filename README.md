@@ -81,9 +81,18 @@ val parse_row : json list -> int = <fun>
 There's a `%e` syntax form which allows you to define standalone expressions, which
 can be spliced into queries later:
 ```ocaml
-# let ok q = {%e|q.is_active|};;
-val ok : < query : (< is_active : 'a; .. > -> 'a) -> 'b; .. > -> 'b = <fun>
+# let ok (q : _ Ch_queries.scope) = {%e|q.is_active|};;
+val ok : < is_active : ('a, 'b) expr; .. > scope -> ('a, 'b) expr = <fun>
 ```
+
+Note that `q` in `q.is_active` is being resolved in the current scope, thus
+reusable expressions are usually defined as functions from scopes to
+expressions.
+
+> [!IMPORTANT]  
+> In most cases it is required to annotate types of the arguments of reusable
+> expressions with `_ Ch_queries.scope`. This is to force the type inference to
+> infer the polymorphic type for scopes.
 
 ## `%eu` - expressions, unsafely
 
@@ -98,6 +107,11 @@ val expr :
 
 Such syntax recognizes only `q.name` and `?param` constructs and passes the rest
 as-is.
+
+> [!IMPORTANT]  
+> The parameters and the result of `%eu` expressions are inferred to have "any
+> expression" type. Consider putting additional type constraints on them to
+> avoid spreading unsafety to other parts of the code.
 
 ## `%t` - types
 
