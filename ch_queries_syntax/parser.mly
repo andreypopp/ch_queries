@@ -23,7 +23,7 @@
 %token SELECT FROM PREWHERE WHERE AS DOT COLON
 %token LPAREN RPAREN LBRACKET RBRACKET COMMA
 %token PLUS MINUS STAR SLASH EQUALS GT LT GE LE
-%token AND OR
+%token AND OR NOT
 %token INNER JOIN LEFT OPTIONAL ON
 %token GROUP BY HAVING ORDER ASC DESC
 %token OVER PARTITION QUALIFY
@@ -39,6 +39,7 @@
 %right ARROW
 %left OR
 %left AND
+%right NOT
 %left EQUALS GT LT GE LE
 %left PLUS MINUS
 %left STAR SLASH
@@ -223,6 +224,8 @@ expr:
     { make_expr $startpos $endpos (E_call (Func (make_id $startpos($2) $endpos($2) "AND"), [e1; e2])) }
   | e1=expr OR e2=expr
     { make_expr $startpos $endpos (E_call (Func (make_id $startpos($2) $endpos($2) "OR"), [e1; e2])) }
+  | NOT e=expr
+    { make_expr $startpos $endpos (E_call (Func (make_id $startpos($1) $endpos($1) "NOT"), [e])) }
   | e1=expr EQUALS e2=expr
     { make_expr $startpos $endpos (E_call (Func (make_id $startpos($2) $endpos($2) "="), [e1; e2])) }
   | e1=expr GT e2=expr

@@ -7,11 +7,12 @@ let pp_id id = string id.node
 let get_precedence = function
   | "OR" -> 2
   | "AND" -> 3
-  | "=" | ">" | "<" | ">=" | "<=" -> 4
-  | "+" | "-" -> 5
-  | "*" | "/" -> 6
-  | "IN" -> 7
-  | _ -> 8 (* atoms: literals, function calls, etc. *)
+  | "NOT" -> 4
+  | "=" | ">" | "<" | ">=" | "<=" -> 5
+  | "+" | "-" -> 6
+  | "*" | "/" -> 7
+  | "IN" -> 8
+  | _ -> 9 (* atoms: literals, function calls, etc. *)
 
 let escape_single_quoted s =
   let buf = Buffer.create (String.length s + 10) in
@@ -129,6 +130,10 @@ let rec pp_expr ~parent_prec expr =
               pp_expr ~parent_prec:prec left
               ^/^ string "OR"
               ^/^ pp_expr ~parent_prec:prec right
+          | "NOT", [ operand ] ->
+              parens_if_needed @@ fun prec ->
+              string "NOT"
+              ^/^ pp_expr ~parent_prec:prec operand
           | "=", [ left; right ] ->
               parens_if_needed @@ fun prec ->
               pp_expr ~parent_prec:prec left

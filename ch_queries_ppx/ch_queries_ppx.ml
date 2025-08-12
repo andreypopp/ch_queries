@@ -147,6 +147,7 @@ let refer_to_scope ~loc scope id f =
 let map_operator_to_expr ~loc = function
   | "OR" -> [%expr Ch_queries.Expr.( || )]
   | "AND" -> [%expr Ch_queries.Expr.( && )]
+  | "NOT" -> [%expr Ch_queries.Expr.not_]
   | ">" -> [%expr Ch_queries.Expr.( > )]
   | "<" -> [%expr Ch_queries.Expr.( < )]
   | ">=" -> [%expr Ch_queries.Expr.( >= )]
