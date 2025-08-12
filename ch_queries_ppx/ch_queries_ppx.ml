@@ -47,31 +47,41 @@ let to_location ({ loc = { start_pos; end_pos }; _ } : _ Syntax.node) : location
     =
   { loc_start = start_pos; loc_end = end_pos; loc_ghost = false }
 
+let alias from_one =
+  match from_one.Syntax.node with
+  | Syntax.F_table { alias; _ } | F_select { alias; _ } | F_param { alias; _ }
+    ->
+      alias
+
 let non_ambigius_from from =
-  let open Syntax in
-  match from.node with
-  | Syntax.F { node = F_table { alias; _ }; _ }
-  | Syntax.F { node = F_select { alias; _ }; _ }
-  | Syntax.F { node = F_param { alias; _ }; _ } ->
-      Some alias
+  match from.Syntax.node with
+  | Syntax.F from_one -> Some (alias from_one)
   | F_join _ -> None
 
-let rec from_scope_expr from =
+let rec from_scope_expr' from =
   let open Syntax in
-  let loc = to_location from in
   match from.node with
-  | F from_one -> from_one_scope_expr from_one
+  | F from_one ->
+      let alias = alias from_one in
+      [ (alias.node, evar ~loc:(to_location alias) alias.node) ]
   | F_join { from; join; _ } ->
-      let x = from_scope_expr from in
-      let y = from_one_scope_expr join in
-      [%expr [%e x], [%e y]]
+      let x = from_scope_expr' from in
+      let y =
+        let alias = alias join in
+        (alias.node, evar ~loc:(to_location alias) alias.node)
+      in
+      y :: x
 
-and from_one_scope_expr from_one =
-  let open Syntax in
-  let loc = to_location from_one in
-  match from_one.node with
-  | F_table { alias; _ } | F_select { alias; _ } | F_param { alias; _ } ->
-      evar ~loc alias.node
+let from_scope_expr from =
+  let loc = to_location from in
+  let es = List.rev (from_scope_expr' from) in
+  pexp_tuple ~loc (List.map ~f:snd es)
+
+let from_one_scope_pattern from_one =
+  match from_one.Syntax.node with
+  | Syntax.F_table { alias; _ } | F_select { alias; _ } | F_param { alias; _ }
+    ->
+      pvar ~loc:(to_location alias) alias.node
 
 let rec from_scope_pattern ?kind from =
   let open Syntax in
@@ -96,12 +106,8 @@ let rec from_scope_pattern ?kind from =
       in
       [%pat? [%p x], [%p y]]
 
-and from_one_scope_pattern from_one =
-  let open Syntax in
-  let loc = to_location from_one in
-  match from_one.node with
-  | F_table { alias; _ } | F_select { alias; _ } | F_param { alias; _ } ->
-      pvar ~loc alias.node
+let make_hole ?kind ~loc ~from expr =
+  pexp_fun ~loc Nolabel None (from_scope_pattern ?kind from) expr
 
 let rec typ_to_ocaml_type ~loc typ =
   let open Syntax in
@@ -164,6 +170,13 @@ let rec typ_to_ocaml_type ~loc typ =
           let loc = to_location id in
           Location.raise_errorf ~loc "Unknown  ClickHouse type: %s" t)
 
+let refer_to_scope ~loc scope id f =
+  let p, e = (pvar ~loc scope.Syntax.node, evar ~loc scope.Syntax.node) in
+  let e' = pexp_send ~loc e (Located.mk ~loc "query") in
+  [%expr
+    [%e e'] (fun [%p p] ->
+        [%e f (pexp_send ~loc e (Located.mk ~loc id.Syntax.node))])]
+
 let rec stage_expr ~params ~from expr =
   let loc = to_location expr in
   match expr.node with
@@ -176,12 +189,7 @@ let rec stage_expr ~params ~from expr =
   | Syntax.E_unsafe id ->
       let loc = to_location id in
       [%expr Ch_queries.unsafe [%e estring ~loc id.node]]
-  | Syntax.E_col (scope, id) ->
-      let e = evar ~loc scope.node in
-      let e' = pexp_send ~loc e (Located.mk ~loc "query") in
-      let p = pvar ~loc scope.node in
-      [%expr
-        [%e e'] (fun [%p p] -> [%e pexp_send ~loc e (Located.mk ~loc id.node)])]
+  | Syntax.E_col (scope, id) -> refer_to_scope ~loc scope id Fun.id
   | Syntax.E_id id -> (
       match CCList.mem id params ~eq:Syntax.equal_id with
       | true -> [%expr Ch_queries.unsafe [%e estring ~loc id.node]]
@@ -242,23 +250,10 @@ let rec stage_expr ~params ~from expr =
             | _ -> evar ~loc ("Ch_queries.Expr." ^ name.node)
           in
           eapply ~loc f (List.map args ~f:(stage_expr ~params ~from))
-      | Func_method (table, method_name) ->
-          let table_loc = to_location table in
-          let method_loc = to_location method_name in
-          let e = evar ~loc:table_loc table.node in
-          let e' =
-            pexp_send ~loc:table_loc e (Located.mk ~loc:table_loc "query")
-          in
-          let p = pvar ~loc:table_loc table.node in
-          let method_call =
-            pexp_send ~loc:method_loc e
-              (Located.mk ~loc:method_loc method_name.node)
-          in
+      | Func_method (scope, method_name) ->
+          refer_to_scope ~loc scope method_name @@ fun e ->
           let staged_args = List.map args ~f:(stage_expr ~params ~from) in
-          let method_call_with_args =
-            eapply ~loc:method_loc method_call staged_args
-          in
-          [%expr [%e e'] (fun [%p p] -> [%e method_call_with_args])])
+          eapply ~loc e staged_args)
   | Syntax.E_param (var, typ) -> (
       let e = evar ~loc var.node in
       let e_with_scope =
@@ -434,7 +429,7 @@ and stage_query ({ node; _ } as q) =
               pexp_object ~loc
                 { pcstr_self = ppat_any ~loc; pcstr_fields = select_methods }
             in
-            pexp_fun ~loc Nolabel None (from_scope_pattern from) select_obj
+            make_hole ~loc ~from select_obj
         | Syntax.Select_splice id ->
             let loc = to_location id in
             evar ~loc id.node
@@ -448,7 +443,7 @@ and stage_query ({ node; _ } as q) =
         | Some prewhere ->
             let loc = to_location prewhere in
             let prewhere =
-              pexp_fun ~loc Nolabel None (from_scope_pattern from)
+              make_hole ~loc ~from
                 (stage_expr ~params:[] ~from:(Some from) prewhere)
             in
             (Labelled "prewhere", prewhere) :: args
@@ -459,7 +454,7 @@ and stage_query ({ node; _ } as q) =
         | Some where ->
             let loc = to_location where in
             let where =
-              pexp_fun ~loc Nolabel None (from_scope_pattern from)
+              make_hole ~loc ~from
                 (stage_expr ~params:[] ~from:(Some from) where)
             in
             (Labelled "where", where) :: args
@@ -470,7 +465,7 @@ and stage_query ({ node; _ } as q) =
         | Some qualify ->
             let loc = to_location qualify in
             let qualify =
-              pexp_fun ~loc Nolabel None (from_scope_pattern from)
+              make_hole ~loc ~from
                 (stage_expr ~params:[] ~from:(Some from) qualify)
             in
             (Labelled "qualify", qualify) :: args
@@ -481,9 +476,7 @@ and stage_query ({ node; _ } as q) =
         | Some dimensions ->
             let loc = to_location q in
             let group_by = stage_dimensions ~loc ~from:(Some from) dimensions in
-            let group_by =
-              pexp_fun ~loc Nolabel None (from_scope_pattern from) group_by
-            in
+            let group_by = make_hole ~loc ~from group_by in
             (Labelled "group_by", group_by) :: args
       in
       let args =
@@ -492,7 +485,7 @@ and stage_query ({ node; _ } as q) =
         | Some having ->
             let loc = to_location having in
             let having =
-              pexp_fun ~loc Nolabel None (from_scope_pattern from)
+              make_hole ~loc ~from
                 (stage_expr ~params:[] ~from:(Some from) having)
             in
             (Labelled "having", having) :: args
@@ -503,9 +496,7 @@ and stage_query ({ node; _ } as q) =
         | Some order_by ->
             let loc = to_location q in
             let order_by = stage_order_by ~loc ~from:(Some from) order_by in
-            let order_by =
-              pexp_fun ~loc Nolabel None (from_scope_pattern from) order_by
-            in
+            let order_by = make_hole ~loc ~from order_by in
             (Labelled "order_by", order_by) :: args
       in
       let args =
@@ -513,7 +504,7 @@ and stage_query ({ node; _ } as q) =
         | None -> args
         | Some expr ->
             let limit =
-              pexp_fun ~loc Nolabel None (from_scope_pattern from)
+              make_hole ~loc ~from
                 (stage_expr ~params:[] ~from:(Some from) expr)
             in
             (Labelled "limit", limit) :: args
@@ -523,7 +514,7 @@ and stage_query ({ node; _ } as q) =
         | None -> args
         | Some expr ->
             let offset =
-              pexp_fun ~loc Nolabel None (from_scope_pattern from)
+              make_hole ~loc ~from
                 (stage_expr ~params:[] ~from:(Some from) expr)
             in
             (Labelled "offset", offset) :: args
@@ -552,8 +543,7 @@ and stage_from from =
         | `LEFT_JOIN_OPTIONAL -> [%expr Ch_queries.left_join ~optional:true]
       in
       let on =
-        pexp_fun ~loc Nolabel None
-          (from_scope_pattern ~kind:`INNER_JOIN from)
+        make_hole ~loc ~from ~kind:`INNER_JOIN
           (stage_expr ~params:[] ~from:(Some from) on)
       in
       [%expr [%e f] [%e stage_from base] [%e stage_from_one join] ~on:[%e on]]
