@@ -144,15 +144,17 @@ let refer_to_scope ~loc scope id f =
     [%e e'] (fun [%p p] ->
         [%e f (pexp_send ~loc e (Located.mk ~loc id.Syntax.node))])]
 
-let map_operator_to_expr ~loc = function
-  | "OR" -> [%expr Ch_queries.Expr.( || )]
-  | "AND" -> [%expr Ch_queries.Expr.( && )]
-  | "NOT" -> [%expr Ch_queries.Expr.not_]
-  | ">" -> [%expr Ch_queries.Expr.( > )]
-  | "<" -> [%expr Ch_queries.Expr.( < )]
-  | ">=" -> [%expr Ch_queries.Expr.( >= )]
-  | "<=" -> [%expr Ch_queries.Expr.( <= )]
-  | name -> evar ~loc ("Ch_queries.Expr." ^ name)
+let map_operator_to_expr ~loc op arity =
+  match (op, arity) with
+  | "OR", 2 -> [%expr Ch_queries.Expr.( || )]
+  | "AND", 2 -> [%expr Ch_queries.Expr.( && )]
+  | "NOT", 1 -> [%expr Ch_queries.Expr.not_]
+  | "-", 1 -> [%expr Ch_queries.Expr.neg]
+  | ">", 2 -> [%expr Ch_queries.Expr.( > )]
+  | "<", 2 -> [%expr Ch_queries.Expr.( < )]
+  | ">=", 2 -> [%expr Ch_queries.Expr.( >= )]
+  | "<=", 2 -> [%expr Ch_queries.Expr.( <= )]
+  | name, _ -> evar ~loc ("Ch_queries.Expr." ^ name)
 
 let adjust_location_for_ocaml_expr loc =
   let open Location in
@@ -243,7 +245,7 @@ let rec stage_expr ~params ~from expr =
       | Func name ->
           let f =
             let loc = to_location name in
-            map_operator_to_expr ~loc name.node
+            map_operator_to_expr ~loc name.node (List.length args)
           in
           eapply ~loc f (List.map args ~f:(stage_expr ~params ~from))
       | Func_method (scope, method_name) ->

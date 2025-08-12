@@ -378,9 +378,10 @@ module Expr = struct
   let ( >= ) = ge
   let le x y = def "<=" [ x; y ]
   let ( <= ) = le
-  let ( && ) x y = def "and" [ x; y ]
-  let ( || ) x y = def "or" [ x; y ]
-  let not_ x = def "not" [ x ]
+  let ( && ) x y = def "AND" [ x; y ]
+  let ( || ) x y = def "OR" [ x; y ]
+  let not_ x = def "NOT" [ x ]
+  let neg x = def "-" [ x ]
   let arrayFilter f x = def "arrayFilter" [ f; x ]
   let length x = def "length" [ x ]
   let toDate x = def "toDate" [ x ]

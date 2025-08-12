@@ -155,6 +155,7 @@ module Expr : sig
   val ( && ) : ('n, bool) expr -> ('n, bool) expr -> ('n, bool) expr
   val ( || ) : ('n, bool) expr -> ('n, bool) expr -> ('n, bool) expr
   val not_ : ('n, bool) expr -> ('n, bool) expr
+  val neg : ('n, 'a number) expr -> ('n, 'a number) expr
   val toDate : ('n, _ number) expr -> ('n, date) expr
   val if_ : ('n, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
 

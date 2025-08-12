@@ -43,6 +43,7 @@
 %left EQUALS GT LT GE LE
 %left PLUS MINUS
 %left STAR SLASH
+%right UMINUS  (* unary minus *)
 %left IN
 
 %start a_query a_expr a_typ
@@ -226,6 +227,8 @@ expr:
     { make_expr $startpos $endpos (E_call (Func (make_id $startpos($2) $endpos($2) "OR"), [e1; e2])) }
   | NOT e=expr
     { make_expr $startpos $endpos (E_call (Func (make_id $startpos($1) $endpos($1) "NOT"), [e])) }
+  | MINUS e=expr %prec UMINUS
+    { make_expr $startpos $endpos (E_call (Func (make_id $startpos($1) $endpos($1) "-"), [e])) }
   | e1=expr EQUALS e2=expr
     { make_expr $startpos $endpos (E_call (Func (make_id $startpos($2) $endpos($2) "="), [e1; e2])) }
   | e1=expr GT e2=expr

@@ -4,15 +4,17 @@ open Syntax
 
 let pp_id id = string id.node
 
-let get_precedence = function
-  | "OR" -> 2
-  | "AND" -> 3
-  | "NOT" -> 4
-  | "=" | ">" | "<" | ">=" | "<=" -> 5
-  | "+" | "-" -> 6
-  | "*" | "/" -> 7
-  | "IN" -> 8
-  | _ -> 9 (* atoms: literals, function calls, etc. *)
+let get_precedence op arity =
+  match (op, arity) with
+  | "OR", 2 -> 2
+  | "AND", 2 -> 3
+  | "NOT", 1 -> 4
+  | ("=" | ">" | "<" | ">=" | "<="), 2 -> 5
+  | ("+" | "-"), 2 -> 6
+  | ("*" | "/"), 2 -> 7
+  | "-", 1 -> 8 (* unary minus has high precedence *)
+  | "IN", 1 -> 9
+  | _ -> 10 (* atoms: literals, function calls, etc. *)
 
 let escape_single_quoted s =
   let buf = Buffer.create (String.length s + 10) in
@@ -89,7 +91,7 @@ let rec pp_expr ~parent_prec expr =
       match func with
       | Func name -> (
           let parens_if_needed content =
-            let prec = get_precedence name.node in
+            let prec = get_precedence name.node (List.length args) in
             if prec < parent_prec then group (parens (content prec))
             else group (content prec)
           in
@@ -132,8 +134,10 @@ let rec pp_expr ~parent_prec expr =
               ^/^ pp_expr ~parent_prec:prec right
           | "NOT", [ operand ] ->
               parens_if_needed @@ fun prec ->
-              string "NOT"
-              ^/^ pp_expr ~parent_prec:prec operand
+              string "NOT" ^/^ pp_expr ~parent_prec:prec operand
+          | "-", [ operand ] ->
+              parens_if_needed @@ fun prec ->
+              string "-" ^^ pp_expr ~parent_prec:prec operand
           | "=", [ left; right ] ->
               parens_if_needed @@ fun prec ->
               pp_expr ~parent_prec:prec left
@@ -183,7 +187,7 @@ let rec pp_expr ~parent_prec expr =
            ^^ pp_args ^^ string ")"))
   | E_ocaml_expr s -> string ("?{" ^ s ^ "}")
   | E_in (expr, in_query) ->
-      let prec = get_precedence "IN" in
+      let prec = get_precedence "IN" 2 in
       let needs_parens = prec < parent_prec in
       let content =
         match in_query with
