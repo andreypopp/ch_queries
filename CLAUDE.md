@@ -43,6 +43,14 @@ The user typically runs dune build in watch mode outside Claude session):
 
 when exploring a project structure, it is fine to read entire files (they are small)
 
+## Architecture overview
+
+The `ch_queries_ppx` parses the surface syntax with `ch_queries_syntax` and
+translates it to the typesafe DSL combinators defined in `ch_queries`.
+
+The `ch_queries` combinators are being translated back to `ch_queries_syntax`
+but only to the subset which maps to SQL. Which is then printed to SQL string.
+
 ## Adding new syntax features
 
 When adding new syntax to the query language, follow this pattern:
@@ -92,7 +100,7 @@ By default, as we use `containers`, the `=` operator has the type `int -> int
 `String.equal` or `List.equal` and etc. Same holds for `compare` function (and
 `>`, `<`, `>=`, `<=` operators).
 
-## Common patterns
+## Developing with OCaml: common pitfalls
 
 - **Record field access**: When the compiler can't infer types, use qualified access like `id.Syntax.node` instead of `id.node`
 - **Pattern matching**: Always handle all cases in pattern matches. Use `_` only when explicitly ignoring unused variants  
