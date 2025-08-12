@@ -15,33 +15,19 @@ let raise_parse_errorf ?msg name lexbuf =
   | None -> Location.raise_errorf ~loc "%%%s: parse error" name
   | Some msg -> Location.raise_errorf ~loc "%%%s: parse error: %s" name msg
 
-let parse_query ~loc s =
+let parse_with parser lexer name ~loc s =
   let lexbuf = Lexing.from_string s in
   set_position lexbuf loc;
-  try Parser.a_query Lexer.token lexbuf with
-  | Parser.Error -> raise_parse_errorf "q" lexbuf
-  | Lexer.Error msg -> raise_parse_errorf ~msg "q" lexbuf
+  try parser lexer lexbuf with
+  | Parser.Error -> raise_parse_errorf name lexbuf
+  | Lexer.Error msg -> raise_parse_errorf ~msg name lexbuf
+  | Uparser.Error -> raise_parse_errorf name lexbuf
+  | Ulexer.Error msg -> raise_parse_errorf ~msg name lexbuf
 
-let parse_expr ~loc s =
-  let lexbuf = Lexing.from_string s in
-  set_position lexbuf loc;
-  try Parser.a_expr Lexer.token lexbuf with
-  | Parser.Error -> raise_parse_errorf "e" lexbuf
-  | Lexer.Error msg -> raise_parse_errorf ~msg "e" lexbuf
-
-let parse_typ ~loc s =
-  let lexbuf = Lexing.from_string s in
-  set_position lexbuf loc;
-  try Parser.a_typ Lexer.token lexbuf with
-  | Parser.Error -> raise_parse_errorf "t" lexbuf
-  | Lexer.Error msg -> raise_parse_errorf "t" ~msg lexbuf
-
-let parse_uexpr ~loc s =
-  let lexbuf = Lexing.from_string s in
-  set_position lexbuf loc;
-  try Uparser.a_uexpr Ulexer.token lexbuf with
-  | Uparser.Error -> raise_parse_errorf "eu" lexbuf
-  | Ulexer.Error msg -> raise_parse_errorf "eu" ~msg lexbuf
+let parse_query ~loc s = parse_with Parser.a_query Lexer.token "q" ~loc s
+let parse_expr ~loc s = parse_with Parser.a_expr Lexer.token "e" ~loc s
+let parse_typ ~loc s = parse_with Parser.a_typ Lexer.token "t" ~loc s
+let parse_uexpr ~loc s = parse_with Uparser.a_uexpr Ulexer.token "eu" ~loc s
 
 let to_location ({ loc = { start_pos; end_pos }; _ } : _ Syntax.node) : location
     =
@@ -109,66 +95,47 @@ let rec from_scope_pattern ?kind from =
 let make_hole ?kind ~loc ~from expr =
   pexp_fun ~loc Nolabel None (from_scope_pattern ?kind from) expr
 
-let rec typ_to_ocaml_type ~loc typ =
+let rec stage_typ typ =
   let open Syntax in
+  let loc = to_location typ in
   match typ.node with
-  | T id -> (
-      match id.node with
-      | "Date" -> ([%type: Ch_queries.non_null], [%type: Ch_queries.date])
-      | "DateTime" ->
-          ([%type: Ch_queries.non_null], [%type: Ch_queries.datetime])
-      | "String" -> ([%type: Ch_queries.non_null], [%type: string])
-      | "Bool" -> ([%type: Ch_queries.non_null], [%type: bool])
-      | "Int8" -> ([%type: Ch_queries.non_null], [%type: int Ch_queries.number])
-      | "UInt8" -> ([%type: Ch_queries.non_null], [%type: int Ch_queries.number])
-      | "Int16" -> ([%type: Ch_queries.non_null], [%type: int Ch_queries.number])
-      | "UInt16" ->
-          ([%type: Ch_queries.non_null], [%type: int Ch_queries.number])
-      | "Int32" -> ([%type: Ch_queries.non_null], [%type: int Ch_queries.number])
-      | "UInt32" ->
-          ([%type: Ch_queries.non_null], [%type: int Ch_queries.number])
-      | "Int64" ->
-          ([%type: Ch_queries.non_null], [%type: int64 Ch_queries.number])
-      | "UInt64" ->
-          ([%type: Ch_queries.non_null], [%type: int64 Ch_queries.number])
-      | "Float32" ->
-          ([%type: Ch_queries.non_null], [%type: float Ch_queries.number])
-      | "Float64" ->
-          ([%type: Ch_queries.non_null], [%type: float Ch_queries.number])
-      | t ->
-          let loc = to_location id in
-          Location.raise_errorf ~loc "unknown ClickHouse type: %s" t)
-  | T_app (id, args) -> (
-      match (id.node, args) with
-      | "Nullable", [ t ] ->
-          let _, t = typ_to_ocaml_type ~loc t in
-          ([%type: Ch_queries.null], t)
-      | "Nullable", _ ->
-          let loc = to_location id in
-          Location.raise_errorf ~loc
-            "Nullable(..) requires exactly one argument"
-      | "Array", [ t ] ->
-          let n, t = typ_to_ocaml_type ~loc t in
-          ( [%type: Ch_queries.non_null],
-            [%type: ([%t n], [%t t]) Ch_queries.array] )
-      | "Array", _ ->
-          let loc = to_location id in
-          Location.raise_errorf ~loc "Array(..) requires exactly one argument"
-      | "Tuple", [ x; y ] ->
-          let xn, xt = typ_to_ocaml_type ~loc x in
-          let yn, yt = typ_to_ocaml_type ~loc y in
-          let loc = to_location id in
-          ( [%type: Ch_queries.non_null],
-            [%type:
-              ( ([%t xn], [%t xt]) Ch_queries.typ,
-                ([%t yn], [%t yt]) Ch_queries.typ )
-              Ch_queries.tuple2] )
-      | "Tuple", _ ->
-          let loc = to_location id in
-          Location.raise_errorf ~loc "only 2-element tuples are supported"
-      | t, _ ->
-          let loc = to_location id in
-          Location.raise_errorf ~loc "Unknown  ClickHouse type: %s" t)
+  | T { node = "Date"; _ } ->
+      ([%type: Ch_queries.non_null], [%type: Ch_queries.date])
+  | T { node = "DateTime"; _ } ->
+      ([%type: Ch_queries.non_null], [%type: Ch_queries.datetime])
+  | T { node = "String"; _ } -> ([%type: Ch_queries.non_null], [%type: string])
+  | T { node = "Bool"; _ } -> ([%type: Ch_queries.non_null], [%type: bool])
+  | T { node = "Int8" | "UInt8" | "Int16" | "UInt16" | "Int32" | "UInt32"; _ }
+    ->
+      ([%type: Ch_queries.non_null], [%type: int Ch_queries.number])
+  | T { node = "Int64" | "UInt64"; _ } ->
+      ([%type: Ch_queries.non_null], [%type: int64 Ch_queries.number])
+  | T { node = "Float32" | "Float64"; _ } ->
+      ([%type: Ch_queries.non_null], [%type: float Ch_queries.number])
+  | T { node = t; _ } ->
+      Location.raise_errorf ~loc "unknown ClickHouse type: %s" t
+  | T_app ({ node = "Nullable"; _ }, [ t ]) ->
+      let _, t = stage_typ t in
+      ([%type: Ch_queries.null], t)
+  | T_app ({ node = "Nullable"; _ }, _) ->
+      Location.raise_errorf ~loc "Nullable(..) requires exactly one argument"
+  | T_app ({ node = "Array"; _ }, [ t ]) ->
+      let n, t = stage_typ t in
+      ([%type: Ch_queries.non_null], [%type: ([%t n], [%t t]) Ch_queries.array])
+  | T_app ({ node = "Array"; _ }, _) ->
+      Location.raise_errorf ~loc "Array(..) requires exactly one argument"
+  | T_app ({ node = "Tuple"; _ }, [ x; y ]) ->
+      let xn, xt = stage_typ x in
+      let yn, yt = stage_typ y in
+      ( [%type: Ch_queries.non_null],
+        [%type:
+          ( ([%t xn], [%t xt]) Ch_queries.typ,
+            ([%t yn], [%t yt]) Ch_queries.typ )
+          Ch_queries.tuple2] )
+  | T_app ({ node = "Tuple"; _ }, _) ->
+      Location.raise_errorf ~loc "only 2-element tuples are supported"
+  | T_app ({ node = t; _ }, _) ->
+      Location.raise_errorf ~loc "Unknown ClickHouse type: %s" t
 
 let refer_to_scope ~loc scope id f =
   let p, e = (pvar ~loc scope.Syntax.node, evar ~loc scope.Syntax.node) in
@@ -176,6 +143,41 @@ let refer_to_scope ~loc scope id f =
   [%expr
     [%e e'] (fun [%p p] ->
         [%e f (pexp_send ~loc e (Located.mk ~loc id.Syntax.node))])]
+
+let map_operator_to_expr ~loc = function
+  | "OR" -> [%expr Ch_queries.Expr.( || )]
+  | "AND" -> [%expr Ch_queries.Expr.( && )]
+  | ">" -> [%expr Ch_queries.Expr.( > )]
+  | "<" -> [%expr Ch_queries.Expr.( < )]
+  | ">=" -> [%expr Ch_queries.Expr.( >= )]
+  | "<=" -> [%expr Ch_queries.Expr.( <= )]
+  | name -> evar ~loc ("Ch_queries.Expr." ^ name)
+
+let adjust_location_for_ocaml_expr loc =
+  let open Location in
+  let start_pos = loc.loc_start in
+  let adjusted_start =
+    { start_pos with pos_cnum = start_pos.pos_cnum + 2 (* length of '?{' *) }
+  in
+  { loc with loc_start = adjusted_start }
+
+let parse_ocaml_expr ~loc ocaml_code =
+  let adjusted_loc = adjust_location_for_ocaml_expr loc in
+  try
+    let lexbuf = Lexing.from_string ocaml_code in
+    (* Set the lexbuf position to match our adjusted location *)
+    lexbuf.lex_start_p <- adjusted_loc.loc_start;
+    lexbuf.lex_curr_p <- adjusted_loc.loc_start;
+    let parsed_expr = Ppxlib.Parse.expression lexbuf in
+    (* Update the location of the parsed expression *)
+    { parsed_expr with pexp_loc = adjusted_loc }
+  with
+  | Syntaxerr.Error _ as e ->
+      (* Re-raise with adjusted location *)
+      raise e
+  | exn ->
+      Location.raise_errorf ~loc:adjusted_loc
+        "Error parsing OCaml expression: %s" (Printexc.to_string exn)
 
 let rec stage_expr ~params ~from expr =
   let loc = to_location expr in
@@ -240,14 +242,7 @@ let rec stage_expr ~params ~from expr =
       | Func name ->
           let f =
             let loc = to_location name in
-            match name.node with
-            | "OR" -> [%expr Ch_queries.Expr.( || )]
-            | "AND" -> [%expr Ch_queries.Expr.( && )]
-            | ">" -> [%expr Ch_queries.Expr.( > )]
-            | "<" -> [%expr Ch_queries.Expr.( < )]
-            | ">=" -> [%expr Ch_queries.Expr.( >= )]
-            | "<=" -> [%expr Ch_queries.Expr.( <= )]
-            | _ -> evar ~loc ("Ch_queries.Expr." ^ name.node)
+            map_operator_to_expr ~loc name.node
           in
           eapply ~loc f (List.map args ~f:(stage_expr ~params ~from))
       | Func_method (scope, method_name) ->
@@ -264,37 +259,12 @@ let rec stage_expr ~params ~from expr =
       match typ with
       | None -> e_with_scope
       | Some t ->
-          let n, ocaml_t = typ_to_ocaml_type ~loc t in
+          let n, ocaml_t = stage_typ t in
           let typed_expr_type =
             [%type: ([%t n], [%t ocaml_t]) Ch_queries.expr]
           in
           [%expr ([%e e_with_scope] : [%t typed_expr_type])])
-  | Syntax.E_ocaml_expr ocaml_code -> (
-      (* Parse the OCaml expression and adjust location for error reporting *)
-      let adjusted_loc =
-        let open Location in
-        let start_pos = loc.loc_start in
-        (* Offset by 2 characters to account for '?{' prefix *)
-        let adjusted_start =
-          { start_pos with pos_cnum = start_pos.pos_cnum + 2 }
-        in
-        { loc with loc_start = adjusted_start }
-      in
-      try
-        let lexbuf = Lexing.from_string ocaml_code in
-        (* Set the lexbuf position to match our adjusted location *)
-        lexbuf.lex_start_p <- adjusted_loc.loc_start;
-        lexbuf.lex_curr_p <- adjusted_loc.loc_start;
-        let parsed_expr = Ppxlib.Parse.expression lexbuf in
-        (* Update the location of the parsed expression *)
-        { parsed_expr with pexp_loc = adjusted_loc }
-      with
-      | Syntaxerr.Error _ as e ->
-          (* Re-raise with adjusted location *)
-          raise e
-      | exn ->
-          Location.raise_errorf ~loc:adjusted_loc
-            "Error parsing OCaml expression: %s" (Printexc.to_string exn))
+  | Syntax.E_ocaml_expr ocaml_code -> parse_ocaml_expr ~loc ocaml_code
   | Syntax.E_in (expr, in_query) -> (
       let expr = stage_expr ~params ~from expr in
       match in_query with
@@ -354,12 +324,10 @@ and stage_settings ~loc settings =
             | Syntax.Setting_lit (L_string s) ->
                 [%expr `String [%e estring ~loc s]]
             | Syntax.Setting_lit (L_float _) ->
-                failwith
-                  "invariant violation: float is not supported in settings"
+                Location.raise_errorf ~loc "float is not supported in settings"
             | Syntax.Setting_lit (L_bool b) -> [%expr `Bool [%e ebool ~loc b]]
             | Syntax.Setting_lit L_null ->
-                failwith
-                  "invariant violation: NULL is not supported in settings"
+                Location.raise_errorf ~loc "NULL is not supported in settings"
             | Syntax.Setting_param param ->
                 let e =
                   Syntax.make_expr ~loc:param.loc (E_param (param, None))
@@ -615,7 +583,7 @@ let expand_typ ~ctxt:_ expr =
   match expr.pexp_desc with
   | Pexp_constant (Pconst_string (txt, loc, _)) ->
       let typ = parse_typ ~loc txt in
-      let n, t = typ_to_ocaml_type ~loc typ in
+      let n, t = stage_typ typ in
       [%type: ([%t n], [%t t]) Ch_queries.expr]
   | _ -> Location.raise_errorf "expected a string literal for [%%t ...]"
 
