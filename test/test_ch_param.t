@@ -4,7 +4,7 @@ Basic CH_PARAM usage:
 
 CH_PARAM with complex expressions:
   $ ch_queries parse 'SELECT {field:string} + {value:int} FROM table'
-  SELECT ({field:string} + {value:int}) FROM table AS table
+  SELECT {field:string} + {value:int} FROM table AS table
 
 CH_PARAM with nested braces:
   $ ch_queries parse 'SELECT {config:Map(String, {nested:int})} FROM config'

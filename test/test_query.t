@@ -329,7 +329,7 @@ select with PREWHERE clause:
     SELECT users.x AS _1
     FROM public.users AS users
     PREWHERE users.is_active
-    WHERE (users.id = 10)) AS q
+    WHERE users.id = 10) AS q
 
 expressions referenced multiple times result in a single column added to teh subquery:
   $ ./compile_and_run '

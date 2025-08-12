@@ -73,7 +73,7 @@ optional join with a table (in use):
   SELECT q._1
   FROM (
     SELECT p.name AS _1
-    FROM public.users AS u LEFT JOIN public.profiles AS p ON (u.id = p.user_id))
+    FROM public.users AS u LEFT JOIN public.profiles AS p ON u.id = p.user_id)
     AS q
 
 optional join with a subquery (elimination):
@@ -175,4 +175,4 @@ optional join with a subquery (in use):
     LEFT JOIN
     (SELECT p.name AS _1, p.user_id AS _2 FROM public.profiles AS p) AS p
     ON
-    (u.id = p._2)) AS q
+    u.id = p._2) AS q
