@@ -216,6 +216,18 @@ let rec stage_expr ~params ~from expr =
   | Syntax.E_lit L_null -> [%expr Ch_queries.null]
   | Syntax.E_lit (L_bool b) -> [%expr Ch_queries.bool [%e ebool ~loc b]]
   | Syntax.E_lit (L_string s) -> [%expr Ch_queries.string [%e estring ~loc s]]
+  | Syntax.E_lit (L_interval (n, unit)) ->
+      let unit_expr =
+        match unit with
+        | Year -> [%expr `YEAR]
+        | Month -> [%expr `MONTH]
+        | Week -> [%expr `WEEK]
+        | Day -> [%expr `DAY]
+        | Hour -> [%expr `HOUR]
+        | Minute -> [%expr `MINUTE]
+        | Second -> [%expr `SECOND]
+      in
+      [%expr Ch_queries.interval [%e eint ~loc n] [%e unit_expr]]
   | Syntax.E_window (name, args, { partition_by; order_by }) ->
       let f =
         let loc = to_location name in
@@ -248,7 +260,12 @@ let rec stage_expr ~params ~from expr =
             let loc = to_location name in
             map_operator_to_expr ~loc name.node (List.length args)
           in
-          eapply ~loc f (List.map args ~f:(stage_expr ~params ~from))
+          let args =
+            match args with
+            | [] -> [ [%expr ()] ]
+            | args -> List.map args ~f:(stage_expr ~params ~from)
+          in
+          eapply ~loc f args
       | Func_method (scope, method_name) ->
           refer_to_scope ~loc scope method_name @@ fun e ->
           let staged_args = List.map args ~f:(stage_expr ~params ~from) in
@@ -332,6 +349,9 @@ and stage_settings ~loc settings =
             | Syntax.Setting_lit (L_bool b) -> [%expr `Bool [%e ebool ~loc b]]
             | Syntax.Setting_lit L_null ->
                 Location.raise_errorf ~loc "NULL is not supported in settings"
+            | Syntax.Setting_lit (L_interval (_, _)) ->
+                Location.raise_errorf ~loc
+                  "INTERVAL is not supported in settings"
             | Syntax.Setting_param param ->
                 let e =
                   Syntax.make_expr ~loc:param.loc (E_param (param, None))

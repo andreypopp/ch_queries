@@ -36,6 +36,21 @@
     ("IN", IN);
     ("UNION", UNION);
     ("SETTINGS", SETTINGS);
+    ("INTERVAL", INTERVAL);
+    ("YEAR", YEAR);
+    ("YEARS", YEAR);
+    ("MONTH", MONTH);
+    ("MONTHS", MONTH);
+    ("WEEK", WEEK);
+    ("WEEKS", WEEK);
+    ("DAY", DAY);
+    ("DAYS", DAY);
+    ("HOUR", HOUR);
+    ("HOURS", HOUR);
+    ("MINUTE", MINUTE);
+    ("MINUTES", MINUTE);
+    ("SECOND", SECOND);
+    ("SECONDS", SECOND);
   ]
 
   let keyword_table = Hashtbl.create 16
@@ -106,6 +121,14 @@
     | Parser.IN -> "IN"
     | Parser.UNION -> "UNION"
     | Parser.SETTINGS -> "SETTINGS"
+    | Parser.INTERVAL -> "INTERVAL"
+    | Parser.YEAR -> "YEAR"
+    | Parser.MONTH -> "MONTH"
+    | Parser.WEEK -> "WEEK"
+    | Parser.DAY -> "DAY"
+    | Parser.HOUR -> "HOUR"
+    | Parser.MINUTE -> "MINUTE"
+    | Parser.SECOND -> "SECOND"
     | Parser.ARROW -> "ARROW"
     | Parser.EOF -> "EOF"
 

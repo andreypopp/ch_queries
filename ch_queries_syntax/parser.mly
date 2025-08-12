@@ -32,6 +32,8 @@
 %token IN
 %token UNION
 %token SETTINGS
+%token INTERVAL
+%token YEAR MONTH WEEK DAY HOUR MINUTE SECOND
 %token ARROW
 %token EOF
 
@@ -157,6 +159,16 @@ setting_literal:
   | s=STRING { L_string s }
   | TRUE     { L_bool true }
   | FALSE    { L_bool false }
+  | INTERVAL n=NUMBER unit=interval_unit { L_interval (n, unit) }
+
+interval_unit:
+    YEAR   { Year }
+  | MONTH  { Month }
+  | WEEK   { Week }
+  | DAY    { Day }
+  | HOUR   { Hour }
+  | MINUTE { Minute }
+  | SECOND { Second }
 
 window_spec:
     partition_by=partition_by? order_by=order_by?
@@ -209,6 +221,8 @@ expr:
     { make_expr $startpos $endpos (E_lit (L_bool true)) }
   | FALSE
     { make_expr $startpos $endpos (E_lit (L_bool false)) }
+  | INTERVAL n=NUMBER unit=interval_unit
+    { make_expr $startpos $endpos (E_lit (L_interval (n, unit))) }
   | LPAREN e=expr RPAREN
     { e }
   | LBRACKET es=separated_list(COMMA, expr) RBRACKET

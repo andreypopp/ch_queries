@@ -49,6 +49,11 @@ val bool : bool -> (non_null, bool) expr
 val float : float -> (non_null, float number) expr
 val null : (null, 'a) expr
 
+val interval :
+  int ->
+  [< `YEAR | `MONTH | `WEEK | `DAY | `HOUR | `MINUTE | `SECOND ] ->
+  (non_null, interval) expr
+
 val lambda :
   string ->
   (('pn, 'pa) expr -> ('n, 'a) expr) ->

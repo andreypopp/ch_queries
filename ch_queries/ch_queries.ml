@@ -345,6 +345,19 @@ let bool x = lit (L_bool x)
 let float x = lit (L_float x)
 let null = lit L_null
 
+let interval n unit =
+  let unit' =
+    match unit with
+    | `YEAR -> Syntax.Year
+    | `MONTH -> Syntax.Month
+    | `WEEK -> Syntax.Week
+    | `DAY -> Syntax.Day
+    | `HOUR -> Syntax.Hour
+    | `MINUTE -> Syntax.Minute
+    | `SECOND -> Syntax.Second
+  in
+  lit (L_interval (n, unit'))
+
 let lambda :
     string ->
     (('pn, 'pa) expr -> ('n, 'a) expr) ->

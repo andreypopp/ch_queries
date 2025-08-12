@@ -37,7 +37,9 @@ and lit =
   | L_string of string
   | L_float of float
   | L_null
+  | L_interval of int * interval_unit
 
+and interval_unit = Year | Month | Week | Day | Hour | Minute | Second
 and in_query = In_query of query | In_expr of expr
 
 and window_spec = {

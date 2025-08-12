@@ -39,6 +39,18 @@ let rec pp_expr ~parent_prec expr =
   | E_lit (L_bool b) -> string (string_of_bool b)
   | E_lit (L_string s) ->
       string (Printf.sprintf "'%s'" (escape_single_quoted s))
+  | E_lit (L_interval (n, unit)) ->
+      let unit_str =
+        match unit with
+        | Year -> "YEARS"
+        | Month -> "MONTHS"
+        | Week -> "WEEKS"
+        | Day -> "DAYS"
+        | Hour -> "HOURS"
+        | Minute -> "MINUTES"
+        | Second -> "SECONDS"
+      in
+      string (Printf.sprintf "INTERVAL %d %s" n unit_str)
   | E_param (v, typ) -> (
       let base = string v.node in
       match typ with None -> base | Some t -> base ^^ string ":" ^^ pp_typ t)
@@ -365,6 +377,18 @@ and pp_query { node; eq = _; loc = _ } =
                     | Setting_lit (L_float n) -> string (string_of_float n)
                     | Setting_lit (L_bool b) -> string (if b then "1" else "0")
                     | Setting_lit L_null -> string "NULL"
+                    | Setting_lit (L_interval (n, unit)) ->
+                        let unit_str =
+                          match unit with
+                          | Year -> "YEARS"
+                          | Month -> "MONTHS"
+                          | Week -> "WEEKS"
+                          | Day -> "DAYS"
+                          | Hour -> "HOURS"
+                          | Minute -> "MINUTES"
+                          | Second -> "SECONDS"
+                        in
+                        string (Printf.sprintf "INTERVAL %d %s" n unit_str)
                     | Setting_param param -> string "?" ^^ pp_id param
                   in
                   pp_id id ^^ string "=" ^^ pp_value
