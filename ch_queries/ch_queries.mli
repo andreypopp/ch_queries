@@ -7,11 +7,13 @@ type 'a nullable = 'a constraint 'a = [< null ]
 (** Used for "subtyping" of numeric types. *)
 type 'a number = private A_number
 
+type 'a timestamp = private A_timestamp
 type ('null, 'a) array = private A_array
 type ('null, 'a) typ = private A_typ
 type ('x, 'y) tuple2 = private A_tuple2
 type date = private Date
 type datetime = private DateTime
+type interval = private Interval
 
 type (+'null, +'typ) expr
 (** An SQL expression. *)
@@ -158,8 +160,80 @@ module Expr : sig
   val ( || ) : ('n, bool) expr -> ('n, bool) expr -> ('n, bool) expr
   val not_ : ('n, bool) expr -> ('n, bool) expr
   val neg : ('n, 'a number) expr -> ('n, 'a number) expr
-  val toDate : ('n, _ number) expr -> ('n, date) expr
+  val abs : ('n, 'a number) expr -> ('n, 'a number) expr
+
+  val intDiv :
+    ('n, _ number) expr -> ('n, _ number) expr -> ('n, int number) expr
+
+  val modulo :
+    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
+
+  val toDate : ('n, _) expr -> ('n, date timestamp) expr
+  val toDateTime : ('n, _) expr -> ('n, datetime timestamp) expr
   val if_ : ('n, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
+  val now : unit -> (non_null, datetime timestamp) expr
+  val today : unit -> (non_null, date timestamp) expr
+  val yesterday : unit -> (non_null, date timestamp) expr
+
+  val addDate :
+    ('n, 'a timestamp) expr -> ('n, interval) expr -> ('n, 'a timestamp) expr
+
+  val addDays :
+    ('n, 'a timestamp) expr -> ('n, int number) expr -> ('n, 'a timestamp) expr
+
+  val addHours :
+    ('n, 'a timestamp) expr -> ('n, int number) expr -> ('n, 'a timestamp) expr
+
+  val addInterval :
+    ('n, 'a timestamp) expr -> ('n, interval) expr -> ('n, 'a timestamp) expr
+
+  val addMinutes :
+    ('n, 'a timestamp) expr -> ('n, int number) expr -> ('n, 'a timestamp) expr
+
+  val addMonths :
+    ('n, 'a timestamp) expr -> ('n, int number) expr -> ('n, 'a timestamp) expr
+
+  val addSeconds :
+    ('n, 'a timestamp) expr -> ('n, int number) expr -> ('n, 'a timestamp) expr
+
+  val addWeeks :
+    ('n, 'a timestamp) expr -> ('n, int number) expr -> ('n, 'a timestamp) expr
+
+  val addYears :
+    ('n, 'a timestamp) expr -> ('n, int number) expr -> ('n, 'a timestamp) expr
+
+  val subDate :
+    ('n, 'a timestamp) expr -> ('n, interval) expr -> ('n, 'a timestamp) expr
+
+  val subtractDays :
+    ('n, 'a timestamp) expr -> ('n, int number) expr -> ('n, 'a timestamp) expr
+
+  val subtractHours :
+    ('n, 'a timestamp) expr -> ('n, int number) expr -> ('n, 'a timestamp) expr
+
+  val subtractMinutes :
+    ('n, 'a timestamp) expr -> ('n, int number) expr -> ('n, 'a timestamp) expr
+
+  val subtractMonths :
+    ('n, 'a timestamp) expr -> ('n, int number) expr -> ('n, 'a timestamp) expr
+
+  val subtractSeconds :
+    ('n, 'a timestamp) expr -> ('n, int number) expr -> ('n, 'a timestamp) expr
+
+  val subtractWeeks :
+    ('n, 'a timestamp) expr -> ('n, int number) expr -> ('n, 'a timestamp) expr
+
+  val subtractYears :
+    ('n, 'a timestamp) expr -> ('n, int number) expr -> ('n, 'a timestamp) expr
+
+  val toYYYYMM : ('n, _ timestamp) expr -> ('n, int number) expr
+  val toYYYYMMDD : ('n, _ timestamp) expr -> ('n, int number) expr
+  val toStartOfYear : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
+  val toStartOfMonth : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
+  val toStartOfWeek : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
+  val toStartOfDay : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
+  val toStartOfHour : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
+  val toStartOfMinute : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
 
   val arrayFilter :
     (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
