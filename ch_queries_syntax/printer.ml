@@ -9,7 +9,7 @@ let get_precedence op arity =
   | "OR", 2 -> 2
   | "AND", 2 -> 3
   | "NOT", 1 -> 4
-  | ("=" | ">" | "<" | ">=" | "<="), 2 -> 5
+  | ("=" | ">" | "<" | ">=" | "<=" | "!="), 2 -> 5
   | ("+" | "-"), 2 -> 6
   | ("*" | "/"), 2 -> 7
   | "-", 1 -> 8 (* unary minus has high precedence *)
@@ -162,6 +162,11 @@ let rec pp_expr ~parent_prec expr =
               parens_if_needed @@ fun prec ->
               pp_expr ~parent_prec:prec left
               ^/^ string "<="
+              ^/^ pp_expr ~parent_prec:prec right
+          | "!=", [ left; right ] ->
+              parens_if_needed @@ fun prec ->
+              pp_expr ~parent_prec:prec left
+              ^/^ string "!="
               ^/^ pp_expr ~parent_prec:prec right
           | _, _ ->
               let pp_args =

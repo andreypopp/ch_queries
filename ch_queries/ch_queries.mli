@@ -119,6 +119,8 @@ module Expr : sig
   val coalesce : ('b, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
   val eq : ('n, 'a) expr -> ('n, 'a) expr -> ('n, bool) expr
   val ( = ) : ('n, 'a) expr -> ('n, 'a) expr -> ('n, bool) expr
+  val neq : ('n, 'a) expr -> ('n, 'a) expr -> ('n, bool) expr
+  val ( != ) : ('n, 'a) expr -> ('n, 'a) expr -> ('n, bool) expr
   val gt : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
   val ( > ) : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
   val lt : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr

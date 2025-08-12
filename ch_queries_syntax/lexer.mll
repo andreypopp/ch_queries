@@ -80,6 +80,7 @@
     | Parser.LT -> "LT" 
     | Parser.GE -> "GE"
     | Parser.LE -> "LE"
+    | Parser.NOT_EQUAL -> "NOT_EQUAL"
     | Parser.AND -> "AND"
     | Parser.OR -> "OR"
     | Parser.NOT -> "NOT"
@@ -161,6 +162,8 @@ rule token = parse
   | '<'                 { LT }
   | ">="                { GE }
   | "<="                { LE }
+  | "!="                { NOT_EQUAL }
+  | "<>"                { NOT_EQUAL }
   | "->"                { ARROW }
   | eof                 { EOF }
   | _ as c              { raise (Error ("Unexpected character: " ^ String.make 1 c)) }

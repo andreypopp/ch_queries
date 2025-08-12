@@ -370,6 +370,8 @@ module Expr = struct
   let ( / ) = divide
   let eq x y = def "=" [ x; y ]
   let ( = ) = eq
+  let neq x y = def "!=" [ x; y ]
+  let ( != ) = neq
   let gt x y = def ">" [ x; y ]
   let ( > ) = gt
   let lt x y = def "<" [ x; y ]
