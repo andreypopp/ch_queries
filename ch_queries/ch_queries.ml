@@ -501,18 +501,21 @@ let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit
 
 let union x y ~alias = Union { x = x ~alias; y = y ~alias }
 
-let grouping_sets (exprs : a_expr list list) =
-  let concat xs = Syntax.make_expr (Syntax.E_unsafe_concat xs) in
-  let exprs =
-    List.map exprs ~f:(fun exprs ->
-        let exprs =
-          List.map exprs ~f:(fun (A_expr expr) -> expr)
-          |> List.intersperse ~x:(unsafe ", ")
-        in
-        concat ([ unsafe "(" ] @ exprs @ [ unsafe ")" ]))
-    |> List.intersperse ~x:(unsafe ", ")
+let grouping_sets (gs : a_expr list list) =
+  let u = unsafe in
+  let cat ?sep xs =
+    let xs =
+      match sep with None -> xs | Some sep -> List.intersperse ~x:(u sep) xs
+    in
+    Syntax.make_expr (Syntax.E_unsafe_concat xs)
   in
-  concat ([ unsafe "GROUPING SETS (" ] @ exprs @ [ unsafe ")" ])
+  let gs =
+    List.map gs ~f:(fun es ->
+        let es = List.map es ~f:(fun (A_expr e) -> e) |> cat ~sep:", " in
+        cat [ u "("; es; u ")" ])
+    |> cat ~sep:", "
+  in
+  cat [ u "GROUPING SETS ("; gs; u ")" ]
 
 type json =
   [ `Assoc of (string * json) list
