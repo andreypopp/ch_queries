@@ -203,13 +203,7 @@ let rec stage_expr ~params ~from expr =
           match Option.bind from non_ambigius_from with
           | None ->
               Location.raise_errorf ~loc "ambiguous column reference" id.node
-          | Some scope ->
-              let e = evar ~loc scope.node in
-              let e' = pexp_send ~loc e (Located.mk ~loc "query") in
-              let p = pvar ~loc scope.node in
-              [%expr
-                [%e e'] (fun [%p p] ->
-                    [%e pexp_send ~loc e (Located.mk ~loc id.node)])]))
+          | Some scope -> refer_to_scope ~loc scope id Fun.id))
   | Syntax.E_lit (L_int n) -> [%expr Ch_queries.int [%e eint ~loc n]]
   | Syntax.E_lit (L_float n) ->
       [%expr Ch_queries.float [%e efloat ~loc (string_of_float n)]]
