@@ -35,18 +35,39 @@ end
 let ( && ) x y = {%e|?x AND ?y|}
 
 let users ~condition =
-  {%q|SELECT u.x AS x, u.id AS id FROM public.users as u WHERE ?condition|}
+  {%q|SELECT
+        u.x AS x,
+        u.id AS id
+      FROM public.users as u WHERE ?condition|}
 
 let x =
   let users =
-    users ~condition:(fun u -> {%e|u.is_active OR true|})
+    users ~condition:(fun __q -> {%e|u.is_active OR true|})
     |> Ch_queries.from_select
   in
-  {%q|SELECT u.x AS name, p.name as pname
-          FROM users as u
-          LEFT JOIN public.profiles as p
-          ON u.id = p.user_id and p.name = 'Alice'
-          WHERE p.name = toNullable('Alice') AND toNullable(false)|}
+  let select
+      (__q : < u : _ Ch_queries.scope ; p : _ Ch_queries.nullable_scope >) =
+    object
+      method name = {%e|u.x|}
+      method pname = {%e|p.name|}
+      method u = __q#u
+      method p = __q#p
+    end
+  in
+  {%q|SELECT ?select...
+      FROM users as u
+      LEFT JOIN public.profiles as p
+      ON u.id = p.user_id and p.name = 'Alice'
+      WHERE p.name = toNullable('Alice') AND toNullable(false)|}
+
+let y =
+  let users = x |> Ch_queries.from_select in
+  Ch_queries.select () ~from:{%f|FROM ?users AS users|}
+    ~select:(fun __q ->
+      object
+        method select = __q#users#query (fun __q -> {%e|coalesce(p.name, u.x)|})
+      end)
+    ~where:(fun __q -> {%e|users.name = 'Alive'|})
 
 (** we define a type for metrics we can compute, metrics are parametrized by
     ocaml type and by sql type. *)
@@ -67,23 +88,27 @@ type 'f stats =
 
 (** this function selects a metric from a table scope *)
 let select_metric : type t sqlt.
-    _ Ch_queries.scope -> (t, sqlt) metric -> (_, sqlt) Ch_queries.expr =
- fun users -> function
+    < users : _ Ch_queries.scope > ->
+    (t, sqlt) metric ->
+    (_, sqlt) Ch_queries.expr =
+ fun __q -> function
   | Metric_count -> {%e|count(1)|}
   | Metric_sum_id -> {%e|sum(users.id)|}
   | Metric_true -> {%e|true|}
 
 (** this function merges metric state into final metric value. *)
 let merge_metric : type a sqlt.
-    _ stats Ch_queries.scope -> (a, sqlt) metric -> (_, sqlt) Ch_queries.expr =
- fun stats m -> {%e|stats.metric(?{m})|}
+    < stats : _ stats Ch_queries.scope > ->
+    (a, sqlt) metric ->
+    (_, sqlt) Ch_queries.expr =
+ fun __q (m : (a, sqlt) metric) -> {%e|stats.metric(?{m})|}
 
 (** this function defines how to query/parse a metric from a query. *)
 let query_metric : type t sqlt.
-    _ stats Ch_queries.scope -> (t, sqlt) metric -> t Ch_queries.Row.t =
- fun stats m ->
+    < q : _ stats Ch_queries.scope > -> (t, sqlt) metric -> t Ch_queries.Row.t =
+ fun __q m ->
   let open Ch_queries.Row in
-  let metric m = {%e|stats.metric(?{m})|} in
+  let metric m = {%e|q.metric(?{m})|} in
   match m with
   | Metric_count -> int (metric m)
   | Metric_sum_id -> int (metric m)
@@ -91,36 +116,36 @@ let query_metric : type t sqlt.
 
 let users_stats =
   let stats =
-    let select (users : _ Ch_queries.scope) : _ stats =
+    let select __q : _ stats =
       object
         method metric : type t sqlt.
             (t, sqlt) metric -> (_, sqlt) Ch_queries.expr =
-          select_metric users
+          select_metric __q
       end
     in
     {%q|SELECT ?select... FROM public.users|} |> Ch_queries.from_select
   in
-  let select (stats : _ stats Ch_queries.scope) : _ stats =
+  let select (__q : < stats : _ stats Ch_queries.scope >) : _ stats =
     object
       method oops = {%e|toNullable('hello')|}
 
       method metric : type a sqlt. (a, sqlt) metric -> (_, sqlt) Ch_queries.expr
           =
-        merge_metric stats
+        merge_metric __q
     end
   in
-  let having (stats : _ stats Ch_queries.scope) =
-    let is_true = stats#query @@ fun stats -> stats#metric Metric_true in
+  let having (__q : < stats : _ stats Ch_queries.scope >) =
+    let is_true = __q#stats#query @@ fun stats -> stats#metric Metric_true in
     {%e|?is_true|}
   in
   {%q|SELECT ?select... FROM stats HAVING ?having|}
 
 let sql, parse_row =
-  Ch_queries.query users_stats (fun (stats : _ stats Ch_queries.scope) ->
+  Ch_queries.query users_stats (fun __q ->
       let open Ch_queries.Row in
-      let+ x = query_metric stats Metric_count
-      and+ y = query_metric stats Metric_true
-      and+ z = query_metric stats Metric_sum_id
-      and+ z' = bool @@ {%e|stats.metric(?{Metric_true})|}
-      and+ s = string_opt {%e|stats.oops|} in
+      let+ x = query_metric __q Metric_count
+      and+ y = query_metric __q Metric_true
+      and+ z = query_metric __q Metric_sum_id
+      and+ z' = bool @@ {%e|q.metric(?{Metric_true})|}
+      and+ s = string_opt {%e|q.oops|} in
       (x, y, z, s))

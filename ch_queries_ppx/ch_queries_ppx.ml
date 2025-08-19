@@ -26,6 +26,7 @@ let parse_with parser lexer name ~loc s =
 
 let parse_query ~loc s = parse_with Parser.a_query Lexer.token "q" ~loc s
 let parse_expr ~loc s = parse_with Parser.a_expr Lexer.token "e" ~loc s
+let parse_from ~loc s = parse_with Parser.a_from Lexer.token "f" ~loc s
 let parse_typ ~loc s = parse_with Parser.a_typ Lexer.token "t" ~loc s
 let parse_uexpr ~loc s = parse_with Uparser.a_uexpr Ulexer.token "eu" ~loc s
 
@@ -61,7 +62,13 @@ let rec from_scope_expr' from =
 let from_scope_expr from =
   let loc = to_location from in
   let es = List.rev (from_scope_expr' from) in
-  pexp_tuple ~loc (List.map ~f:snd es)
+  (* create an object with fields *)
+  let fields =
+    List.map es ~f:(fun (name, expr) ->
+        pcf_method ~loc
+          (Located.mk ~loc name, Public, Cfk_concrete (Fresh, expr)))
+  in
+  pexp_object ~loc { pcstr_self = ppat_any ~loc; pcstr_fields = fields }
 
 let from_one_scope_pattern from_one =
   match from_one.Syntax.node with
@@ -92,8 +99,7 @@ let rec from_scope_pattern ?kind from =
       in
       [%pat? [%p x], [%p y]]
 
-let make_hole ?kind ~loc ~from expr =
-  pexp_fun ~loc Nolabel None (from_scope_pattern ?kind from) expr
+let make_hole ?kind:_ ~loc ~from:_ expr = [%expr fun __q -> [%e expr]]
 
 let rec stage_typ typ =
   let open Syntax in
@@ -138,8 +144,9 @@ let rec stage_typ typ =
       Location.raise_errorf ~loc "Unknown ClickHouse type: %s" t
 
 let refer_to_scope ~loc scope id f =
-  let p, e = (pvar ~loc scope.Syntax.node, evar ~loc scope.Syntax.node) in
+  let e = pexp_send ~loc [%expr __q] (Located.mk ~loc scope.Syntax.node) in
   let e' = pexp_send ~loc e (Located.mk ~loc "query") in
+  let p, e = (pvar ~loc scope.Syntax.node, evar ~loc scope.Syntax.node) in
   [%expr
     [%e e'] (fun [%p p] ->
         [%e f (pexp_send ~loc e (Located.mk ~loc id.Syntax.node))])]
@@ -267,9 +274,7 @@ let rec stage_expr ~params ~from expr =
   | Syntax.E_param (var, typ) -> (
       let e = evar ~loc var.node in
       let e_with_scope =
-        match Option.map from_scope_expr from with
-        | None -> e
-        | Some arg -> [%expr [%e e] [%e arg]]
+        match from with None -> e | Some _ -> [%expr [%e e] __q]
       in
       match typ with
       | None -> e_with_scope
@@ -421,7 +426,12 @@ and stage_query ({ node; _ } as q) =
             evar ~loc id.node
       in
       let args =
-        [ (Labelled "select", select); (Labelled "from", stage_from from) ]
+        let from =
+          [%expr
+            Ch_queries.map_from_scope [%e stage_from from]
+              (fun [%p from_scope_pattern from] -> [%e from_scope_expr from])]
+        in
+        [ (Labelled "select", select); (Labelled "from", from) ]
       in
       let args =
         match prewhere with
@@ -529,8 +539,10 @@ and stage_from from =
         | `LEFT_JOIN_OPTIONAL -> [%expr Ch_queries.left_join ~optional:true]
       in
       let on =
-        make_hole ~loc ~from ~kind:`INNER_JOIN
-          (stage_expr ~params:[] ~from:(Some from) on)
+        [%expr
+          fun [%p from_scope_pattern ~kind:`INNER_JOIN from] ->
+            let __q = [%e from_scope_expr from] in
+            [%e stage_expr ~params:[] ~from:(Some from) on]]
       in
       [%expr [%e f] [%e stage_from base] [%e stage_from_one join] ~on:[%e on]]
 
@@ -576,12 +588,21 @@ and stage_from_one from_one =
             [%e evar ~loc id.node] ~final:true
               ~alias:[%e estring ~loc alias.node]])
 
-let expand_select ~ctxt:_ expr =
+let expand_query ~ctxt:_ expr =
   match expr.pexp_desc with
   | Pexp_constant (Pconst_string (txt, loc, _)) ->
       let query = parse_query ~loc txt in
       stage_query query
   | _ -> Location.raise_errorf "expected a string literal for the '%%q"
+
+let expand_from ~ctxt:_ expr =
+  match expr.pexp_desc with
+  | Pexp_constant (Pconst_string (txt, loc, _)) ->
+      let from = parse_from ~loc txt in
+      [%expr
+        Ch_queries.map_from_scope [%e stage_from from]
+          (fun [%p from_scope_pattern from] -> [%e from_scope_expr from])]
+  | _ -> Location.raise_errorf "expected a string literal for the '%%f"
 
 let expand_expr ~ctxt:_ expr =
   match expr.pexp_desc with
@@ -605,10 +626,15 @@ let expand_typ ~ctxt:_ expr =
       [%type: ([%t n], [%t t]) Ch_queries.expr]
   | _ -> Location.raise_errorf "expected a string literal for [%%t ...]"
 
-let select_extension =
+let query_extension =
   Extension.V3.declare "q" Extension.Context.expression
     Ast_pattern.(single_expr_payload __)
-    expand_select
+    expand_query
+
+let from_extension =
+  Extension.V3.declare "f" Extension.Context.expression
+    Ast_pattern.(single_expr_payload __)
+    expand_from
 
 let expr_extension =
   Extension.V3.declare "e" Extension.Context.expression
@@ -627,7 +653,8 @@ let uexpr_extension =
 
 let rules =
   [
-    Context_free.Rule.extension select_extension;
+    Context_free.Rule.extension query_extension;
+    Context_free.Rule.extension from_extension;
     Context_free.Rule.extension expr_extension;
     Context_free.Rule.extension typ_extension;
     Context_free.Rule.extension uexpr_extension;

@@ -51,18 +51,20 @@ Test untyped expressions
     (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr
 
   $ ./compile_and_run '
-  > let e users : [%t "Int32"] = [%eu "someUnknownFunction(users.x, interval 1 day)"];;
+  > let e __q : [%t "Int32"] = [%eu "someUnknownFunction(users.x, interval 1 day)"];;
   > #show e
   > '
   >>> PREPROCESSING
-  let e users : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr =
+  let e __q : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr =
     Ch_queries.unsafe_concat
       [
         Ch_queries.A_expr (Ch_queries.unsafe "someUnknownFunction(");
-        Ch_queries.A_expr (users#query (fun users -> users#x));
+        Ch_queries.A_expr (__q#users#query (fun users -> users#x));
         Ch_queries.A_expr (Ch_queries.unsafe ", interval 1 day)");
       ]
   >>> RUNNING
   val e :
-    < query : (< x : 'a; .. > -> 'a) -> ('b, 'c) Ch_queries.expr; .. > ->
+    < users : < query : (< x : 'a; .. > -> 'a) -> ('b, 'c) Ch_queries.expr;
+                .. >;
+      .. > ->
     (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr

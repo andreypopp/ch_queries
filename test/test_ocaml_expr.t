@@ -28,8 +28,14 @@ OCaml expression in query:
   
   let q users =
     Ch_queries.select ()
-      ~from:(Ch_queries.from (users ~alias:"users"))
-      ~select:(fun (users : _ Ch_queries.scope) ->
+      ~from:
+        (Ch_queries.map_from_scope
+           (Ch_queries.from (users ~alias:"users"))
+           (fun (users : _ Ch_queries.scope) ->
+             object
+               method users = users
+             end))
+      ~select:(fun __q ->
         object
           method x = x + 1
         end)

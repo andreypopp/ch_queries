@@ -6,20 +6,31 @@ select from a JOIN:
   let q =
     Ch_queries.select ()
       ~from:
-        (Ch_queries.join
-           (Ch_queries.from (Ch_database.Public.users ~alias:"u" ~final:false))
-           (Ch_database.Public.profiles ~alias:"p" ~final:false)
-           ~on:(fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.scope)) ->
-             Ch_queries.Expr.( = )
-               (u#query (fun u -> u#id))
-               (p#query (fun p -> p#user_id))))
-      ~select:(fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.scope)) ->
+        (Ch_queries.map_from_scope
+           (Ch_queries.join
+              (Ch_queries.from (Ch_database.Public.users ~alias:"u" ~final:false))
+              (Ch_database.Public.profiles ~alias:"p" ~final:false)
+              ~on:(fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.scope)) ->
+                let __q =
+                  object
+                    method u = u
+                    method p = p
+                  end
+                in
+                Ch_queries.Expr.( = )
+                  (__q#u#query (fun u -> u#id))
+                  (__q#p#query (fun p -> p#user_id))))
+           (fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.scope)) ->
+             object
+               method u = u
+               method p = p
+             end))
+      ~select:(fun __q ->
         object
-          method id = u#query (fun u -> u#id)
-          method name = p#query (fun p -> p#name)
+          method id = __q#u#query (fun u -> u#id)
+          method name = __q#p#query (fun p -> p#name)
         end)
-      ~where:(fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.scope)) ->
-        u#query (fun u -> u#is_active))
+      ~where:(fun __q -> __q#u#query (fun u -> u#is_active))
   >>> RUNNING
 
 select from a LEFT JOIN:
@@ -36,18 +47,29 @@ select from a LEFT JOIN:
   let q =
     Ch_queries.select ()
       ~from:
-        (Ch_queries.left_join
-           (Ch_queries.from (Ch_database.Public.users ~alias:"u" ~final:false))
-           (Ch_database.Public.profiles ~alias:"p" ~final:false)
-           ~on:(fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.scope)) ->
-             Ch_queries.Expr.( = )
-               (u#query (fun u -> u#id))
-               (p#query (fun p -> p#user_id))))
-      ~select:(fun
-          ((u : _ Ch_queries.scope), (p : _ Ch_queries.nullable_scope)) ->
+        (Ch_queries.map_from_scope
+           (Ch_queries.left_join
+              (Ch_queries.from (Ch_database.Public.users ~alias:"u" ~final:false))
+              (Ch_database.Public.profiles ~alias:"p" ~final:false)
+              ~on:(fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.scope)) ->
+                let __q =
+                  object
+                    method u = u
+                    method p = p
+                  end
+                in
+                Ch_queries.Expr.( = )
+                  (__q#u#query (fun u -> u#id))
+                  (__q#p#query (fun p -> p#user_id))))
+           (fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.nullable_scope)) ->
+             object
+               method u = u
+               method p = p
+             end))
+      ~select:(fun __q ->
         object
-          method user_id = u#query (fun u -> u#id)
-          method user_name = p#query (fun p -> p#name)
+          method user_id = __q#u#query (fun u -> u#id)
+          method user_name = __q#p#query (fun p -> p#name)
         end)
   >>> RUNNING
   val q :
@@ -71,18 +93,29 @@ select from an OCaml value with JOIN:
   let q profiles =
     Ch_queries.select ()
       ~from:
-        (Ch_queries.left_join
-           (Ch_queries.from (Ch_database.Public.users ~alias:"u" ~final:false))
-           (profiles ~alias:"p")
-           ~on:(fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.scope)) ->
-             Ch_queries.Expr.( = )
-               (u#query (fun u -> u#id))
-               (p#query (fun p -> p#user_id))))
-      ~select:(fun
-          ((u : _ Ch_queries.scope), (p : _ Ch_queries.nullable_scope)) ->
+        (Ch_queries.map_from_scope
+           (Ch_queries.left_join
+              (Ch_queries.from (Ch_database.Public.users ~alias:"u" ~final:false))
+              (profiles ~alias:"p")
+              ~on:(fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.scope)) ->
+                let __q =
+                  object
+                    method u = u
+                    method p = p
+                  end
+                in
+                Ch_queries.Expr.( = )
+                  (__q#u#query (fun u -> u#id))
+                  (__q#p#query (fun p -> p#user_id))))
+           (fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.nullable_scope)) ->
+             object
+               method u = u
+               method p = p
+             end))
+      ~select:(fun __q ->
         object
-          method user_id = u#query (fun u -> u#id)
-          method user_name = p#query (fun p -> p#name)
+          method user_id = __q#u#query (fun u -> u#id)
+          method user_name = __q#p#query (fun p -> p#name)
         end)
   
   let q = q (Ch_database.Public.profiles ~final:false)
@@ -115,35 +148,58 @@ splicing ocaml values into JOIN-ON:
   let q cond =
     Ch_queries.select ()
       ~from:
-        (Ch_queries.left_join
+        (Ch_queries.map_from_scope
            (Ch_queries.left_join
-              (Ch_queries.from (Ch_database.Public.users ~alias:"u" ~final:false))
-              (Ch_database.Public.profiles ~alias:"p" ~final:false)
-              ~on:(fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.scope)) ->
-                cond (u, p)))
-           (Ch_database.Public.profiles ~alias:"p2" ~final:false)
-           ~on:(fun
-               ( ((u : _ Ch_queries.scope), (p : _ Ch_queries.nullable_scope)),
-                 (p2 : _ Ch_queries.scope) )
-             -> Ch_queries.bool true))
-      ~select:(fun
-          ( ((u : _ Ch_queries.scope), (p : _ Ch_queries.nullable_scope)),
-            (p2 : _ Ch_queries.nullable_scope) )
-        ->
+              (Ch_queries.left_join
+                 (Ch_queries.from
+                    (Ch_database.Public.users ~alias:"u" ~final:false))
+                 (Ch_database.Public.profiles ~alias:"p" ~final:false)
+                 ~on:(fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.scope)) ->
+                   let __q =
+                     object
+                       method u = u
+                       method p = p
+                     end
+                   in
+                   cond __q))
+              (Ch_database.Public.profiles ~alias:"p2" ~final:false)
+              ~on:(fun
+                  ( ((u : _ Ch_queries.scope), (p : _ Ch_queries.nullable_scope)),
+                    (p2 : _ Ch_queries.scope) )
+                ->
+                let __q =
+                  object
+                    method u = u
+                    method p = p
+                    method p2 = p2
+                  end
+                in
+                Ch_queries.bool true))
+           (fun ( ((u : _ Ch_queries.scope), (p : _ Ch_queries.nullable_scope)),
+                  (p2 : _ Ch_queries.nullable_scope) )
+              ->
+             object
+               method u = u
+               method p = p
+               method p2 = p2
+             end))
+      ~select:(fun __q ->
         object
           method one = Ch_queries.int 1
         end)
   >>> RUNNING
   val q :
-    (< id : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr;
-       is_active : (Ch_queries.non_null, bool) Ch_queries.expr;
-       x : (Ch_queries.non_null, string) Ch_queries.expr;
-       xs : (Ch_queries.non_null,
-             (Ch_queries.non_null, string) Ch_queries.array)
-            Ch_queries.expr >
-     Ch_queries.scope *
-     < name : (Ch_queries.non_null, string) Ch_queries.expr;
-       user_id : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr >
-     Ch_queries.scope -> ('a, bool) Ch_queries.expr) ->
+    (< p : < name : (Ch_queries.non_null, string) Ch_queries.expr;
+             user_id : (Ch_queries.non_null, int Ch_queries.number)
+                       Ch_queries.expr >
+           Ch_queries.scope;
+       u : < id : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr;
+             is_active : (Ch_queries.non_null, bool) Ch_queries.expr;
+             x : (Ch_queries.non_null, string) Ch_queries.expr;
+             xs : (Ch_queries.non_null,
+                   (Ch_queries.non_null, string) Ch_queries.array)
+                  Ch_queries.expr >
+           Ch_queries.scope > ->
+     ('a, bool) Ch_queries.expr) ->
     < one : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr >
     Ch_queries.scope Ch_queries.select

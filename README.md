@@ -59,10 +59,11 @@ scope and returns an expression:
     WHERE users.is_active AND ?where
   |}
 val users :
-  where:(< id : (non_null, int number) expr;
-           is_active : (non_null, bool) expr;
-           name : (non_null, string) expr >
-         scope -> (non_null, bool) expr) ->
+  where:(< users : < id : (non_null, int number) expr;
+                     is_active : (non_null, bool) expr;
+                     name : (non_null, string) expr >
+                   scope > ->
+         (non_null, bool) expr) ->
   < id : (non_null, int number) expr; name : (non_null, string) expr > scope
   select = <fun>
 ```
@@ -70,7 +71,7 @@ val users :
 Finally to generate SQL from the query, one needs to define what exactly to
 select and how to parse each column:
 ```ocaml
-# let sql, parse_row = Ch_queries.query {%q|SELECT id FROM db.users|} Row.(fun q -> int {%e|q.id|});;
+# let sql, parse_row = Ch_queries.query {%q|SELECT id FROM db.users|} Row.(fun __q -> int {%e|q.id|});;
 val sql : string =
   "SELECT q._1 FROM (SELECT users.id AS _1 FROM public.users AS users) AS q"
 val parse_row : json list -> int = <fun>
@@ -81,8 +82,9 @@ val parse_row : json list -> int = <fun>
 There's a `%e` syntax form which allows you to define standalone expressions, which
 can be spliced into queries later:
 ```ocaml
-# let ok (q : _ Ch_queries.scope) = {%e|q.is_active|};;
-val ok : < is_active : ('a, 'b) expr; .. > scope -> ('a, 'b) expr = <fun>
+# let ok (__q : < q : _ Ch_queries.scope>) = {%e|q.is_active|};;
+val ok : < q : < is_active : ('a, 'b) expr; .. > scope > -> ('a, 'b) expr =
+  <fun>
 ```
 
 Note that `q` in `q.is_active` is being resolved in the current scope, thus
@@ -99,9 +101,11 @@ expressions.
 Sometimes you need to construct an expression using syntax which is not
 supported by ch_queries.ppx. In this case you can use the `%eu` syntax:
 ```ocaml
-# let expr q = {%eu|q.name || ' ' || q.surname|};;
+# let expr __q = {%eu|q.name || ' ' || q.surname|};;
 val expr :
-  < query : (< name : 'a; surname : 'a; .. > -> 'a) -> ('b, 'c) expr; .. > ->
+  < q : < query : (< name : 'a; surname : 'a; .. > -> 'a) -> ('b, 'c) expr;
+          .. >;
+    .. > ->
   ('d, 'e) expr = <fun>
 ```
 

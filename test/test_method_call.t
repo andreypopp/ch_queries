@@ -1,10 +1,10 @@
 Method call syntax:
   $ ./compile_and_run '
-  > let q table = [%e "table.compute(42, 43)"]
+  > let q __q = [%e "table.compute(42, 43)"]
   > '
   >>> PREPROCESSING
-  let q table =
-    table#query (fun table ->
+  let q __q =
+    __q#table#query (fun table ->
         table#compute (Ch_queries.int 42) (Ch_queries.int 43))
   >>> RUNNING
 
@@ -15,9 +15,15 @@ Method call in query:
   >>> PREPROCESSING
   let q users =
     Ch_queries.select ()
-      ~from:(Ch_queries.from (users ~alias:"users"))
-      ~select:(fun (users : _ Ch_queries.scope) ->
+      ~from:
+        (Ch_queries.map_from_scope
+           (Ch_queries.from (users ~alias:"users"))
+           (fun (users : _ Ch_queries.scope) ->
+             object
+               method users = users
+             end))
+      ~select:(fun __q ->
         object
-          method _1 = users#query (fun users -> users#count)
+          method _1 = __q#users#query (fun users -> users#count)
         end)
   >>> RUNNING

@@ -1,34 +1,34 @@
 
 basic form:
   $ ./compile_and_run '
-  > let x users = [%e "users.x"]
+  > let x __q = [%e "users.x"]
   > '
   >>> PREPROCESSING
-  let x users = users#query (fun users -> users#x)
+  let x __q = __q#users#query (fun users -> users#x)
   >>> RUNNING
 
 function calls of the form `FUNCTION_NAME(..)` resolve to `Ch_queries.Expr.FUNCTION_NAME ..`:
   $ ./compile_and_run '
-  > let x users = [%e "coalesce(users.x, 1)"]
+  > let x __q = [%e "coalesce(users.x, 1)"]
   > '
   >>> PREPROCESSING
-  let x users =
+  let x __q =
     Ch_queries.Expr.coalesce
-      (users#query (fun users -> users#x))
+      (__q#users#query (fun users -> users#x))
       (Ch_queries.int 1)
   >>> RUNNING
 
 AND/OR operators:
   $ ./compile_and_run '
-  > let x users = [%e "users.is_active OR users.is_deleted AND users.x"]
+  > let x __q = [%e "users.is_active OR users.is_deleted AND users.x"]
   > '
   >>> PREPROCESSING
-  let x users =
+  let x __q =
     Ch_queries.Expr.( || )
-      (users#query (fun users -> users#is_active))
+      (__q#users#query (fun users -> users#is_active))
       (Ch_queries.Expr.( && )
-         (users#query (fun users -> users#is_deleted))
-         (users#query (fun users -> users#x)))
+         (__q#users#query (fun users -> users#is_deleted))
+         (__q#users#query (fun users -> users#x)))
   >>> RUNNING
 
 arrays:

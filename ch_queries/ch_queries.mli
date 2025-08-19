@@ -109,6 +109,8 @@ val left_join :
   on:('a * 'b scope -> (_, bool) expr) ->
   ('a * 'b nullable_scope) from
 
+val map_from_scope : 'x from -> ('x -> 'y) -> 'y from
+
 val from_select :
   ?cluster_name:string -> alias:string -> 'a scope select -> 'a scope from_one
 
@@ -315,7 +317,9 @@ module Row : sig
 end
 
 val query :
-  'a scope select -> ('a scope -> 'row Row.t) -> string * (json list -> 'row)
+  'a scope select ->
+  (< q : 'a scope > -> 'row Row.t) ->
+  string * (json list -> 'row)
 (** [query select f] queries the SELECT query by defining a set of columns of
     interest (along with the parser).
 

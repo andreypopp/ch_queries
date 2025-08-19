@@ -1,25 +1,31 @@
 SETTINGS with literal values:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x FROM public.users SETTINGS max_threads=4, use_cache='"'"'true'"'"'"];;
-  > let sql, _parse_row = Ch_queries.query users @@ fun users -> Ch_queries.Row.string [%e "users.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.string [%e "q.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
   let users =
     Ch_queries.select ()
       ~from:
-        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Ch_queries.scope) ->
+        (Ch_queries.map_from_scope
+           (Ch_queries.from
+              (Ch_database.Public.users ~alias:"users" ~final:false))
+           (fun (users : _ Ch_queries.scope) ->
+             object
+               method users = users
+             end))
+      ~select:(fun __q ->
         object
-          method x = users#query (fun users -> users#x)
+          method x = __q#users#query (fun users -> users#x)
         end)
       ~settings:
         (List.concat
            [ [ ("max_threads", `Int 4) ]; [ ("use_cache", `String "true") ] ])
   
   let sql, _parse_row =
-    Ch_queries.query users @@ fun users ->
-    Ch_queries.Row.string (users#query (fun users -> users#x))
+    Ch_queries.query users @@ fun __q ->
+    Ch_queries.Row.string (__q#q#query (fun q -> q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -38,10 +44,16 @@ SETTINGS with parameter:
   let users ~max_threads =
     Ch_queries.select ()
       ~from:
-        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Ch_queries.scope) ->
+        (Ch_queries.map_from_scope
+           (Ch_queries.from
+              (Ch_database.Public.users ~alias:"users" ~final:false))
+           (fun (users : _ Ch_queries.scope) ->
+             object
+               method users = users
+             end))
+      ~select:(fun __q ->
         object
-          method x = users#query (fun users -> users#x)
+          method x = __q#users#query (fun users -> users#x)
         end)
       ~settings:(List.concat [ [ ("max_threads", max_threads) ] ])
   >>> RUNNING
@@ -59,10 +71,16 @@ SETTINGS with splice:
   let users ~settings =
     Ch_queries.select ()
       ~from:
-        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Ch_queries.scope) ->
+        (Ch_queries.map_from_scope
+           (Ch_queries.from
+              (Ch_database.Public.users ~alias:"users" ~final:false))
+           (fun (users : _ Ch_queries.scope) ->
+             object
+               method users = users
+             end))
+      ~select:(fun __q ->
         object
-          method x = users#query (fun users -> users#x)
+          method x = __q#users#query (fun users -> users#x)
         end)
       ~settings:(List.concat [ settings ])
   >>> RUNNING
@@ -81,10 +99,16 @@ SETTINGS with mixed literal and splice:
   let users ~extra_settings =
     Ch_queries.select ()
       ~from:
-        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Ch_queries.scope) ->
+        (Ch_queries.map_from_scope
+           (Ch_queries.from
+              (Ch_database.Public.users ~alias:"users" ~final:false))
+           (fun (users : _ Ch_queries.scope) ->
+             object
+               method users = users
+             end))
+      ~select:(fun __q ->
         object
-          method x = users#query (fun users -> users#x)
+          method x = __q#users#query (fun users -> users#x)
         end)
       ~settings:
         (List.concat
@@ -110,10 +134,16 @@ SETTINGS with multiple splices:
   let users ~perf_settings ~cache_settings =
     Ch_queries.select ()
       ~from:
-        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Ch_queries.scope) ->
+        (Ch_queries.map_from_scope
+           (Ch_queries.from
+              (Ch_database.Public.users ~alias:"users" ~final:false))
+           (fun (users : _ Ch_queries.scope) ->
+             object
+               method users = users
+             end))
+      ~select:(fun __q ->
         object
-          method x = users#query (fun users -> users#x)
+          method x = __q#users#query (fun users -> users#x)
         end)
       ~settings:
         (List.concat [ perf_settings; [ ("timeout", `Int 60) ]; cache_settings ])
@@ -130,25 +160,31 @@ SETTINGS with multiple splices:
 SETTINGS with boolean values (rendered as ints):
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x FROM public.users SETTINGS enable_analyzer=false, use_cache=true"];;
-  > let sql, _parse_row = Ch_queries.query users @@ fun users -> Ch_queries.Row.string [%e "users.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.string [%e "q.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
   let users =
     Ch_queries.select ()
       ~from:
-        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Ch_queries.scope) ->
+        (Ch_queries.map_from_scope
+           (Ch_queries.from
+              (Ch_database.Public.users ~alias:"users" ~final:false))
+           (fun (users : _ Ch_queries.scope) ->
+             object
+               method users = users
+             end))
+      ~select:(fun __q ->
         object
-          method x = users#query (fun users -> users#x)
+          method x = __q#users#query (fun users -> users#x)
         end)
       ~settings:
         (List.concat
            [ [ ("enable_analyzer", `Bool false) ]; [ ("use_cache", `Bool true) ] ])
   
   let sql, _parse_row =
-    Ch_queries.query users @@ fun users ->
-    Ch_queries.Row.string (users#query (fun users -> users#x))
+    Ch_queries.query users @@ fun __q ->
+    Ch_queries.Row.string (__q#q#query (fun q -> q#x))
   
   let () = print_endline sql
   >>> RUNNING

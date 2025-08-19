@@ -83,14 +83,16 @@ and 'a from0 =
               clause. *)
     }
       -> ('a * 'b) from0
+  | From_map : 'a from0 * ('a -> 'b) -> 'b from0
 
 and 'a from = unit -> 'a from0
 and a_from0 = A_from : 'a from0 -> a_from0
 and a_from_one0 = A_from_one : 'a from_one0 -> a_from_one0
 
-let scope_from : type scope. scope from0 -> scope = function
+let rec scope_from : type scope. scope from0 -> scope = function
   | From { scope; _ } -> scope
   | From_join { scope; _ } -> scope
+  | From_map (from, f) -> f (scope_from from)
 
 let from_select ?cluster_name ~alias select () =
   From_select { select = select ~alias; alias; cluster_name }
@@ -198,6 +200,9 @@ let left_join ?(optional = false) from (join : 'a scope from_one) ~on () =
       on = lazy (A_expr (on (scope_from, scope_join')));
     }
 
+let map_from_scope : type x y. x from -> (x -> y) -> y from =
+ fun from f () -> From_map (from (), f)
+
 module To_syntax = struct
   open Ch_queries_syntax
 
@@ -288,6 +293,7 @@ module To_syntax = struct
                      cluster_name;
                })
     and from_to_syntax : type a. a from0 -> Syntax.from = function
+      | From_map (from, _f) -> from_to_syntax from
       | From { from = A_from_one from; _ } ->
           Syntax.make_from (F (from_one_to_syntax from))
       | From_join { kind; from = A_from from; join = A_from_one join; on; _ }
@@ -670,7 +676,12 @@ end
 let query q f =
   let q = q ~alias:"q" in
   let scope = scope_from_select q in
-  let row = f scope in
+  let row =
+    f
+      (object
+         method q = scope
+      end)
+  in
   let fields = Row.fields row in
   let fields =
     List.map fields ~f:(fun (A_expr expr) -> { Syntax.expr; alias = None })

@@ -1,34 +1,45 @@
 test IN expression with subquery:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x AS x FROM public.users WHERE users.id IN (SELECT users.id AS _1 FROM public.users)"];;
-  > let sql, _parse_row = Ch_queries.query users @@ fun users -> Ch_queries.Row.string [%e "users.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.string [%e "q.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
   let users =
     Ch_queries.select ()
       ~from:
-        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Ch_queries.scope) ->
+        (Ch_queries.map_from_scope
+           (Ch_queries.from
+              (Ch_database.Public.users ~alias:"users" ~final:false))
+           (fun (users : _ Ch_queries.scope) ->
+             object
+               method users = users
+             end))
+      ~select:(fun __q ->
         object
-          method x = users#query (fun users -> users#x)
+          method x = __q#users#query (fun users -> users#x)
         end)
-      ~where:(fun (users : _ Ch_queries.scope) ->
+      ~where:(fun __q ->
         Ch_queries.in_
-          (users#query (fun users -> users#id))
+          (__q#users#query (fun users -> users#id))
           (Ch_queries.In_query
              (Ch_queries.select ()
                 ~from:
-                  (Ch_queries.from
-                     (Ch_database.Public.users ~alias:"users" ~final:false))
-                ~select:(fun (users : _ Ch_queries.scope) ->
+                  (Ch_queries.map_from_scope
+                     (Ch_queries.from
+                        (Ch_database.Public.users ~alias:"users" ~final:false))
+                     (fun (users : _ Ch_queries.scope) ->
+                       object
+                         method users = users
+                       end))
+                ~select:(fun __q ->
                   object
-                    method _1 = users#query (fun users -> users#id)
+                    method _1 = __q#users#query (fun users -> users#id)
                   end))))
   
   let sql, _parse_row =
-    Ch_queries.query users @@ fun users ->
-    Ch_queries.Row.string (users#query (fun users -> users#x))
+    Ch_queries.query users @@ fun __q ->
+    Ch_queries.Row.string (__q#q#query (fun q -> q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -41,27 +52,33 @@ test IN expression with subquery:
 test IN expression with expression::
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x AS x FROM public.users WHERE users.id IN [1, 2]"];;
-  > let sql, _parse_row = Ch_queries.query users @@ fun users -> Ch_queries.Row.string [%e "users.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.string [%e "q.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
   let users =
     Ch_queries.select ()
       ~from:
-        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Ch_queries.scope) ->
+        (Ch_queries.map_from_scope
+           (Ch_queries.from
+              (Ch_database.Public.users ~alias:"users" ~final:false))
+           (fun (users : _ Ch_queries.scope) ->
+             object
+               method users = users
+             end))
+      ~select:(fun __q ->
         object
-          method x = users#query (fun users -> users#x)
+          method x = __q#users#query (fun users -> users#x)
         end)
-      ~where:(fun (users : _ Ch_queries.scope) ->
+      ~where:(fun __q ->
         Ch_queries.in_
-          (users#query (fun users -> users#id))
+          (__q#users#query (fun users -> users#id))
           (Ch_queries.In_array
              (Ch_queries.array [ Ch_queries.int 1; Ch_queries.int 2 ])))
   
   let sql, _parse_row =
-    Ch_queries.query users @@ fun users ->
-    Ch_queries.Row.string (users#query (fun users -> users#x))
+    Ch_queries.query users @@ fun __q ->
+    Ch_queries.Row.string (__q#q#query (fun q -> q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -78,13 +95,19 @@ test IN expression with parameter:
   let users ~ids =
     Ch_queries.select ()
       ~from:
-        (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:false))
-      ~select:(fun (users : _ Ch_queries.scope) ->
+        (Ch_queries.map_from_scope
+           (Ch_queries.from
+              (Ch_database.Public.users ~alias:"users" ~final:false))
+           (fun (users : _ Ch_queries.scope) ->
+             object
+               method users = users
+             end))
+      ~select:(fun __q ->
         object
-          method x = users#query (fun users -> users#x)
+          method x = __q#users#query (fun users -> users#x)
         end)
-      ~where:(fun (users : _ Ch_queries.scope) ->
-        Ch_queries.in_ (users#query (fun users -> users#id)) ids)
+      ~where:(fun __q ->
+        Ch_queries.in_ (__q#users#query (fun users -> users#id)) ids)
   >>> RUNNING
   val users :
     ids:int Ch_queries.number Ch_queries.in_rhs ->

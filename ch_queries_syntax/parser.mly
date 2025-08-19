@@ -48,10 +48,11 @@
 %right UMINUS  (* unary minus *)
 %left IN
 
-%start a_query a_expr a_typ
+%start a_query a_expr a_typ a_from
 %type <Syntax.query> a_query
 %type <Syntax.expr> a_expr
 %type <Syntax.typ> a_typ
+%type <Syntax.from> a_from
 
 %%
 
@@ -66,6 +67,9 @@ typ:
 
 a_query:
     q=query EOF { q }
+
+a_from:
+    FROM f=from EOF { f }
 
 query_no_param:
     SELECT select=select FROM from=from prewhere=prewhere? where=where? qualify=qualify? group_by=group_by? having=having? order_by=order_by? limit=limit? offset=offset? settings=settings?
