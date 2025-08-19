@@ -41,7 +41,7 @@ Programmatic union
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.int (__q#q#query (fun q -> q#x))
+    Ch_queries.Row.int (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -89,7 +89,7 @@ UNION syntax:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.int (__q#q#query (fun q -> q#x))
+    Ch_queries.Row.int (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING

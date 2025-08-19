@@ -18,8 +18,8 @@ select from a JOIN:
                   end
                 in
                 Ch_queries.Expr.( = )
-                  (__q#u#query (fun u -> u#id))
-                  (__q#p#query (fun p -> p#user_id))))
+                  (__q#u#query (fun __q -> __q#id))
+                  (__q#p#query (fun __q -> __q#user_id))))
            (fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.scope)) ->
              object
                method u = u
@@ -27,10 +27,10 @@ select from a JOIN:
              end))
       ~select:(fun __q ->
         object
-          method id = __q#u#query (fun u -> u#id)
-          method name = __q#p#query (fun p -> p#name)
+          method id = __q#u#query (fun __q -> __q#id)
+          method name = __q#p#query (fun __q -> __q#name)
         end)
-      ~where:(fun __q -> __q#u#query (fun u -> u#is_active))
+      ~where:(fun __q -> __q#u#query (fun __q -> __q#is_active))
   >>> RUNNING
 
 select from a LEFT JOIN:
@@ -59,8 +59,8 @@ select from a LEFT JOIN:
                   end
                 in
                 Ch_queries.Expr.( = )
-                  (__q#u#query (fun u -> u#id))
-                  (__q#p#query (fun p -> p#user_id))))
+                  (__q#u#query (fun __q -> __q#id))
+                  (__q#p#query (fun __q -> __q#user_id))))
            (fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.nullable_scope)) ->
              object
                method u = u
@@ -68,8 +68,8 @@ select from a LEFT JOIN:
              end))
       ~select:(fun __q ->
         object
-          method user_id = __q#u#query (fun u -> u#id)
-          method user_name = __q#p#query (fun p -> p#name)
+          method user_id = __q#u#query (fun __q -> __q#id)
+          method user_name = __q#p#query (fun __q -> __q#name)
         end)
   >>> RUNNING
   val q :
@@ -105,8 +105,8 @@ select from an OCaml value with JOIN:
                   end
                 in
                 Ch_queries.Expr.( = )
-                  (__q#u#query (fun u -> u#id))
-                  (__q#p#query (fun p -> p#user_id))))
+                  (__q#u#query (fun __q -> __q#id))
+                  (__q#p#query (fun __q -> __q#user_id))))
            (fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.nullable_scope)) ->
              object
                method u = u
@@ -114,8 +114,8 @@ select from an OCaml value with JOIN:
              end))
       ~select:(fun __q ->
         object
-          method user_id = __q#u#query (fun u -> u#id)
-          method user_name = __q#p#query (fun p -> p#name)
+          method user_id = __q#u#query (fun __q -> __q#id)
+          method user_name = __q#p#query (fun __q -> __q#name)
         end)
   
   let q = q (Ch_database.Public.profiles ~final:false)

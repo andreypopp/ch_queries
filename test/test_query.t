@@ -17,13 +17,13 @@ basic form:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun users -> users#x)
+          method x = __q#users#query (fun __q -> __q#x)
         end)
-      ~where:(fun __q -> __q#users#query (fun users -> users#is_active))
+      ~where:(fun __q -> __q#users#query (fun __q -> __q#is_active))
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun q -> q#x))
+    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -50,13 +50,13 @@ unqualified columns are resolved if possible:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun users -> users#x)
+          method x = __q#users#query (fun __q -> __q#x)
         end)
-      ~where:(fun __q -> __q#users#query (fun users -> users#is_active))
+      ~where:(fun __q -> __q#users#query (fun __q -> __q#is_active))
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun q -> q#x))
+    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -102,10 +102,10 @@ select from a subquery:
                            end))
                     ~select:(fun __q ->
                       object
-                        method x = __q#users#query (fun users -> users#x)
+                        method x = __q#users#query (fun __q -> __q#x)
   
                         method is_active =
-                          __q#users#query (fun users -> users#is_active)
+                          __q#users#query (fun __q -> __q#is_active)
                       end))
                  ~alias:"q"))
            (fun (q : _ Ch_queries.scope) ->
@@ -114,13 +114,13 @@ select from a subquery:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#q#query (fun q -> q#x)
+          method x = __q#q#query (fun __q -> __q#x)
         end)
-      ~where:(fun __q -> __q#q#query (fun q -> q#is_active))
+      ~where:(fun __q -> __q#q#query (fun __q -> __q#is_active))
   
   let sql, _parse_row =
     let open Ch_queries in
-    query users @@ fun __q -> Row.string (__q#q#query (fun q -> q#x))
+    query users @@ fun __q -> Row.string (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -155,10 +155,10 @@ select from a subquery (no alias default to "q"):
                            end))
                     ~select:(fun __q ->
                       object
-                        method x = __q#users#query (fun users -> users#x)
+                        method x = __q#users#query (fun __q -> __q#x)
   
                         method is_active =
-                          __q#users#query (fun users -> users#is_active)
+                          __q#users#query (fun __q -> __q#is_active)
                       end))
                  ~alias:"q"))
            (fun (q : _ Ch_queries.scope) ->
@@ -167,13 +167,13 @@ select from a subquery (no alias default to "q"):
              end))
       ~select:(fun __q ->
         object
-          method x = __q#q#query (fun q -> q#x)
+          method x = __q#q#query (fun __q -> __q#x)
         end)
-      ~where:(fun __q -> __q#q#query (fun q -> q#is_active))
+      ~where:(fun __q -> __q#q#query (fun __q -> __q#is_active))
   
   let sql, _parse_row =
     let open Ch_queries in
-    query users @@ fun __q -> Row.string (__q#q#query (fun q -> q#x))
+    query users @@ fun __q -> Row.string (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -201,9 +201,9 @@ select from an OCaml value (parameter syntax):
              end))
       ~select:(fun __q ->
         object
-          method x = __q#q#query (fun q -> q#x)
+          method x = __q#q#query (fun __q -> __q#x)
         end)
-      ~where:(fun __q -> __q#q#query (fun q -> q#is_active))
+      ~where:(fun __q -> __q#q#query (fun __q -> __q#is_active))
   >>> RUNNING
   val users :
     (alias:string ->
@@ -229,9 +229,9 @@ select from an OCaml value (id syntax):
              end))
       ~select:(fun __q ->
         object
-          method x = __q#t#query (fun t -> t#x)
+          method x = __q#t#query (fun __q -> __q#x)
         end)
-      ~where:(fun __q -> __q#t#query (fun t -> t#is_active))
+      ~where:(fun __q -> __q#t#query (fun __q -> __q#is_active))
   >>> RUNNING
   val users :
     (alias:string ->
@@ -258,7 +258,7 @@ splicing ocaml values into WHERE:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun users -> users#x)
+          method x = __q#users#query (fun __q -> __q#x)
         end)
       ~where:(fun __q -> where __q)
   >>> RUNNING
@@ -293,7 +293,7 @@ splicing ocaml values into WHERE:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun users -> users#x)
+          method x = __q#users#query (fun __q -> __q#x)
         end)
       ~where:(fun __q ->
         (where __q : (Ch_queries.non_null, bool) Ch_queries.expr))
@@ -393,17 +393,17 @@ select with PREWHERE clause:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun users -> users#x)
+          method x = __q#users#query (fun __q -> __q#x)
         end)
-      ~prewhere:(fun __q -> __q#users#query (fun users -> users#is_active))
+      ~prewhere:(fun __q -> __q#users#query (fun __q -> __q#is_active))
       ~where:(fun __q ->
         Ch_queries.Expr.( = )
-          (__q#users#query (fun users -> users#id))
+          (__q#users#query (fun __q -> __q#id))
           (Ch_queries.int 10))
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun q -> q#x))
+    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -439,7 +439,7 @@ expressions referenced multiple times result in a single column added to teh sub
                     ~select:(fun __q ->
                       object
                         method is_active =
-                          __q#users#query (fun users -> users#is_active)
+                          __q#users#query (fun __q -> __q#is_active)
                       end))
                  ~alias:"q"))
            (fun (q : _ Ch_queries.scope) ->
@@ -448,13 +448,13 @@ expressions referenced multiple times result in a single column added to teh sub
              end))
       ~select:(fun __q ->
         object
-          method is_active = __q#q#query (fun q -> q#is_active)
+          method is_active = __q#q#query (fun __q -> __q#is_active)
         end)
-      ~where:(fun __q -> __q#q#query (fun q -> q#is_active))
+      ~where:(fun __q -> __q#q#query (fun __q -> __q#is_active))
   
   let sql, _parse_row =
     let open Ch_queries in
-    query users @@ fun __q -> Row.bool (__q#q#query (fun q -> q#is_active))
+    query users @@ fun __q -> Row.bool (__q#q#query (fun __q -> __q#is_active))
   
   let () = print_endline sql
   >>> RUNNING

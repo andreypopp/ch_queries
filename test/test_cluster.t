@@ -22,10 +22,10 @@ test cluster syntax parsing:
                            end))
                     ~select:(fun __q ->
                       object
-                        method x = __q#users#query (fun users -> users#x)
+                        method x = __q#users#query (fun __q -> __q#x)
   
                         method is_active =
-                          __q#users#query (fun users -> users#is_active)
+                          __q#users#query (fun __q -> __q#is_active)
                       end))
                  ~alias:"users"))
            (fun (users : _ Ch_queries.scope) ->
@@ -34,13 +34,13 @@ test cluster syntax parsing:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun users -> users#x)
+          method x = __q#users#query (fun __q -> __q#x)
         end)
-      ~where:(fun __q -> __q#users#query (fun users -> users#is_active))
+      ~where:(fun __q -> __q#users#query (fun __q -> __q#is_active))
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun q -> q#x))
+    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -76,10 +76,10 @@ test parameterized cluster syntax:
                            end))
                     ~select:(fun __q ->
                       object
-                        method x = __q#users#query (fun users -> users#x)
+                        method x = __q#users#query (fun __q -> __q#x)
   
                         method is_active =
-                          __q#users#query (fun users -> users#is_active)
+                          __q#users#query (fun __q -> __q#is_active)
                       end))
                  ~alias:"users"))
            (fun (users : _ Ch_queries.scope) ->
@@ -88,13 +88,13 @@ test parameterized cluster syntax:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun users -> users#x)
+          method x = __q#users#query (fun __q -> __q#x)
         end)
-      ~where:(fun __q -> __q#users#query (fun users -> users#is_active))
+      ~where:(fun __q -> __q#users#query (fun __q -> __q#is_active))
   
   let sql, _parse_row =
     Ch_queries.query (users "test_cluster") @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun q -> q#x))
+    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING

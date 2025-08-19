@@ -17,17 +17,15 @@ ORDER BY single column (default ASC):
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun users -> users#x)
+          method x = __q#users#query (fun __q -> __q#x)
         end)
       ~order_by:(fun __q ->
         List.concat
-          [
-            [ (Ch_queries.A_expr (__q#users#query (fun users -> users#x)), `ASC) ];
-          ])
+          [ [ (Ch_queries.A_expr (__q#users#query (fun __q -> __q#x)), `ASC) ] ])
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun q -> q#x))
+    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -53,19 +51,15 @@ ORDER BY with DESC:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun users -> users#x)
+          method x = __q#users#query (fun __q -> __q#x)
         end)
       ~order_by:(fun __q ->
         List.concat
-          [
-            [
-              (Ch_queries.A_expr (__q#users#query (fun users -> users#x)), `DESC);
-            ];
-          ])
+          [ [ (Ch_queries.A_expr (__q#users#query (fun __q -> __q#x)), `DESC) ] ])
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun q -> q#x))
+    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -92,20 +86,18 @@ ORDER BY multiple columns:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun users -> users#x)
+          method x = __q#users#query (fun __q -> __q#x)
         end)
       ~order_by:(fun __q ->
         List.concat
           [
-            [ (Ch_queries.A_expr (__q#users#query (fun users -> users#x)), `ASC) ];
-            [
-              (Ch_queries.A_expr (__q#users#query (fun users -> users#id)), `DESC);
-            ];
+            [ (Ch_queries.A_expr (__q#users#query (fun __q -> __q#x)), `ASC) ];
+            [ (Ch_queries.A_expr (__q#users#query (fun __q -> __q#id)), `DESC) ];
           ])
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun q -> q#x))
+    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -133,7 +125,7 @@ ORDER BY with a parameter:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun users -> users#x)
+          method x = __q#users#query (fun __q -> __q#x)
         end)
       ~order_by:(fun __q -> List.concat [ ord __q ])
   >>> RUNNING

@@ -59,7 +59,7 @@ Test untyped expressions
     Ch_queries.unsafe_concat
       [
         Ch_queries.A_expr (Ch_queries.unsafe "someUnknownFunction(");
-        Ch_queries.A_expr (__q#users#query (fun users -> users#x));
+        Ch_queries.A_expr (__q#users#query (fun __q -> __q#x));
         Ch_queries.A_expr (Ch_queries.unsafe ", interval 1 day)");
       ]
   >>> RUNNING

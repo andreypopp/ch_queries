@@ -25,8 +25,8 @@ optional join with a table (elimination):
                   end
                 in
                 Ch_queries.Expr.( = )
-                  (__q#u#query (fun u -> u#id))
-                  (__q#p#query (fun p -> p#user_id))))
+                  (__q#u#query (fun __q -> __q#id))
+                  (__q#p#query (fun __q -> __q#user_id))))
            (fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.nullable_scope)) ->
              object
                method u = u
@@ -34,13 +34,13 @@ optional join with a table (elimination):
              end))
       ~select:(fun __q ->
         object
-          method user_id = __q#u#query (fun u -> u#id)
-          method user_name = __q#p#query (fun p -> p#name)
+          method user_id = __q#u#query (fun __q -> __q#id)
+          method user_name = __q#p#query (fun __q -> __q#name)
         end)
   
   let sql, _parse_row =
     let open Ch_queries in
-    query q @@ fun __q -> Row.int (__q#q#query (fun q -> q#user_id))
+    query q @@ fun __q -> Row.int (__q#q#query (fun __q -> __q#user_id))
   
   let () = print_endline sql
   >>> RUNNING
@@ -73,8 +73,8 @@ optional join with a table (in use):
                   end
                 in
                 Ch_queries.Expr.( = )
-                  (__q#u#query (fun u -> u#id))
-                  (__q#p#query (fun p -> p#user_id))))
+                  (__q#u#query (fun __q -> __q#id))
+                  (__q#p#query (fun __q -> __q#user_id))))
            (fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.nullable_scope)) ->
              object
                method u = u
@@ -82,13 +82,13 @@ optional join with a table (in use):
              end))
       ~select:(fun __q ->
         object
-          method user_id = __q#u#query (fun u -> u#id)
-          method user_name = __q#p#query (fun p -> p#name)
+          method user_id = __q#u#query (fun __q -> __q#id)
+          method user_name = __q#p#query (fun __q -> __q#name)
         end)
   
   let sql, _parse_row =
     let open Ch_queries in
-    query q @@ fun __q -> Row.string_opt (__q#q#query (fun q -> q#user_name))
+    query q @@ fun __q -> Row.string_opt (__q#q#query (fun __q -> __q#user_name))
   
   let () = print_endline sql
   >>> RUNNING
@@ -128,8 +128,8 @@ optional join with a subquery (elimination):
                            end))
                     ~select:(fun __q ->
                       object
-                        method user_id = __q#p#query (fun p -> p#user_id)
-                        method name = __q#p#query (fun p -> p#name)
+                        method user_id = __q#p#query (fun __q -> __q#user_id)
+                        method name = __q#p#query (fun __q -> __q#name)
                       end))
                  ~alias:"p")
               ~on:(fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.scope)) ->
@@ -140,8 +140,8 @@ optional join with a subquery (elimination):
                   end
                 in
                 Ch_queries.Expr.( = )
-                  (__q#u#query (fun u -> u#id))
-                  (__q#p#query (fun p -> p#user_id))))
+                  (__q#u#query (fun __q -> __q#id))
+                  (__q#p#query (fun __q -> __q#user_id))))
            (fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.nullable_scope)) ->
              object
                method u = u
@@ -149,13 +149,13 @@ optional join with a subquery (elimination):
              end))
       ~select:(fun __q ->
         object
-          method user_id = __q#u#query (fun u -> u#id)
-          method user_name = __q#p#query (fun p -> p#name)
+          method user_id = __q#u#query (fun __q -> __q#id)
+          method user_name = __q#p#query (fun __q -> __q#name)
         end)
   
   let sql, _parse_row =
     let open Ch_queries in
-    query q @@ fun __q -> Row.int (__q#q#query (fun q -> q#user_id))
+    query q @@ fun __q -> Row.int (__q#q#query (fun __q -> __q#user_id))
   
   let () = print_endline sql
   >>> RUNNING
@@ -191,8 +191,8 @@ optional join with a subquery (in use):
                            end))
                     ~select:(fun __q ->
                       object
-                        method user_id = __q#p#query (fun p -> p#user_id)
-                        method name = __q#p#query (fun p -> p#name)
+                        method user_id = __q#p#query (fun __q -> __q#user_id)
+                        method name = __q#p#query (fun __q -> __q#name)
                       end))
                  ~alias:"p")
               ~on:(fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.scope)) ->
@@ -203,8 +203,8 @@ optional join with a subquery (in use):
                   end
                 in
                 Ch_queries.Expr.( = )
-                  (__q#u#query (fun u -> u#id))
-                  (__q#p#query (fun p -> p#user_id))))
+                  (__q#u#query (fun __q -> __q#id))
+                  (__q#p#query (fun __q -> __q#user_id))))
            (fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.nullable_scope)) ->
              object
                method u = u
@@ -212,13 +212,13 @@ optional join with a subquery (in use):
              end))
       ~select:(fun __q ->
         object
-          method user_id = __q#u#query (fun u -> u#id)
-          method user_name = __q#p#query (fun p -> p#name)
+          method user_id = __q#u#query (fun __q -> __q#id)
+          method user_name = __q#p#query (fun __q -> __q#name)
         end)
   
   let sql, _parse_row =
     let open Ch_queries in
-    query q @@ fun __q -> Row.string_opt (__q#q#query (fun q -> q#user_name))
+    query q @@ fun __q -> Row.string_opt (__q#q#query (fun __q -> __q#user_name))
   
   let () = print_endline sql
   >>> RUNNING
@@ -228,5 +228,4 @@ optional join with a subquery (in use):
     FROM public.users AS u
     LEFT JOIN
     (SELECT p.name AS _1, p.user_id AS _2 FROM public.profiles AS p) AS p
-    ON
-    u.id = p._2) AS q
+    ON u.id = p._2) AS q

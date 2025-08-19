@@ -217,6 +217,8 @@ expr:
     { make_expr $startpos $endpos (E_id id) }
   | ns=id DOT id=id
     { make_expr $startpos $endpos (E_col (ns, id)) }
+  | ns=id DOT LPAREN e=expr RPAREN
+    { make_expr $startpos $endpos (E_query (ns, e)) }
   | n=NUMBER
     { make_expr $startpos $endpos (E_lit (L_int n)) }
   | s=STRING

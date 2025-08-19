@@ -16,13 +16,13 @@ select from table with FINAL keyword:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun users -> users#x)
+          method x = __q#users#query (fun __q -> __q#x)
         end)
-      ~where:(fun __q -> __q#users#query (fun users -> users#is_active))
+      ~where:(fun __q -> __q#users#query (fun __q -> __q#is_active))
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun q -> q#x))
+    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -50,15 +50,15 @@ if FINAL keyword is applied to param, then it expects the table:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun users -> users#x)
+          method x = __q#users#query (fun __q -> __q#x)
         end)
-      ~where:(fun __q -> __q#users#query (fun users -> users#is_active))
+      ~where:(fun __q -> __q#users#query (fun __q -> __q#is_active))
   
   let users = users Ch_database.Public.users
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun q -> q#x))
+    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING

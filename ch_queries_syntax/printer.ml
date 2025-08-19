@@ -33,6 +33,10 @@ let rec pp_expr ~parent_prec expr =
   | E_unsafe id -> string id.node
   | E_id id -> pp_id id
   | E_col (ns, id) -> string (Printf.sprintf "%s.%s" ns.node id.node)
+  | E_query (ns, expr) ->
+      group
+        (string (Printf.sprintf "%s." ns.node)
+        ^^ parens (pp_expr ~parent_prec:0 expr))
   | E_lit (L_int n) -> string (string_of_int n)
   | E_lit (L_float n) -> string (string_of_float n)
   | E_lit L_null -> string "NULL"
@@ -273,8 +277,8 @@ and pp_from from =
         | `LEFT_JOIN_OPTIONAL -> "LEFT JOIN OPTIONAL"
       in
       group
-        (pp_from from ^/^ string join_kind_str ^/^ pp_from_one join
-       ^/^ string "ON" ^/^ pp_expr ~parent_prec:0 on)
+        (pp_from from ^/^ group (string join_kind_str ^/^ pp_from_one join)
+       ^/^ group (string "ON" ^/^ pp_expr ~parent_prec:0 on))
 
 and pp_query { node; eq = _; loc = _ } =
   match node with

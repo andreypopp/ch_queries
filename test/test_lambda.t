@@ -23,12 +23,12 @@ test IN expression with subquery:
                  (Ch_queries.lambda "x" (fun x ->
                       Ch_queries.Expr.( = ) (Ch_queries.unsafe "x")
                         (Ch_queries.int 1)))
-                 (__q#users#query (fun users -> users#xs)))
+                 (__q#users#query (fun __q -> __q#xs)))
         end)
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.int (__q#q#query (fun q -> q#x))
+    Ch_queries.Row.int (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING

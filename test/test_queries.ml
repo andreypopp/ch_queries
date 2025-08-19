@@ -65,7 +65,7 @@ let y =
   Ch_queries.select () ~from:{%f|FROM ?users AS users|}
     ~select:(fun __q ->
       object
-        method select = __q#users#query (fun __q -> {%e|coalesce(p.name, u.x)|})
+        method select = {%e|users.(coalesce(p.name, u.x))|}
       end)
     ~where:(fun __q -> {%e|users.name = 'Alive'|})
 

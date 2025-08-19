@@ -17,13 +17,13 @@ LIMIT with literal value:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun users -> users#x)
+          method x = __q#users#query (fun __q -> __q#x)
         end)
       ~limit:(fun __q -> Ch_queries.int 1)
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun q -> q#x))
+    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -47,7 +47,7 @@ LIMIT with parameter:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun users -> users#x)
+          method x = __q#users#query (fun __q -> __q#x)
         end)
       ~limit:(fun __q -> n __q)
   >>> RUNNING
@@ -83,13 +83,13 @@ OFFSET with literal value:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun users -> users#x)
+          method x = __q#users#query (fun __q -> __q#x)
         end)
       ~offset:(fun __q -> Ch_queries.int 1)
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun q -> q#x))
+    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -113,7 +113,7 @@ OFFSET with parameter:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun users -> users#x)
+          method x = __q#users#query (fun __q -> __q#x)
         end)
       ~offset:(fun __q -> n __q)
   >>> RUNNING

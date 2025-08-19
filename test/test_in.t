@@ -17,11 +17,11 @@ test IN expression with subquery:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun users -> users#x)
+          method x = __q#users#query (fun __q -> __q#x)
         end)
       ~where:(fun __q ->
         Ch_queries.in_
-          (__q#users#query (fun users -> users#id))
+          (__q#users#query (fun __q -> __q#id))
           (Ch_queries.In_query
              (Ch_queries.select ()
                 ~from:
@@ -34,12 +34,12 @@ test IN expression with subquery:
                        end))
                 ~select:(fun __q ->
                   object
-                    method _1 = __q#users#query (fun users -> users#id)
+                    method _1 = __q#users#query (fun __q -> __q#id)
                   end))))
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun q -> q#x))
+    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -68,17 +68,17 @@ test IN expression with expression::
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun users -> users#x)
+          method x = __q#users#query (fun __q -> __q#x)
         end)
       ~where:(fun __q ->
         Ch_queries.in_
-          (__q#users#query (fun users -> users#id))
+          (__q#users#query (fun __q -> __q#id))
           (Ch_queries.In_array
              (Ch_queries.array [ Ch_queries.int 1; Ch_queries.int 2 ])))
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun q -> q#x))
+    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -104,10 +104,9 @@ test IN expression with parameter:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun users -> users#x)
+          method x = __q#users#query (fun __q -> __q#x)
         end)
-      ~where:(fun __q ->
-        Ch_queries.in_ (__q#users#query (fun users -> users#id)) ids)
+      ~where:(fun __q -> Ch_queries.in_ (__q#users#query (fun __q -> __q#id)) ids)
   >>> RUNNING
   val users :
     ids:int Ch_queries.number Ch_queries.in_rhs ->

@@ -22,17 +22,13 @@ basic window functions:
                 (List.concat
                    [
                      [
-                       ( Ch_queries.A_expr (__q#users#query (fun users -> users#x)),
+                       ( Ch_queries.A_expr (__q#users#query (fun __q -> __q#x)),
                          `ASC );
                      ];
                    ])
               ~partition_by:
                 (List.concat
-                   [
-                     [
-                       Ch_queries.A_expr (__q#users#query (fun users -> users#x));
-                     ];
-                   ])
+                   [ [ Ch_queries.A_expr (__q#users#query (fun __q -> __q#x)) ] ])
               (Ch_queries.int 1)
         end)
   >>> RUNNING
@@ -64,7 +60,7 @@ window functions / param in PARTITION BY:
                 (List.concat
                    [
                      [
-                       ( Ch_queries.A_expr (__q#users#query (fun users -> users#x)),
+                       ( Ch_queries.A_expr (__q#users#query (fun __q -> __q#x)),
                          `ASC );
                      ];
                    ])

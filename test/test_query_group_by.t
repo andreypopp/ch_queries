@@ -17,15 +17,14 @@ GROUP BY single column:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun users -> users#x)
+          method x = __q#users#query (fun __q -> __q#x)
         end)
       ~group_by:(fun __q ->
-        List.concat
-          [ [ Ch_queries.A_expr (__q#users#query (fun users -> users#x)) ] ])
+        List.concat [ [ Ch_queries.A_expr (__q#users#query (fun __q -> __q#x)) ] ])
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun q -> q#x))
+    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -51,18 +50,18 @@ GROUP BY multiple columns:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun users -> users#x)
+          method x = __q#users#query (fun __q -> __q#x)
         end)
       ~group_by:(fun __q ->
         List.concat
           [
-            [ Ch_queries.A_expr (__q#users#query (fun users -> users#x)) ];
-            [ Ch_queries.A_expr (__q#users#query (fun users -> users#id)) ];
+            [ Ch_queries.A_expr (__q#users#query (fun __q -> __q#x)) ];
+            [ Ch_queries.A_expr (__q#users#query (fun __q -> __q#id)) ];
           ])
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun q -> q#x))
+    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -89,12 +88,12 @@ GROUP BY with a parameter:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun users -> users#x)
+          method x = __q#users#query (fun __q -> __q#x)
         end)
       ~group_by:(fun __q ->
         List.concat
           [
-            [ Ch_queries.A_expr (__q#users#query (fun users -> users#id)) ];
+            [ Ch_queries.A_expr (__q#users#query (fun __q -> __q#id)) ];
             dimension __q;
           ])
   >>> RUNNING
@@ -140,7 +139,7 @@ GROUP BY GROUPING SETS:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.int (__q#q#query (fun q -> q#one))
+    Ch_queries.Row.int (__q#q#query (fun __q -> __q#one))
   
   let () = print_endline sql
   >>> RUNNING
@@ -158,10 +157,10 @@ GROUP BY GROUPING SETS:
     Ch_queries.grouping_sets
       [
         [
-          A_expr (__q#u#query (fun u -> u#x));
-          A_expr (__q#u#query (fun u -> u#id));
+          A_expr (__q#u#query (fun __q -> __q#x));
+          A_expr (__q#u#query (fun __q -> __q#id));
         ];
-        [ A_expr (__q#u#query (fun u -> u#id)) ];
+        [ A_expr (__q#u#query (fun __q -> __q#id)) ];
       ]
   
   let users =
@@ -181,7 +180,7 @@ GROUP BY GROUPING SETS:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.int (__q#q#query (fun q -> q#one))
+    Ch_queries.Row.int (__q#q#query (fun __q -> __q#one))
   
   let () = print_endline sql
   >>> RUNNING
