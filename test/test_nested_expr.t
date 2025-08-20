@@ -1,5 +1,5 @@
   $ ./compile_and_run '
-  > let q = 
+  > let q =
   >   Ch_queries.select ()
   >   ~from:[%f "FROM public.users JOIN public.profiles ON users.id = profiles.user_id"]
   >   ~select:(fun __q -> object method users = __q#users method profiles = __q#profiles end)
@@ -61,14 +61,14 @@
 
 The param within the scope receives the scope as argument:
   $ ./compile_and_run '
-  > let q1 = 
+  > let q1 =
   >   Ch_queries.select ()
   >   ~from:[%f "FROM public.users JOIN public.profiles ON users.id = profiles.user_id"]
   >   ~select:(fun __q -> object method users = __q#users method profiles = __q#profiles end)
   >   |> Ch_queries.from_select
   > ;;
   > let q2 ~field =
-  >   {%q|SELECT q.(?field) AS field FROM ?q1 AS q|}
+  >   {%q|SELECT q.($field) AS field FROM $q1 AS q|}
   > ;;
   > #show q2;;
   > let q = q2 ~field:(fun __q -> {%e|coalesce(profiles.name, users.x)|}) in

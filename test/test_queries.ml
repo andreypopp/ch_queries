@@ -54,7 +54,7 @@ let x =
       method p = __q#p
     end
   in
-  {%q|SELECT ?select...
+  {%q|SELECT $select...
       FROM users as u
       LEFT JOIN public.profiles as p
       ON u.id = p.user_id and p.name = 'Alice'
@@ -62,7 +62,7 @@ let x =
 
 let y =
   let users = x |> Ch_queries.from_select in
-  Ch_queries.select () ~from:{%f|FROM ?users AS users|}
+  Ch_queries.select () ~from:{%f|FROM $users AS users|}
     ~select:(fun __q ->
       object
         method select = {%e|users.(coalesce(p.name, u.x))|}

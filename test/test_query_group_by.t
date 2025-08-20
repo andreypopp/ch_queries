@@ -21,11 +21,11 @@ GROUP BY single column:
         end)
       ~group_by:(fun __q ->
         List.concat [ [ Ch_queries.A_expr (__q#users#query (fun __q -> __q#x)) ] ])
-
+  
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
     Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
-
+  
   let () = print_endline sql
   >>> RUNNING
   SELECT q._1
@@ -58,11 +58,11 @@ GROUP BY multiple columns:
             [ Ch_queries.A_expr (__q#users#query (fun __q -> __q#x)) ];
             [ Ch_queries.A_expr (__q#users#query (fun __q -> __q#id)) ];
           ])
-
+  
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
     Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
-
+  
   let () = print_endline sql
   >>> RUNNING
   SELECT q._1
@@ -120,7 +120,7 @@ GROUP BY GROUPING SETS:
   > '
   >>> PREPROCESSING
   let group_by __q = Ch_queries.grouping_sets []
-
+  
   let users =
     Ch_queries.select ()
       ~from:
@@ -136,11 +136,11 @@ GROUP BY GROUPING SETS:
           method one = Ch_queries.int 1
         end)
       ~group_by:(fun __q -> List.concat [ [ Ch_queries.A_expr (group_by __q) ] ])
-
+  
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
     Ch_queries.Row.int (__q#q#query (fun __q -> __q#one))
-
+  
   let () = print_endline sql
   >>> RUNNING
   SELECT q._1
@@ -162,7 +162,7 @@ GROUP BY GROUPING SETS:
         ];
         [ A_expr (__q#u#query (fun __q -> __q#id)) ];
       ]
-
+  
   let users =
     Ch_queries.select ()
       ~from:
@@ -177,11 +177,11 @@ GROUP BY GROUPING SETS:
           method one = Ch_queries.int 1
         end)
       ~group_by:(fun __q -> List.concat [ [ Ch_queries.A_expr (group_by __q) ] ])
-
+  
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
     Ch_queries.Row.int (__q#q#query (fun __q -> __q#one))
-
+  
   let () = print_endline sql
   >>> RUNNING
   SELECT q._1

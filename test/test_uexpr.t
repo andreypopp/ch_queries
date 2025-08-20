@@ -20,13 +20,14 @@ Test untyped expressions
   > #show e
   > '
   >>> PREPROCESSING
-  let e x : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr =
-    Ch_queries.unsafe_concat
-      [
-        Ch_queries.A_expr (Ch_queries.unsafe "someUnknownFunction(");
-        Ch_queries.A_expr x;
-        Ch_queries.A_expr (Ch_queries.unsafe ", interval 1 day)");
-      ]
+  let e x =
+    (Ch_queries.unsafe_concat
+       [
+         Ch_queries.A_expr (Ch_queries.unsafe "someUnknownFunction(");
+         Ch_queries.A_expr x;
+         Ch_queries.A_expr (Ch_queries.unsafe ", interval 1 day)");
+       ]
+      : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr)
   >>> RUNNING
   val e :
     ('a, 'b) Ch_queries.expr ->
@@ -37,14 +38,14 @@ Test untyped expressions
   > #show e
   > '
   >>> PREPROCESSING
-  let e (x : (Ch_queries.non_null, int64 Ch_queries.number) Ch_queries.expr) :
-      (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr =
-    Ch_queries.unsafe_concat
-      [
-        Ch_queries.A_expr (Ch_queries.unsafe "someUnknownFunction(");
-        Ch_queries.A_expr x;
-        Ch_queries.A_expr (Ch_queries.unsafe ", interval 1 day)");
-      ]
+  let e (x : (Ch_queries.non_null, int64 Ch_queries.number) Ch_queries.expr) =
+    (Ch_queries.unsafe_concat
+       [
+         Ch_queries.A_expr (Ch_queries.unsafe "someUnknownFunction(");
+         Ch_queries.A_expr x;
+         Ch_queries.A_expr (Ch_queries.unsafe ", interval 1 day)");
+       ]
+      : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr)
   >>> RUNNING
   val e :
     (Ch_queries.non_null, int64 Ch_queries.number) Ch_queries.expr ->
@@ -55,13 +56,14 @@ Test untyped expressions
   > #show e
   > '
   >>> PREPROCESSING
-  let e __q : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr =
-    Ch_queries.unsafe_concat
-      [
-        Ch_queries.A_expr (Ch_queries.unsafe "someUnknownFunction(");
-        Ch_queries.A_expr (__q#users#query (fun __q -> __q#x));
-        Ch_queries.A_expr (Ch_queries.unsafe ", interval 1 day)");
-      ]
+  let e __q =
+    (Ch_queries.unsafe_concat
+       [
+         Ch_queries.A_expr (Ch_queries.unsafe "someUnknownFunction(");
+         Ch_queries.A_expr (__q#users#query (fun __q -> __q#x));
+         Ch_queries.A_expr (Ch_queries.unsafe ", interval 1 day)");
+       ]
+      : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr)
   >>> RUNNING
   val e :
     < users : < query : (< x : 'a; .. > -> 'a) -> ('b, 'c) Ch_queries.expr;
