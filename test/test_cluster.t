@@ -23,7 +23,7 @@ test cluster syntax parsing:
                     ~select:(fun __q ->
                       object
                         method x = __q#users#query (fun __q -> __q#x)
-  
+
                         method is_active =
                           __q#users#query (fun __q -> __q#is_active)
                       end))
@@ -37,11 +37,11 @@ test cluster syntax parsing:
           method x = __q#users#query (fun __q -> __q#x)
         end)
       ~where:(fun __q -> __q#users#query (fun __q -> __q#is_active))
-  
+
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
     Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
-  
+
   let () = print_endline sql
   >>> RUNNING
   SELECT q._1
@@ -54,7 +54,7 @@ test cluster syntax parsing:
 
 test parameterized cluster syntax:
   $ ./compile_and_run '
-  > let users cluster_name = [%q "SELECT users.x AS x FROM cluster(?cluster_name, view(SELECT users.x AS x, users.is_active AS is_active FROM public.users)) AS users WHERE users.is_active"];;
+  > let users cluster_name = [%q "SELECT users.x AS x FROM cluster($cluster_name, view(SELECT users.x AS x, users.is_active AS is_active FROM public.users)) AS users WHERE users.is_active"];;
   > let sql, _parse_row = Ch_queries.query (users "test_cluster") @@ fun __q -> Ch_queries.Row.string [%e "q.x"]
   > let () = print_endline sql;;
   > '
@@ -77,7 +77,7 @@ test parameterized cluster syntax:
                     ~select:(fun __q ->
                       object
                         method x = __q#users#query (fun __q -> __q#x)
-  
+
                         method is_active =
                           __q#users#query (fun __q -> __q#is_active)
                       end))
@@ -91,11 +91,11 @@ test parameterized cluster syntax:
           method x = __q#users#query (fun __q -> __q#x)
         end)
       ~where:(fun __q -> __q#users#query (fun __q -> __q#is_active))
-  
+
   let sql, _parse_row =
     Ch_queries.query (users "test_cluster") @@ fun __q ->
     Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
-  
+
   let () = print_endline sql
   >>> RUNNING
   SELECT q._1

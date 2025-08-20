@@ -1,7 +1,7 @@
 simple OCaml expression:
   $ ./compile_and_run '
   > let x = 42
-  > let result users = [%e "?{x + 1}"]
+  > let result users = [%e "${x + 1}"]
   > '
   >>> PREPROCESSING
   let x = 42
@@ -11,7 +11,7 @@ simple OCaml expression:
 OCaml expression with function call:
   $ ./compile_and_run '
   > let name = "alice"
-  > let result users = [%e "?{String.uppercase_ascii name}"]
+  > let result users = [%e "${String.uppercase_ascii name}"]
   > '
   >>> PREPROCESSING
   let name = "alice"
@@ -21,7 +21,7 @@ OCaml expression with function call:
 OCaml expression in query:
   $ ./compile_and_run '
   > let x = 42
-  > let q users = [%q "SELECT ?{x + 1} AS x FROM ?users"]
+  > let q users = [%q "SELECT ${x + 1} AS x FROM $users"]
   > '
   >>> PREPROCESSING
   let x = 42

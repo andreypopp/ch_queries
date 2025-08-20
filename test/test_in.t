@@ -88,7 +88,7 @@ test IN expression with expression::
 
 test IN expression with parameter:
   $ ./compile_and_run '
-  > let users ~ids = [%q "SELECT users.x AS x FROM public.users WHERE users.id IN ?ids"];;
+  > let users ~ids = [%q "SELECT users.x AS x FROM public.users WHERE users.id IN $ids"];;
   > #show users
   > '
   >>> PREPROCESSING

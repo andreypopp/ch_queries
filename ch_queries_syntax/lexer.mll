@@ -92,7 +92,7 @@
     | Parser.SLASH -> "SLASH"
     | Parser.EQUALS -> "EQUALS"
     | Parser.GT -> "GT"
-    | Parser.LT -> "LT" 
+    | Parser.LT -> "LT"
     | Parser.GE -> "GE"
     | Parser.LE -> "LE"
     | Parser.NOT_EQUAL -> "NOT_EQUAL"
@@ -141,25 +141,26 @@ let letter = ['a'-'z' 'A'-'Z']
 let id_char = letter | digit | '_'
 let id = (letter | '_') id_char*
 let number = digit+
+let param_char = '$'
 
 rule token = parse
   | whitespace+         { token lexbuf }
   | newline             { Lexing.new_line lexbuf; token lexbuf }
   | number as s         { NUMBER (int_of_string s) }
-  | '\''                { 
+  | '\''                {
     (* remember start position to restore later, needed because string token is matched through multiple patterns *)
     let lex_start_p = Lexing.lexeme_start_p lexbuf in
     let s = string_literal (Buffer.create 16) lexbuf in
     lexbuf.Lexing.lex_start_p <- lex_start_p;
     STRING s }
-  | '?' (id as s) '.' '.' '.' { PARAM_SPLICE s }
-  | '?' '{'             { 
+  | param_char (id as s) '.' '.' '.' { PARAM_SPLICE s }
+  | param_char '{'             {
     (* remember start position to restore later *)
     let lex_start_p = Lexing.lexeme_start_p lexbuf in
     let s = ocaml_expr (Buffer.create 32) 0 lexbuf in
     lexbuf.Lexing.lex_start_p <- lex_start_p;
     OCAML_EXPR s }
-  | '{'                 { 
+  | '{'                 {
     (* remember start position to restore later *)
     let lex_start_p = Lexing.lexeme_start_p lexbuf in
     let buf = Buffer.create 32 in
@@ -167,7 +168,7 @@ rule token = parse
     let s = ch_param buf 0 lexbuf in
     lexbuf.Lexing.lex_start_p <- lex_start_p;
     CH_PARAM s }
-  | '?' (id as s)       { PARAM s }
+  | param_char (id as s)       { PARAM s }
   | id as s             { get_keyword_or_id s }
   | '('                 { LPAREN }
   | ')'                 { RPAREN }
@@ -206,11 +207,11 @@ and string_literal buf = parse
 
 and ocaml_expr buf brace_count = parse
   | '{'                 { Buffer.add_char buf '{'; ocaml_expr buf (brace_count + 1) lexbuf }
-  | '}'                 { 
+  | '}'                 {
     if brace_count = 0 then
       Buffer.contents buf
     else (
-      Buffer.add_char buf '}'; 
+      Buffer.add_char buf '}';
       ocaml_expr buf (brace_count - 1) lexbuf
     ) }
   | newline             { Lexing.new_line lexbuf; Buffer.add_char buf '\n'; ocaml_expr buf brace_count lexbuf }
@@ -219,7 +220,7 @@ and ocaml_expr buf brace_count = parse
 
 and ch_param buf brace_count = parse
   | '{'                 { Buffer.add_char buf '{'; ch_param buf (brace_count + 1) lexbuf }
-  | '}'                 { 
+  | '}'                 {
     Buffer.add_char buf '}';
     if brace_count = 0 then
       Buffer.contents buf

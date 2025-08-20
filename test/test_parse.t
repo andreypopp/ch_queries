@@ -1,62 +1,62 @@
 
-  $ ch_queries parse 'SELECT x.name FROM ?x'
+  $ ch_queries parse 'SELECT x.name FROM $x'
   SELECT x.name FROM x AS x
 
-  $ ch_queries parse 'SELECT x.name FROM ?x WHERE x.age + 30'
+  $ ch_queries parse 'SELECT x.name FROM $x WHERE x.age + 30'
   SELECT x.name FROM x AS x WHERE x.age + 30
 
-  $ ch_queries parse 'SELECT x.name FROM ?x WHERE x.is_active'
+  $ ch_queries parse 'SELECT x.name FROM $x WHERE x.is_active'
   SELECT x.name FROM x AS x WHERE x.is_active
 
-  $ ch_queries parse 'SELECT x.name FROM ?x WHERE true'
+  $ ch_queries parse 'SELECT x.name FROM $x WHERE true'
   SELECT x.name FROM x AS x WHERE true
 
 parsing AND:
-  $ ch_queries parse 'SELECT x.name FROM ?x WHERE true AND false'
+  $ ch_queries parse 'SELECT x.name FROM $x WHERE true AND false'
   SELECT x.name FROM x AS x WHERE true AND false
 
 parsing OR:
-  $ ch_queries parse 'SELECT x.name FROM ?x WHERE true OR false'
+  $ ch_queries parse 'SELECT x.name FROM $x WHERE true OR false'
   SELECT x.name FROM x AS x WHERE true OR false
 
 parsing splicing:
-  $ ch_queries parse 'SELECT x.name FROM ?x WHERE ?condition'
+  $ ch_queries parse 'SELECT x.name FROM $x WHERE $condition'
   SELECT x.name FROM x AS x WHERE condition
 
 parsing string literals:
-  $ ch_queries parse "SELECT x.name FROM ?x WHERE x.name = 'hello'"
+  $ ch_queries parse "SELECT x.name FROM \$x WHERE x.name = 'hello'"
   SELECT x.name FROM x AS x WHERE x.name = 'hello'
 
-  $ ch_queries parse "SELECT 'hello world' FROM ?x"
+  $ ch_queries parse "SELECT 'hello world' FROM \$x"
   SELECT 'hello world' FROM x AS x
 
-  $ ch_queries parse "SELECT 'string with \\'quotes\\'' FROM ?x"
+  $ ch_queries parse "SELECT 'string with \\'quotes\\'' FROM \$x"
   SELECT 'string with \'quotes\'' FROM x AS x
 
-  $ ch_queries parse "SELECT 'string with\nnewline' FROM ?x"
+  $ ch_queries parse "SELECT 'string with\nnewline' FROM \$x"
   SELECT 'string with\nnewline' FROM x AS x
 
-  $ ch_queries parse "SELECT 'string with\ttab' FROM ?x"
+  $ ch_queries parse "SELECT 'string with\ttab' FROM \$x"
   SELECT 'string with\ttab' FROM x AS x
 
 parsing GROUP BY:
-  $ ch_queries parse 'SELECT x.name FROM ?x GROUP BY x.name'
+  $ ch_queries parse 'SELECT x.name FROM $x GROUP BY x.name'
   SELECT x.name FROM x AS x GROUP BY x.name
 
-  $ ch_queries parse 'SELECT x.name FROM ?x GROUP BY x.name, x.age'
+  $ ch_queries parse 'SELECT x.name FROM $x GROUP BY x.name, x.age'
   SELECT x.name FROM x AS x GROUP BY x.name, x.age
 
-paersing ORDER BY:
-  $ ch_queries parse 'SELECT x.name FROM ?x ORDER BY x.name'
+parsing ORDER BY:
+  $ ch_queries parse 'SELECT x.name FROM $x ORDER BY x.name'
   SELECT x.name FROM x AS x ORDER BY x.name ASC
- 
-  $ ch_queries parse 'SELECT x.name FROM ?x ORDER BY x.name DESC'
+
+  $ ch_queries parse 'SELECT x.name FROM $x ORDER BY x.name DESC'
   SELECT x.name FROM x AS x ORDER BY x.name DESC
 
-  $ ch_queries parse 'SELECT x.name FROM ?x ORDER BY x.name ASC'
+  $ ch_queries parse 'SELECT x.name FROM $x ORDER BY x.name ASC'
   SELECT x.name FROM x AS x ORDER BY x.name ASC
 
-  $ ch_queries parse 'SELECT x.name FROM ?x ORDER BY x.name, x.age'
+  $ ch_queries parse 'SELECT x.name FROM $x ORDER BY x.name, x.age'
   SELECT x.name FROM x AS x ORDER BY x.name ASC, x.age ASC
 
 parsing cluster syntax with literal cluster name:
@@ -64,7 +64,7 @@ parsing cluster syntax with literal cluster name:
   SELECT q.x FROM cluster(my_cluster, view(SELECT t.x FROM db.table AS t)) AS q
 
 parsing cluster syntax with parameterized cluster name:
-  $ ch_queries parse 'SELECT q.x FROM cluster(?cluster_name, view(SELECT t.x FROM db.table as t)) AS q'
+  $ ch_queries parse 'SELECT q.x FROM cluster($cluster_name, view(SELECT t.x FROM db.table as t)) AS q'
   SELECT q.x FROM cluster(?cluster_name, view(SELECT t.x FROM db.table AS t)) AS q
 
 parsing arrays:

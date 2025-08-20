@@ -2,7 +2,7 @@ Programmatic union
   $ ./compile_and_run '
   > let users1 = [%q "SELECT 1 AS x FROM public.users"];;
   > let users2 = [%q "SELECT 2 AS x FROM public.users"];;
-  > let users = [%q "?users1 UNION ?users2"];;
+  > let users = [%q $users1 UNION $users2"];;
   > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.int [%e "q.x"]
   > let () = print_endline sql;;
   > '
@@ -21,7 +21,7 @@ Programmatic union
         object
           method x = Ch_queries.int 1
         end)
-  
+
   let users2 =
     Ch_queries.select ()
       ~from:
@@ -36,13 +36,13 @@ Programmatic union
         object
           method x = Ch_queries.int 2
         end)
-  
+
   let users = Ch_queries.union users1 users2
-  
+
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
     Ch_queries.Row.int (__q#q#query (fun __q -> __q#x))
-  
+
   let () = print_endline sql
   >>> RUNNING
   SELECT q._1
@@ -86,11 +86,11 @@ UNION syntax:
            object
              method x = Ch_queries.int 2
            end))
-  
+
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
     Ch_queries.Row.int (__q#q#query (fun __q -> __q#x))
-  
+
   let () = print_endline sql
   >>> RUNNING
   SELECT q._1

@@ -49,14 +49,14 @@ val users :
   select = <abstr>
 ```
 
-The `?param` syntax is used for parameters. If a parameter appears in the
+The `$param` syntax is used for parameters. If a parameter appears in the
 expression position, then it is expected to be a function which takes the current
 scope and returns an expression:
 ```ocaml
 # let users ~where = {%q|
     SELECT users.id AS id, users.name AS name
     FROM db.users
-    WHERE users.is_active AND ?where
+    WHERE users.is_active AND $where
   |}
 val users :
   where:(< users : < id : (non_null, int number) expr;
@@ -91,7 +91,7 @@ Note that `q` in `q.is_active` is being resolved in the current scope, thus
 reusable expressions are usually defined as functions from scopes to
 expressions.
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > In most cases it is required to annotate types of the arguments of reusable
 > expressions with `_ Ch_queries.scope`. This is to force the type inference to
 > infer the polymorphic type for scopes.
@@ -109,10 +109,10 @@ val expr :
   ('d, 'e) expr = <fun>
 ```
 
-Such syntax recognizes only `q.name` and `?param` constructs and passes the rest
+Such syntax recognizes only `q.name` and `$param` constructs and passes the rest
 as-is.
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > The parameters and the result of `%eu` expressions are inferred to have "any
 > expression" type. Consider putting additional type constraints on them to
 > avoid spreading unsafety to other parts of the code.
