@@ -669,13 +669,13 @@ let uexpr_extension name =
 let rules =
   [
     Context_free.Rule.extension (query_extension "q");
-    Context_free.Rule.extension (query_extension "clickhouse.q");
+    Context_free.Rule.extension (query_extension "ch.q");
     Context_free.Rule.extension (expr_extension "e");
-    Context_free.Rule.extension (expr_extension "clickhouse.e");
+    Context_free.Rule.extension (expr_extension "ch.e");
     Context_free.Rule.extension (typ_extension "t");
-    Context_free.Rule.extension (typ_extension "clickhouse.t");
+    Context_free.Rule.extension (typ_extension "ch.t");
     Context_free.Rule.extension (uexpr_extension "eu");
-    Context_free.Rule.extension (uexpr_extension "clickhouse.eu");
+    Context_free.Rule.extension (uexpr_extension "ch.eu");
   ]
 
 let () = Driver.register_transformation ~rules "queries_ppx"
