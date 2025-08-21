@@ -641,38 +641,38 @@ let expand_typ ~ctxt:_ expr =
       [%type: ([%t n], [%t t]) Ch_queries.expr]
   | _ -> Location.raise_errorf "expected a string literal for [%%t ...]"
 
-let query_extension =
-  Extension.V3.declare "q" Extension.Context.expression
+let query_extension name =
+  Extension.V3.declare name Extension.Context.expression
     Ast_pattern.(single_expr_payload __)
     expand_query
 
-let from_extension =
-  Extension.V3.declare "f" Extension.Context.expression
+let from_extension name =
+  Extension.V3.declare name Extension.Context.expression
     Ast_pattern.(single_expr_payload __)
     expand_from
 
-let expr_extension =
-  Extension.V3.declare "e" Extension.Context.expression
+let expr_extension name =
+  Extension.V3.declare name Extension.Context.expression
     Ast_pattern.(single_expr_payload __)
     expand_expr
 
-let typ_extension =
-  Extension.V3.declare "t" Extension.Context.core_type
+let typ_extension name =
+  Extension.V3.declare name Extension.Context.core_type
     Ast_pattern.(single_expr_payload __)
     expand_typ
 
-let uexpr_extension =
-  Extension.V3.declare "eu" Extension.Context.expression
+let uexpr_extension name =
+  Extension.V3.declare name Extension.Context.expression
     Ast_pattern.(single_expr_payload __)
     expand_uexpr
 
 let rules =
   [
-    Context_free.Rule.extension query_extension;
-    Context_free.Rule.extension from_extension;
-    Context_free.Rule.extension expr_extension;
-    Context_free.Rule.extension typ_extension;
-    Context_free.Rule.extension uexpr_extension;
+    Context_free.Rule.extension (query_extension "ch.q");
+    Context_free.Rule.extension (from_extension "ch.f");
+    Context_free.Rule.extension (expr_extension "ch.e");
+    Context_free.Rule.extension (typ_extension "ch.t");
+    Context_free.Rule.extension (uexpr_extension "ch.eu");
   ]
 
 let () = Driver.register_transformation ~rules "queries_ppx"
