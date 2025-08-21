@@ -646,8 +646,8 @@ let query_extension name =
     Ast_pattern.(single_expr_payload __)
     expand_query
 
-let from_extension =
-  Extension.V3.declare "f" Extension.Context.expression
+let from_extension name =
+  Extension.V3.declare name Extension.Context.expression
     Ast_pattern.(single_expr_payload __)
     expand_from
 
@@ -668,13 +668,10 @@ let uexpr_extension name =
 
 let rules =
   [
-    Context_free.Rule.extension (query_extension "q");
     Context_free.Rule.extension (query_extension "ch.q");
-    Context_free.Rule.extension (expr_extension "e");
+    Context_free.Rule.extension (from_extension "ch.f");
     Context_free.Rule.extension (expr_extension "ch.e");
-    Context_free.Rule.extension (typ_extension "t");
     Context_free.Rule.extension (typ_extension "ch.t");
-    Context_free.Rule.extension (uexpr_extension "eu");
     Context_free.Rule.extension (uexpr_extension "ch.eu");
   ]
 
