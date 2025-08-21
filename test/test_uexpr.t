@@ -1,7 +1,7 @@
 Test untyped expressions
 
   $ ./compile_and_run '
-  > let e x = [%eu "someUnknownFunction(?x, interval 1 day)"];;
+  > let e x = [%eu "someUnknownFunction($x, interval 1 day)"];;
   > #show e
   > '
   >>> PREPROCESSING
@@ -16,7 +16,7 @@ Test untyped expressions
   val e : ('a, 'b) Ch_queries.expr -> ('c, 'd) Ch_queries.expr
 
   $ ./compile_and_run '
-  > let e x : [%t "Int32"] = [%eu "someUnknownFunction(?x, interval 1 day)"];;
+  > let e x : [%t "Int32"] = [%eu "someUnknownFunction($x, interval 1 day)"];;
   > #show e
   > '
   >>> PREPROCESSING
@@ -33,7 +33,7 @@ Test untyped expressions
     (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr
 
   $ ./compile_and_run '
-  > let e (x : [%t "UInt64"]) : [%t "Int32"] = [%eu "someUnknownFunction(?x, interval 1 day)"];;
+  > let e (x : [%t "UInt64"]) : [%t "Int32"] = [%eu "someUnknownFunction($x, interval 1 day)"];;
   > #show e
   > '
   >>> PREPROCESSING

@@ -10,7 +10,7 @@ Method call syntax:
 
 Method call in query:
   $ ./compile_and_run '
-  > let q users = [%q "SELECT users.count() FROM ?users"]
+  > let q users = [%q "SELECT users.count() FROM $users"]
   > '
   >>> PREPROCESSING
   let q users =

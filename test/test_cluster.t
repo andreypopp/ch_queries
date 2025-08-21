@@ -54,7 +54,7 @@ test cluster syntax parsing:
 
 test parameterized cluster syntax:
   $ ./compile_and_run '
-  > let users cluster_name = [%q "SELECT users.x AS x FROM cluster(?cluster_name, view(SELECT users.x AS x, users.is_active AS is_active FROM public.users)) AS users WHERE users.is_active"];;
+  > let users cluster_name = [%q "SELECT users.x AS x FROM cluster($cluster_name, view(SELECT users.x AS x, users.is_active AS is_active FROM public.users)) AS users WHERE users.is_active"];;
   > let sql, _parse_row = Ch_queries.query (users "test_cluster") @@ fun __q -> Ch_queries.Row.string [%e "q.x"]
   > let () = print_endline sql;;
   > '

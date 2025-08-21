@@ -32,13 +32,13 @@ end
 
 [@@@ocaml.warning "-27"]
 
-let ( && ) x y = {%e|?x AND ?y|}
+let ( && ) x y = {%e|$x AND $y|}
 
 let users ~condition =
   {%q|SELECT
         u.x AS x,
         u.id AS id
-      FROM public.users as u WHERE ?condition|}
+      FROM public.users as u WHERE $condition|}
 
 let x =
   let users =
@@ -54,7 +54,7 @@ let x =
       method p = __q#p
     end
   in
-  {%q|SELECT ?select...
+  {%q|SELECT $select...
       FROM users as u
       LEFT JOIN public.profiles as p
       ON u.id = p.user_id and p.name = 'Alice'
@@ -62,7 +62,7 @@ let x =
 
 let y =
   let users = x |> Ch_queries.from_select in
-  Ch_queries.select () ~from:{%f|FROM ?users AS users|}
+  Ch_queries.select () ~from:{%f|FROM $users AS users|}
     ~select:(fun __q ->
       object
         method select = {%e|users.(coalesce(p.name, u.x))|}
@@ -101,14 +101,14 @@ let merge_metric : type a sqlt.
     < stats : _ stats Ch_queries.scope > ->
     (a, sqlt) metric ->
     (_, sqlt) Ch_queries.expr =
- fun __q (m : (a, sqlt) metric) -> {%e|stats.metric(?{m})|}
+ fun __q (m : (a, sqlt) metric) -> {%e|stats.metric(${m})|}
 
 (** this function defines how to query/parse a metric from a query. *)
 let query_metric : type t sqlt.
     < q : _ stats Ch_queries.scope > -> (t, sqlt) metric -> t Ch_queries.Row.t =
  fun __q m ->
   let open Ch_queries.Row in
-  let metric m = {%e|q.metric(?{m})|} in
+  let metric m = {%e|q.metric(${m})|} in
   match m with
   | Metric_count -> int (metric m)
   | Metric_sum_id -> int (metric m)
@@ -123,7 +123,7 @@ let users_stats =
           select_metric __q
       end
     in
-    {%q|SELECT ?select... FROM public.users|} |> Ch_queries.from_select
+    {%q|SELECT $select... FROM public.users|} |> Ch_queries.from_select
   in
   let select (__q : < stats : _ stats Ch_queries.scope >) : _ stats =
     object
@@ -136,9 +136,9 @@ let users_stats =
   in
   let having (__q : < stats : _ stats Ch_queries.scope >) =
     let is_true = __q#stats#query @@ fun stats -> stats#metric Metric_true in
-    {%e|?is_true|}
+    {%e|$is_true|}
   in
-  {%q|SELECT ?select... FROM stats HAVING ?having|}
+  {%q|SELECT $select... FROM stats HAVING $having|}
 
 let sql, parse_row =
   Ch_queries.query users_stats (fun __q ->
@@ -146,6 +146,6 @@ let sql, parse_row =
       let+ x = query_metric __q Metric_count
       and+ y = query_metric __q Metric_true
       and+ z = query_metric __q Metric_sum_id
-      and+ z' = bool @@ {%e|q.metric(?{Metric_true})|}
+      and+ z' = bool @@ {%e|q.metric(${Metric_true})|}
       and+ s = string_opt {%e|q.oops|} in
       (x, y, z, s))

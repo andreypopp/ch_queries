@@ -186,7 +186,7 @@ select from a subquery (no alias default to "q"):
 
 select from an OCaml value (parameter syntax):
   $ ./compile_and_run '
-  > let users t = [%q "SELECT q.x FROM ?t AS q WHERE q.is_active"];;
+  > let users t = [%q "SELECT q.x FROM $t AS q WHERE q.is_active"];;
   > #show users
   > '
   >>> PREPROCESSING
@@ -242,7 +242,7 @@ select from an OCaml value (id syntax):
 
 splicing ocaml values into WHERE:
   $ ./compile_and_run '
-  > let users ~where = [%q "SELECT users.x AS x FROM public.users WHERE ?where"];;
+  > let users ~where = [%q "SELECT users.x AS x FROM public.users WHERE $where"];;
   > #show users
   > '
   >>> PREPROCESSING
@@ -277,7 +277,7 @@ splicing ocaml values into WHERE:
 
 splicing ocaml values into WHERE:
   $ ./compile_and_run '
-  > let users ~where = [%q "SELECT users.x AS x FROM public.users WHERE ?where:Bool"];;
+  > let users ~where = [%q "SELECT users.x AS x FROM public.users WHERE $where:Bool"];;
   > #show users
   > '
   >>> PREPROCESSING
@@ -313,7 +313,7 @@ splicing ocaml values into WHERE:
 
 splicing ocaml values into SELECT:
   $ ./compile_and_run '
-  > let users ~what = [%q "SELECT ?what AS field FROM public.users"];;
+  > let users ~what = [%q "SELECT $what AS field FROM public.users"];;
   > #show users
   > '
   >>> PREPROCESSING
@@ -346,7 +346,7 @@ splicing ocaml values into SELECT:
 
 splicing ocaml values into SELECT as scope:
   $ ./compile_and_run '
-  > let users ~what = [%q "SELECT ?what... FROM public.users"];;
+  > let users ~what = [%q "SELECT $what... FROM public.users"];;
   > #show users
   > '
   >>> PREPROCESSING

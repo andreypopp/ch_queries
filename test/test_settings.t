@@ -37,7 +37,7 @@ SETTINGS with literal values:
 
 SETTINGS with parameter:
   $ ./compile_and_run '
-  > let users ~max_threads = [%q "SELECT users.x FROM public.users SETTINGS max_threads=?max_threads"];;
+  > let users ~max_threads = [%q "SELECT users.x FROM public.users SETTINGS max_threads=$max_threads"];;
   > #show users;;
   > '
   >>> PREPROCESSING
@@ -64,7 +64,7 @@ SETTINGS with parameter:
 
 SETTINGS with splice:
   $ ./compile_and_run '
-  > let users ~settings = [%q "SELECT users.x FROM public.users SETTINGS ?settings..."];;
+  > let users ~settings = [%q "SELECT users.x FROM public.users SETTINGS $settings..."];;
   > #show users;;
   > '
   >>> PREPROCESSING
@@ -92,7 +92,7 @@ SETTINGS with splice:
 
 SETTINGS with mixed literal and splice:
   $ ./compile_and_run '
-  > let users ~extra_settings = [%q "SELECT users.x FROM public.users SETTINGS max_threads=4, ?extra_settings..., use_cache='"'"'false'"'"'"];;
+  > let users ~extra_settings = [%q "SELECT users.x FROM public.users SETTINGS max_threads=4, $extra_settings..., use_cache='"'"'false'"'"'"];;
   > #show users;;
   > '
   >>> PREPROCESSING
@@ -127,7 +127,7 @@ SETTINGS with mixed literal and splice:
 
 SETTINGS with multiple splices:
   $ ./compile_and_run '
-  > let users ~perf_settings ~cache_settings = [%q "SELECT users.x FROM public.users SETTINGS ?perf_settings..., timeout=60, ?cache_settings..."];;
+  > let users ~perf_settings ~cache_settings = [%q "SELECT users.x FROM public.users SETTINGS $perf_settings..., timeout=60, $cache_settings..."];;
   > #show users;;
   > '
   >>> PREPROCESSING

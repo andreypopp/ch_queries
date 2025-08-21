@@ -16,14 +16,15 @@ let digit = ['0'-'9']
 let letter = ['a'-'z' 'A'-'Z']
 let id_char = letter | digit | '_'
 let id = (letter | '_') id_char*
+let param_char = '$'
 
 rule token = parse
   | whitespace+             { token lexbuf }
   | newline                 { Lexing.new_line lexbuf; token lexbuf }
-  | "?" (id as param)       { PARAM param }
+  | param_char (id as param)       { PARAM param }
   | (id as x) "." (id as y) { COLUMN (x, y) }
   | eof                     { EOF }
-  | _ as c                  { 
+  | _ as c                  {
     (* Collect SQL fragment starting from this character *)
     let lex_start_p = Lexing.lexeme_start_p lexbuf in
     let buf = Buffer.create 32 in
@@ -33,14 +34,14 @@ rule token = parse
     SQL s }
 
 and sql_fragment buf = parse
-  | "?" (id as param)
+  | param_char (id as param)
     {
     (* Put back the parameter token for next parsing *)
-    let len = String.length ("?" ^ param) in
+    let len = String.length ("$" ^ param) in
     lexbuf.Lexing.lex_curr_pos <- lexbuf.Lexing.lex_curr_pos - len;
     Buffer.contents buf
     }
-  | (id as x) "." (id as y) 
+  | (id as x) "." (id as y)
     {
     (* Put back the parameter token for next parsing *)
     let len = String.length (x ^ "." ^ y) in
