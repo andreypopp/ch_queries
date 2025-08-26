@@ -111,9 +111,11 @@ let rec stage_typ typ =
   let loc = to_location typ in
   match typ.node with
   | T { node = "Date"; _ } ->
-      ([%type: Ch_queries.non_null], [%type: Ch_queries.date])
+      ( [%type: Ch_queries.non_null],
+        [%type: Ch_queries.date Ch_queries.timestamp] )
   | T { node = "DateTime"; _ } ->
-      ([%type: Ch_queries.non_null], [%type: Ch_queries.datetime])
+      ( [%type: Ch_queries.non_null],
+        [%type: Ch_queries.datetime Ch_queries.timestamp] )
   | T { node = "String"; _ } -> ([%type: Ch_queries.non_null], [%type: string])
   | T { node = "Bool"; _ } -> ([%type: Ch_queries.non_null], [%type: bool])
   | T { node = "Int8" | "UInt8" | "Int16" | "UInt16" | "Int32" | "UInt32"; _ }
