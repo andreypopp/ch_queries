@@ -193,6 +193,9 @@ let rec pp_expr opts ~parent_prec expr =
               pp_expr opts ~parent_prec:prec left
               ^/^ string "!="
               ^/^ pp_expr opts ~parent_prec:prec right
+          | "map_get", [ key; value ] ->
+              pp_expr opts ~parent_prec:0 key
+              ^^ brackets (pp_expr opts ~parent_prec:0 value)
           | _, _ ->
               let pp_args =
                 match args with

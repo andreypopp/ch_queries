@@ -64,6 +64,48 @@ arrays:
          but an expression was expected of type
            (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr
          Type bool is not compatible with type int Ch_queries.number
+string literal:
+  $ echo "let x = [%e \"'hello world'\"]"
+  let x = [%e "'hello world'"]
+  $ ./compile_and_run "let x = [%e \"'hello world'\"]"
+  >>> PREPROCESSING
+  let x = Ch_queries.string "hello world"
+  >>> RUNNING
+
+maps:
+  $ ./compile_and_run "let x = [%e \"map('aac', 1, 'bb', 2, 'cc', 3)\"]"
+  >>> PREPROCESSING
+  let x =
+    Ch_queries.Expr.map
+      [
+        (Ch_queries.string "aac", Ch_queries.int 1);
+        (Ch_queries.string "bb", Ch_queries.int 2);
+        (Ch_queries.string "cc", Ch_queries.int 3);
+      ]
+  >>> RUNNING
+
+  $ ./compile_and_run "let x = [%e \"map('a', 1, 'b')\"]"
+  >>> PREPROCESSING
+  Fatal error: exception Failure("map: odd number of arguments")
+  >>> RUNNING
+  Fatal error: exception Failure("map: odd number of arguments")
+  File "./test_query.ml", line 1:
+  Error: Error while running external preprocessor
+  Command line: /home/emile/ahrefs/ch_queries/_build/install/default/lib/ch_queries/ppx/./ppx.exe --as-ppx '/tmp/build_e69b22_dune/camlppx5e871f' '/tmp/build_e69b22_dune/camlppx915b0c'
+  
+  [2]
+  $ ./compile_and_run "let x = [%e \"map('a', 1, 'b', 2)['b']\"]"
+  >>> PREPROCESSING
+  let x =
+    Ch_queries.Expr.map_get
+      (Ch_queries.Expr.map
+         [
+           (Ch_queries.string "a", Ch_queries.int 1);
+           (Ch_queries.string "b", Ch_queries.int 2);
+         ])
+      (Ch_queries.string "b")
+  >>> RUNNING
+
 
   $ ./compile_and_run '
   > let x = [%e "arrayElement([1,2,3], 1)"]
