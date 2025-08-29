@@ -65,6 +65,26 @@ arrays:
            (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr
          Type bool is not compatible with type int Ch_queries.number
 
+  $ ./compile_and_run '
+  > let x = [%e "arrayElement([1,2,3], 1)"]
+  > '
+  >>> PREPROCESSING
+  let x =
+    Ch_queries.Expr.arrayElement
+      (Ch_queries.array [ Ch_queries.int 1; Ch_queries.int 2; Ch_queries.int 3 ])
+      (Ch_queries.int 1)
+  >>> RUNNING
+
+  $ ./compile_and_run '
+  > let x = [%e "arrayElementOrNull([1,2,3], 12)"]
+  > '
+  >>> PREPROCESSING
+  let x =
+    Ch_queries.Expr.arrayElementOrNull
+      (Ch_queries.array [ Ch_queries.int 1; Ch_queries.int 2; Ch_queries.int 3 ])
+      (Ch_queries.int 12)
+  >>> RUNNING
+
 parameter expressions:
   $ ./compile_and_run '
   > let x ~param = [%e "$param"]
