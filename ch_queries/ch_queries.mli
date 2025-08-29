@@ -242,6 +242,16 @@ module Expr : sig
   val toStartOfHour : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
   val toStartOfMinute : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
 
+  val arrayElement :
+    (non_null, ('n, 'a) array) expr ->
+    (non_null, int number) expr ->
+    ('n, 'a) expr
+
+  val arrayElementOrNull :
+    (non_null, ('n, 'a) array) expr ->
+    (non_null, int number) expr ->
+    ('m, 'a) expr
+
   val arrayFilter :
     (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
     ('m, ('n, 'a) array) expr ->

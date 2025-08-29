@@ -435,6 +435,8 @@ module Expr = struct
   let toStartOfDay date = def "toStartOfDay" [ date ]
   let toStartOfHour datetime = def "toStartOfHour" [ datetime ]
   let toStartOfMinute datetime = def "toStartOfMinute" [ datetime ]
+  let arrayElement arr i = def "arrayElement" [ arr; i ]
+  let arrayElementOrNull arr i = def "arrayElementOrNull" [ arr; i ]
 
   let make_window f ?partition_by ?order_by args =
     match (partition_by, order_by) with
