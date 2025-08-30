@@ -42,11 +42,10 @@
 %left OR
 %left AND
 %right NOT
-%left EQUALS GT LT GE LE NOT_EQUAL
+%left EQUALS GT LT GE LE NOT_EQUAL IN
 %left PLUS MINUS
 %left STAR SLASH
 %right UMINUS  (* unary minus *)
-%left IN
 
 %start a_query a_expr a_typ a_from
 %type <Syntax.query> a_query

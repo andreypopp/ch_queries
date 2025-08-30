@@ -9,11 +9,10 @@ let get_precedence op arity =
   | "OR", 2 -> 2
   | "AND", 2 -> 3
   | "NOT", 1 -> 4
-  | ("=" | ">" | "<" | ">=" | "<=" | "!="), 2 -> 5
+  | ("=" | ">" | "<" | ">=" | "<=" | "!=" | "IN"), 2 -> 5
   | ("+" | "-"), 2 -> 6
   | ("*" | "/"), 2 -> 7
   | "-", 1 -> 8 (* unary minus has high precedence *)
-  | "IN", 1 -> 9
   | _ -> 10 (* atoms: literals, function calls, etc. *)
 
 let escape_single_quoted s =
