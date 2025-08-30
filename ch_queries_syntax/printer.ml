@@ -26,16 +26,22 @@ let escape_single_quoted s =
     | c -> Buffer.add_char buf c);
   Buffer.contents buf
 
-let rec pp_expr ~parent_prec expr =
+type opts = {
+  force_parens : bool;
+      (* Force parentheses around expressions, even if they are not needed following precedence rules. *)
+}
+
+let rec pp_expr opts ~parent_prec expr =
   match expr.node with
-  | E_unsafe_concat xs -> group (separate_map empty (pp_expr ~parent_prec:0) xs)
+  | E_unsafe_concat xs ->
+      group (separate_map empty (pp_expr opts ~parent_prec:0) xs)
   | E_unsafe id -> string id.node
   | E_id id -> pp_id id
   | E_col (ns, id) -> string (Printf.sprintf "%s.%s" ns.node id.node)
   | E_query (ns, expr) ->
       group
         (string (Printf.sprintf "%s." ns.node)
-        ^^ parens (pp_expr ~parent_prec:0 expr))
+        ^^ parens (pp_expr opts ~parent_prec:0 expr))
   | E_lit (L_int n) -> string (string_of_int n)
   | E_lit (L_float n) -> string (string_of_float n)
   | E_lit L_null -> string "NULL"
@@ -64,7 +70,7 @@ let rec pp_expr ~parent_prec expr =
         | _ ->
             separate
               (string "," ^^ space)
-              (List.map ~f:(pp_expr ~parent_prec:0) args)
+              (List.map ~f:(pp_expr opts ~parent_prec:0) args)
       in
       let pp_partition_by =
         match window_spec.partition_by with
@@ -73,7 +79,7 @@ let rec pp_expr ~parent_prec expr =
             string "PARTITION BY" ^^ space
             ^^ separate
                  (string "," ^^ space)
-                 (List.map ~f:pp_dimension dimensions)
+                 (List.map ~f:(pp_dimension opts) dimensions)
       in
       let pp_order_by =
         match window_spec.order_by with
@@ -81,9 +87,9 @@ let rec pp_expr ~parent_prec expr =
         | Some orders ->
             let pp_order = function
               | Order_by_expr (expr, `ASC) ->
-                  pp_expr ~parent_prec:0 expr ^^ space ^^ string "ASC"
+                  pp_expr opts ~parent_prec:0 expr ^^ space ^^ string "ASC"
               | Order_by_expr (expr, `DESC) ->
-                  pp_expr ~parent_prec:0 expr ^^ space ^^ string "DESC"
+                  pp_expr opts ~parent_prec:0 expr ^^ space ^^ string "DESC"
               | Order_by_splice id -> pp_id id
             in
             string "ORDER BY" ^^ space
@@ -106,83 +112,85 @@ let rec pp_expr ~parent_prec expr =
       match func with
       | Func name -> (
           let parens_if_needed content =
-            let prec = get_precedence name.node (List.length args) in
-            if prec < parent_prec then group (parens (content prec))
-            else group (content prec)
+            if opts.force_parens then group (parens (content 0))
+            else
+              let prec = get_precedence name.node (List.length args) in
+              if prec < parent_prec then group (parens (content prec))
+              else group (content prec)
           in
           match (name.node, args) with
           | "+", [ left; right ] ->
               parens_if_needed @@ fun prec ->
-              pp_expr ~parent_prec:prec left
+              pp_expr opts ~parent_prec:prec left
               ^/^ string "+"
-              ^/^ pp_expr ~parent_prec:prec right
+              ^/^ pp_expr opts ~parent_prec:prec right
           | "[", xs ->
               brackets
-                (List.map ~f:(pp_expr ~parent_prec:0) xs
+                (List.map ~f:(pp_expr opts ~parent_prec:0) xs
                 |> separate (string "," ^^ space))
           | "-", [ left; right ] ->
               parens_if_needed @@ fun prec ->
-              pp_expr ~parent_prec:prec left
+              pp_expr opts ~parent_prec:prec left
               ^/^ string "-"
               (* Right operand gets prec+1 to enforce left associativity: a-b-c not a-(b-c) *)
-              ^/^ pp_expr ~parent_prec:(prec + 1) right
+              ^/^ pp_expr opts ~parent_prec:(prec + 1) right
           | "*", [ left; right ] ->
               parens_if_needed @@ fun prec ->
-              pp_expr ~parent_prec:prec left
+              pp_expr opts ~parent_prec:prec left
               ^/^ string "*"
-              ^/^ pp_expr ~parent_prec:prec right
+              ^/^ pp_expr opts ~parent_prec:prec right
           | "/", [ left; right ] ->
               parens_if_needed @@ fun prec ->
-              pp_expr ~parent_prec:prec left
+              pp_expr opts ~parent_prec:prec left
               ^/^ string "/"
               (* Right operand gets prec+1 to enforce left associativity: a/b/c not a/(b/c) *)
-              ^/^ pp_expr ~parent_prec:(prec + 1) right
+              ^/^ pp_expr opts ~parent_prec:(prec + 1) right
           | "AND", [ left; right ] ->
               parens_if_needed @@ fun prec ->
-              pp_expr ~parent_prec:prec left
+              pp_expr opts ~parent_prec:prec left
               ^/^ string "AND"
-              ^/^ pp_expr ~parent_prec:prec right
+              ^/^ pp_expr opts ~parent_prec:prec right
           | "OR", [ left; right ] ->
               parens_if_needed @@ fun prec ->
-              pp_expr ~parent_prec:prec left
+              pp_expr opts ~parent_prec:prec left
               ^/^ string "OR"
-              ^/^ pp_expr ~parent_prec:prec right
+              ^/^ pp_expr opts ~parent_prec:prec right
           | "NOT", [ operand ] ->
               parens_if_needed @@ fun prec ->
-              string "NOT" ^/^ pp_expr ~parent_prec:prec operand
+              string "NOT" ^/^ pp_expr opts ~parent_prec:prec operand
           | "-", [ operand ] ->
               parens_if_needed @@ fun prec ->
-              string "-" ^^ pp_expr ~parent_prec:prec operand
+              string "-" ^^ pp_expr opts ~parent_prec:prec operand
           | "=", [ left; right ] ->
               parens_if_needed @@ fun prec ->
-              pp_expr ~parent_prec:prec left
+              pp_expr opts ~parent_prec:prec left
               ^/^ string "="
-              ^/^ pp_expr ~parent_prec:prec right
+              ^/^ pp_expr opts ~parent_prec:prec right
           | ">", [ left; right ] ->
               parens_if_needed @@ fun prec ->
-              pp_expr ~parent_prec:prec left
+              pp_expr opts ~parent_prec:prec left
               ^/^ string ">"
-              ^/^ pp_expr ~parent_prec:prec right
+              ^/^ pp_expr opts ~parent_prec:prec right
           | "<", [ left; right ] ->
               parens_if_needed @@ fun prec ->
-              pp_expr ~parent_prec:prec left
+              pp_expr opts ~parent_prec:prec left
               ^/^ string "<"
-              ^/^ pp_expr ~parent_prec:prec right
+              ^/^ pp_expr opts ~parent_prec:prec right
           | ">=", [ left; right ] ->
               parens_if_needed @@ fun prec ->
-              pp_expr ~parent_prec:prec left
+              pp_expr opts ~parent_prec:prec left
               ^/^ string ">="
-              ^/^ pp_expr ~parent_prec:prec right
+              ^/^ pp_expr opts ~parent_prec:prec right
           | "<=", [ left; right ] ->
               parens_if_needed @@ fun prec ->
-              pp_expr ~parent_prec:prec left
+              pp_expr opts ~parent_prec:prec left
               ^/^ string "<="
-              ^/^ pp_expr ~parent_prec:prec right
+              ^/^ pp_expr opts ~parent_prec:prec right
           | "!=", [ left; right ] ->
               parens_if_needed @@ fun prec ->
-              pp_expr ~parent_prec:prec left
+              pp_expr opts ~parent_prec:prec left
               ^/^ string "!="
-              ^/^ pp_expr ~parent_prec:prec right
+              ^/^ pp_expr opts ~parent_prec:prec right
           | _, _ ->
               let pp_args =
                 match args with
@@ -190,7 +198,7 @@ let rec pp_expr ~parent_prec expr =
                 | _ ->
                     separate
                       (string "," ^^ space)
-                      (List.map ~f:(pp_expr ~parent_prec:0) args)
+                      (List.map ~f:(pp_expr opts ~parent_prec:0) args)
               in
               group (pp_id name ^^ string "(" ^^ pp_args ^^ string ")"))
       | Func_method (table, method_name) ->
@@ -200,7 +208,7 @@ let rec pp_expr ~parent_prec expr =
             | _ ->
                 separate
                   (string "," ^^ space)
-                  (List.map ~f:(pp_expr ~parent_prec:0) args)
+                  (List.map ~f:(pp_expr opts ~parent_prec:0) args)
           in
           group
             (pp_id table ^^ string "." ^^ pp_id method_name ^^ string "("
@@ -212,36 +220,35 @@ let rec pp_expr ~parent_prec expr =
       let content =
         match in_query with
         | In_query query ->
-            pp_expr ~parent_prec:prec expr
+            pp_expr opts ~parent_prec:prec expr
             ^/^ string "IN" ^/^ lparen
-            ^^ nest 2 (break 0 ^^ pp_query query ^^ rparen)
+            ^^ nest 2 (break 0 ^^ pp_query opts query ^^ rparen)
         | In_expr expr' ->
-            pp_expr ~parent_prec:prec expr
+            pp_expr opts ~parent_prec:prec expr
             ^/^ string "IN"
-            ^/^ pp_expr ~parent_prec:prec expr'
+            ^/^ pp_expr opts ~parent_prec:prec expr'
       in
       if needs_parens then group (parens content) else group content
   | E_lambda (param, body) ->
-      let prec = 1 in
-      (* arrow has lowest precedence *)
-      let needs_parens = prec < parent_prec in
-      let content =
-        pp_id param ^/^ string "->" ^/^ pp_expr ~parent_prec:prec body
-      in
-      if needs_parens then group (parens content) else group content
+      (* we will always print lambdas with parentheses around them *)
+      group
+        (parens
+           (pp_id param ^/^ string "->"
+           ^/^ parens (pp_expr opts ~parent_prec:0 body)))
 
-and pp_dimension = function
-  | Dimension_expr expr -> pp_expr ~parent_prec:0 expr
+and pp_dimension opts = function
+  | Dimension_expr expr -> pp_expr opts ~parent_prec:0 expr
   | Dimension_splice id -> pp_id id ^^ string "..."
 
-and pp_field { expr; alias } =
+and pp_field opts { expr; alias } =
   match alias with
-  | None -> pp_expr ~parent_prec:0 expr
-  | Some alias_name -> group (pp_expr ~parent_prec:0 expr ^^ pp_as alias_name)
+  | None -> pp_expr opts ~parent_prec:0 expr
+  | Some alias_name ->
+      group (pp_expr opts ~parent_prec:0 expr ^^ pp_as alias_name)
 
 and pp_as id = group (nest 2 (break 1 ^^ string (sprintf "AS %s" id.node)))
 
-and pp_from_one from_one =
+and pp_from_one opts from_one =
   match from_one.node with
   | F_table { db; table; alias; final } ->
       let base = pp_id db ^^ string "." ^^ pp_id table in
@@ -256,18 +263,20 @@ and pp_from_one from_one =
       group
         (string "cluster" ^^ lparen ^^ pp_cluster_name ^^ comma ^^ space
        ^^ string "view" ^^ lparen
-        ^^ nest 2 (break 0 ^^ pp_query select)
+        ^^ nest 2 (break 0 ^^ pp_query opts select)
         ^^ rparen ^^ rparen ^^ pp_as alias)
   | F_select { select; alias; cluster_name = None } ->
       group
-        (lparen ^^ nest 2 (break 0 ^^ pp_query select ^^ rparen) ^^ pp_as alias)
+        (lparen
+        ^^ nest 2 (break 0 ^^ pp_query opts select ^^ rparen)
+        ^^ pp_as alias)
   | F_param { id; alias; final } ->
       let final = if final then string " FINAL" else empty in
       group (pp_id id ^^ pp_as alias ^^ final)
 
-and pp_from from =
+and pp_from opts from =
   match from.node with
-  | F from_one -> pp_from_one from_one
+  | F from_one -> pp_from_one opts from_one
   | F_join { kind; from; join; on; _ } ->
       let join_kind_str =
         match kind with
@@ -276,12 +285,14 @@ and pp_from from =
         | `LEFT_JOIN_OPTIONAL -> "LEFT JOIN OPTIONAL"
       in
       group
-        (pp_from from ^/^ group (string join_kind_str ^/^ pp_from_one join)
-       ^/^ group (string "ON" ^/^ pp_expr ~parent_prec:0 on))
+        (pp_from opts from
+        ^/^ group (string join_kind_str ^/^ pp_from_one opts join)
+        ^/^ group (string "ON" ^/^ pp_expr opts ~parent_prec:0 on))
 
-and pp_query { node; eq = _; loc = _ } =
+and pp_query opts { node; eq = _; loc = _ } =
   match node with
-  | Q_union (q1, q2) -> group (pp_query q1 ^/^ string "UNION" ^/^ pp_query q2)
+  | Q_union (q1, q2) ->
+      group (pp_query opts q1 ^/^ string "UNION" ^/^ pp_query opts q2)
   | Q_param id -> string "?" ^^ pp_id id
   | Q_select
       {
@@ -300,28 +311,31 @@ and pp_query { node; eq = _; loc = _ } =
       let pp_fields =
         match select with
         | Select_fields fields ->
-            separate (string "," ^^ break 1) (List.map ~f:pp_field fields)
+            separate
+              (string "," ^^ break 1)
+              (List.map ~f:(pp_field opts) fields)
         | Select_splice id -> pp_id id ^^ string "..."
       in
       let select = group (string "SELECT" ^^ nest 2 (break 1 ^^ pp_fields)) in
-      let from = group (string "FROM " ^^ pp_from from) in
+      let from = group (string "FROM " ^^ pp_from opts from) in
       let prewhere =
         match prewhere with
         | None -> None
         | Some expr ->
-            Some (group (string "PREWHERE" ^/^ pp_expr ~parent_prec:0 expr))
+            Some
+              (group (string "PREWHERE" ^/^ pp_expr opts ~parent_prec:0 expr))
       in
       let where =
         match where with
         | None -> None
         | Some expr ->
-            Some (group (string "WHERE" ^/^ pp_expr ~parent_prec:0 expr))
+            Some (group (string "WHERE" ^/^ pp_expr opts ~parent_prec:0 expr))
       in
       let qualify =
         match qualify with
         | None -> None
         | Some expr ->
-            Some (group (string "QUALIFY" ^/^ pp_expr ~parent_prec:0 expr))
+            Some (group (string "QUALIFY" ^/^ pp_expr opts ~parent_prec:0 expr))
       in
       let group_by =
         match group_by with
@@ -331,7 +345,8 @@ and pp_query { node; eq = _; loc = _ } =
               match dimensions with
               | [] -> string "()"
               | dimensions ->
-                  separate (string ", ") (List.map ~f:pp_dimension dimensions)
+                  separate (string ", ")
+                    (List.map ~f:(pp_dimension opts) dimensions)
             in
             Some (group (string "GROUP BY " ^^ dimensions))
       in
@@ -339,7 +354,7 @@ and pp_query { node; eq = _; loc = _ } =
         match having with
         | None -> None
         | Some expr ->
-            Some (group (string "HAVING" ^/^ pp_expr ~parent_prec:0 expr))
+            Some (group (string "HAVING" ^/^ pp_expr opts ~parent_prec:0 expr))
       in
       let order_by =
         match order_by with
@@ -349,7 +364,9 @@ and pp_query { node; eq = _; loc = _ } =
               | Syntax.Order_by_splice id -> pp_id id ^^ string "..."
               | Syntax.Order_by_expr (expr, dir) ->
                   let dir = match dir with `ASC -> "ASC" | `DESC -> "DESC" in
-                  group (pp_expr ~parent_prec:0 expr ^^ string " " ^^ string dir)
+                  group
+                    (pp_expr opts ~parent_prec:0 expr
+                    ^^ string " " ^^ string dir)
             in
             let pp_items = separate (string ", ") (List.map ~f:pp_item items) in
             Some (group (string "ORDER BY " ^^ pp_items))
@@ -358,13 +375,13 @@ and pp_query { node; eq = _; loc = _ } =
         match limit with
         | None -> None
         | Some expr ->
-            Some (group (string "LIMIT" ^/^ pp_expr ~parent_prec:0 expr))
+            Some (group (string "LIMIT" ^/^ pp_expr opts ~parent_prec:0 expr))
       in
       let offset =
         match offset with
         | None -> None
         | Some expr ->
-            Some (group (string "OFFSET" ^/^ pp_expr ~parent_prec:0 expr))
+            Some (group (string "OFFSET" ^/^ pp_expr opts ~parent_prec:0 expr))
       in
       let settings =
         match settings with
@@ -435,6 +452,7 @@ let print' pp v =
   ToBuffer.pretty 1.0 80 buffer (pp v);
   Buffer.contents buffer
 
-let print_expr = print' (pp_expr ~parent_prec:0)
-let print_query = print' pp_query
-let print_from_one = print' pp_from_one
+let print_expr ?(force_parens = false) e =
+  print' (pp_expr { force_parens } ~parent_prec:0) e
+
+let print_query ?(force_parens = false) q = print' (pp_query { force_parens }) q

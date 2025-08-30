@@ -1,20 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(find:*)",
-      "Bash(ls:*)",
-      "WebFetch(domain:dune.build)",
-      "WebFetch(domain:dune.readthedocs.io)",
-      "Bash(opam install:*)",
-      "Bash(ocamlfind:*)",
-      "Bash(dune build:*)",
-      "Bash(DUNE_CONFIG__GLOBAL_LOCK=disabled dune exec queries --no-build -- *)",
-      "Bash(dune test:*)",
-      "Bash(dune promote:*)",
-      "Bash(DUNE_CONFIG__GLOBAL_LOCK=disabled dune exec queries --no-build -- --help)",
-      "Bash(DUNE_CONFIG__GLOBAL_LOCK=disabled dune exec queries --no-build -- parse 'SELECT 1 AS x FROM public.users UNION SELECT 2 AS x FROM public.users')",
-      "Bash(sed:*)"
+      "Bash(dune build:*)"
     ],
-    "deny": []
+    "deny": [],
+    "ask": []
   }
 }

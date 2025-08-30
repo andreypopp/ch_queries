@@ -76,23 +76,23 @@ parsing arrays:
 
 parsing lambda expressions:
   $ ch_queries parse 'SELECT arrayMap(x -> x + 1, [1, 2, 3]) FROM db.table'
-  SELECT arrayMap(x -> x + 1, [1, 2, 3]) FROM db.table AS table
+  SELECT arrayMap((x -> (x + 1)), [1, 2, 3]) FROM db.table AS table
 
   $ ch_queries parse 'SELECT arrayFilter(item -> item + 1, t.numbers) FROM db.table AS t'
-  SELECT arrayFilter(item -> item + 1, t.numbers) FROM db.table AS t
+  SELECT arrayFilter((item -> (item + 1)), t.numbers) FROM db.table AS t
 
   $ ch_queries parse 'SELECT arrayReduce(x -> x * 2, t.arr) FROM db.table AS t'
-  SELECT arrayReduce(x -> x * 2, t.arr) FROM db.table AS t
+  SELECT arrayReduce((x -> (x * 2)), t.arr) FROM db.table AS t
 
 parsing nested lambda expressions:
   $ ch_queries parse 'SELECT arrayMap(x -> arrayMap(y -> x + y, [1, 2]), [3, 4]) FROM db.table'
-  SELECT arrayMap(x -> arrayMap(y -> x + y, [1, 2]), [3, 4])
+  SELECT arrayMap((x -> (arrayMap((y -> (x + y)), [1, 2]))), [3, 4])
   FROM db.table AS table
 
 parsing lambda with complex body:
   $ ch_queries parse 'SELECT arrayMap(x -> x * 2 + 1, t.nums) FROM db.table AS t'
-  SELECT arrayMap(x -> x * 2 + 1, t.nums) FROM db.table AS t
+  SELECT arrayMap((x -> (x * 2 + 1)), t.nums) FROM db.table AS t
 
 parsing lambda with parentheses:
   $ ch_queries parse 'SELECT arrayMap((x -> x + 1), t.arr) FROM db.table AS t'
-  SELECT arrayMap(x -> x + 1, t.arr) FROM db.table AS t
+  SELECT arrayMap((x -> (x + 1)), t.arr) FROM db.table AS t

@@ -6,18 +6,15 @@ let version_cmd =
   Cmd.v (Cmd.info "version" ~doc) Term.(const version $ const ())
 
 let parse_cmd =
-  let doc = "Parse a SQL query" in
-  let query =
-    let doc = "SQL query to parse" in
-    Arg.(required & pos 0 (some string) None & info [] ~docv:"QUERY" ~doc)
-  in
-  let parse_query query_str =
+  let parse_query query force_parens =
     try
-      let lexbuf = Lexing.from_string query_str in
+      let lexbuf = Lexing.from_string query in
       let query =
         Ch_queries_syntax.Parser.a_query Ch_queries_syntax.Lexer.token lexbuf
       in
-      let pretty_printed = Ch_queries_syntax.Printer.print_query query in
+      let pretty_printed =
+        Ch_queries_syntax.Printer.print_query ~force_parens query
+      in
       print_endline pretty_printed
     with
     | Ch_queries_syntax.Lexer.Error msg ->
@@ -27,7 +24,18 @@ let parse_cmd =
         Printf.eprintf "Parse error\n";
         exit 1
   in
-  Cmd.v (Cmd.info "parse" ~doc) Term.(const parse_query $ query)
+  Cmd.v
+    (Cmd.info "parse" ~doc:"parse query and pretty-print it back")
+    Term.(
+      const parse_query
+      $ Arg.(
+          required
+          & pos 0 (some string) None
+          & info [] ~docv:"QUERY" ~doc:"SQL query to parse")
+      $ Arg.(
+          value & flag
+          & info [ "print-force-parens" ]
+              ~doc:"force parentheses when printing the query"))
 
 let parse_expr_cmd =
   let doc = "Parse a SQL expression" in
