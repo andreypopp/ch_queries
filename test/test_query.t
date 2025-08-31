@@ -277,7 +277,7 @@ splicing ocaml values into WHERE:
 
 splicing ocaml values into WHERE:
   $ ./compile_and_run '
-  > let users ~where = [%q "SELECT users.x AS x FROM public.users WHERE $where:Bool"];;
+  > let users ~where = [%q "SELECT users.x AS x FROM public.users WHERE $where::Bool"];;
   > #show users
   > '
   >>> PREPROCESSING

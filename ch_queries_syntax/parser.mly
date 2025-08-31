@@ -20,7 +20,7 @@
 %token <string> STRING
 %token <int> NUMBER
 %token TRUE FALSE
-%token SELECT FROM PREWHERE WHERE AS DOT COLON
+%token SELECT FROM PREWHERE WHERE AS DOT COLONCOLON
 %token LPAREN RPAREN LBRACKET RBRACKET COMMA
 %token PLUS MINUS STAR SLASH EQUALS GT LT GE LE NOT_EQUAL
 %token AND OR NOT
@@ -268,7 +268,7 @@ expr:
     { make_expr $startpos $endpos (E_window (fn, args, window_spec)) }
   | param=param
     { make_expr $startpos $endpos (E_param (param, None)) }
-  | param=param COLON typ=typ
+  | param=param COLONCOLON typ=typ
     { make_expr $startpos $endpos (E_param (param, Some typ)) }
   | ocaml_expr=OCAML_EXPR
     { make_expr $startpos $endpos (E_ocaml_expr ocaml_expr) }

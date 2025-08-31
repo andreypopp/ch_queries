@@ -80,7 +80,7 @@
     | Parser.WHERE -> "WHERE"
     | Parser.AS -> "AS"
     | Parser.DOT -> "DOT"
-    | Parser.COLON -> "COLON"
+    | Parser.COLONCOLON -> "COLONCOLON"
     | Parser.LPAREN -> "LPAREN"
     | Parser.RPAREN -> "RPAREN"
     | Parser.LBRACKET -> "LBRACKET"
@@ -176,7 +176,7 @@ rule token = parse
   | ']'                 { RBRACKET }
   | ','                 { COMMA }
   | '.'                 { DOT }
-  | ':'                 { COLON }
+  | ':' ':'             { COLONCOLON }
   | '+'                 { PLUS }
   | '-'                 { MINUS }
   | '*'                 { STAR }

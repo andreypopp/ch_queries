@@ -95,7 +95,7 @@ parameter expressions:
 
 parameter expressions with type annotation:
   $ ./compile_and_run '
-  > let x ~param = [%e "$param:String"]
+  > let x ~param = [%e "$param::String"]
   > '
   >>> PREPROCESSING
   let x ~param = (param : (Ch_queries.non_null, string) Ch_queries.expr)
@@ -103,7 +103,7 @@ parameter expressions with type annotation:
 
 parameter expressions with numeric types:
   $ ./compile_and_run '
-  > let x ~param = [%e "$param:Int32"]
+  > let x ~param = [%e "$param::Int32"]
   > '
   >>> PREPROCESSING
   let x ~param =
@@ -111,7 +111,7 @@ parameter expressions with numeric types:
   >>> RUNNING
 
   $ ./compile_and_run '
-  > let x ~param = [%e "$param:Int64"]
+  > let x ~param = [%e "$param::Int64"]
   > '
   >>> PREPROCESSING
   let x ~param =
@@ -119,7 +119,7 @@ parameter expressions with numeric types:
   >>> RUNNING
 
   $ ./compile_and_run '
-  > let x ~param = [%e "$param:Float64"]
+  > let x ~param = [%e "$param::Float64"]
   > '
   >>> PREPROCESSING
   let x ~param =
@@ -128,14 +128,14 @@ parameter expressions with numeric types:
 
 parameter expressions with nullable types:
   $ ./compile_and_run '
-  > let x ~param = [%e "$param:Nullable(String)"]
+  > let x ~param = [%e "$param::Nullable(String)"]
   > '
   >>> PREPROCESSING
   let x ~param = (param : (Ch_queries.null, string) Ch_queries.expr)
   >>> RUNNING
 
   $ ./compile_and_run '
-  > let x ~param = [%e "$param:Nullable(Int32)"]
+  > let x ~param = [%e "$param::Nullable(Int32)"]
   > '
   >>> PREPROCESSING
   let x ~param =
@@ -144,7 +144,7 @@ parameter expressions with nullable types:
 
 parameter expressions with array types:
   $ ./compile_and_run '
-  > let x ~param = [%e "$param:Array(String)"]
+  > let x ~param = [%e "$param::Array(String)"]
   > '
   >>> PREPROCESSING
   let x ~param =
@@ -155,7 +155,7 @@ parameter expressions with array types:
   >>> RUNNING
 
   $ ./compile_and_run '
-  > let x ~param = [%e "$param:Array(Int32)"]
+  > let x ~param = [%e "$param::Array(Int32)"]
   > '
   >>> PREPROCESSING
   let x ~param =
@@ -167,7 +167,7 @@ parameter expressions with array types:
 
 parameter expressions with nested complex types:
   $ ./compile_and_run '
-  > let x ~param = [%e "$param:Array(Nullable(String))"]
+  > let x ~param = [%e "$param::Array(Nullable(String))"]
   > '
   >>> PREPROCESSING
   let x ~param =
