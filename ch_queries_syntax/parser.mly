@@ -216,7 +216,11 @@ join_kind:
 
 expr:
     id=id
-    { make_expr $startpos $endpos (E_id id) }
+    { if String.equal (String.uppercase_ascii id.node) "NULL" then
+        make_expr $startpos $endpos (E_lit L_null)
+      else
+        make_expr $startpos $endpos (E_id id) 
+    }
   | ns=id DOT id=id
     { make_expr $startpos $endpos (E_col (ns, id)) }
   | ns=id DOT LPAREN e=expr RPAREN
