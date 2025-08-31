@@ -3,10 +3,12 @@
  (name ch_queries_ppx)
  (libraries ppxlib ch_queries.syntax)
  (kind ppx_rewriter)
+ (flags
+  (:standard -open ContainersLabels))
  (ppx_runtime_libraries ch_queries)
  (modules :standard \ main)
  (preprocess
-  (pps ppxlib.metaquot)))
+  (pps ppxlib.metaquot ppx_compare)))
 
 (executable
  (name main)

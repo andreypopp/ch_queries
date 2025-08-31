@@ -1,4 +1,3 @@
-open ContainersLabels
 open Ppxlib
 open Ast_builder.Default
 open Ch_queries_syntax
