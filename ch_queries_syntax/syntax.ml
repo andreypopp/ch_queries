@@ -22,14 +22,14 @@ and exprsyn =
       (** encodes function calls and operators as well *)
   | E_window of id * expr list * window_spec
       (** window function, e.g. f(..)OVER(...) *)
-  | E_param of id * typ option
-      (** param for splicing OCaml values, ?param or ?param:typ *)
+  | E_param of id  (** param for splicing OCaml values, ?param *)
   | E_ocaml_expr of string  (** OCaml expression for splicing *)
   | E_in of expr * in_query
       (** in-query, e.g. `expr IN (query)` or `expr IN (expr)` *)
   | E_lambda of id * expr  (** lambda expression: param -> body *)
   | E_unsafe of string node  (** unsafe injection of an SQL fragment *)
   | E_unsafe_concat of expr list  (** unsafe concatenation of SQL fragments *)
+  | E_ascribe of expr * typ  (** type ascription, e.g. `expr: Typ` *)
 
 and func = Func of id | Func_method of id * id
 

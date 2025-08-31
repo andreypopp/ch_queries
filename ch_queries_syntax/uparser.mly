@@ -35,7 +35,7 @@ uexpr_items:
 uexpr_item:
     param=PARAM { 
       let id = make_id $startpos $endpos param in
-      make_expr $startpos $endpos (E_param (id, None)) 
+      make_expr $startpos $endpos (E_param id) 
     }
   | col=COLUMN { 
       let x, y = col in

@@ -33,6 +33,10 @@ type opts = {
 
 let rec pp_expr opts ~parent_prec expr =
   match expr.node with
+  | E_ascribe (expr, typ) ->
+      group
+        (pp_expr opts ~parent_prec expr
+        ^^ space ^^ string ":" ^^ space ^^ pp_typ typ)
   | E_unsafe_concat xs ->
       group (separate_map empty (pp_expr opts ~parent_prec:0) xs)
   | E_unsafe id -> string id.node
@@ -60,9 +64,7 @@ let rec pp_expr opts ~parent_prec expr =
         | Second -> "SECONDS"
       in
       string (Printf.sprintf "INTERVAL %d %s" n unit_str)
-  | E_param (v, typ) -> (
-      let base = string v.node in
-      match typ with None -> base | Some t -> base ^^ string ":" ^^ pp_typ t)
+  | E_param v -> string v.node
   | E_window (name, args, window_spec) ->
       let pp_args =
         match args with

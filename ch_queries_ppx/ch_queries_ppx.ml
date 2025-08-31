@@ -201,6 +201,11 @@ let parse_ocaml_expr ~loc ocaml_code =
 let rec stage_expr ~params ~(from : from_ctx) expr =
   let loc = to_location expr in
   match expr.node with
+  | Syntax.E_ascribe (e, t) ->
+      let e = stage_expr ~params ~from e in
+      let n, ocaml_t = stage_typ t in
+      let typed_expr_type = [%type: ([%t n], [%t ocaml_t]) Ch_queries.expr] in
+      [%expr ([%e e] : [%t typed_expr_type])]
   | Syntax.E_unsafe_concat xs ->
       let xs =
         List.map xs ~f:(fun e ->
@@ -283,19 +288,9 @@ let rec stage_expr ~params ~(from : from_ctx) expr =
           refer_to_scope ~loc scope method_name ~map:(fun e ->
               let staged_args = List.map args ~f:(stage_expr ~params ~from) in
               eapply ~loc e staged_args))
-  | Syntax.E_param (var, typ) -> (
+  | Syntax.E_param var -> (
       let e = evar ~loc var.node in
-      let e_with_scope =
-        match from with From_none -> e | From _ -> [%expr [%e e] __q]
-      in
-      match typ with
-      | None -> e_with_scope
-      | Some t ->
-          let n, ocaml_t = stage_typ t in
-          let typed_expr_type =
-            [%type: ([%t n], [%t ocaml_t]) Ch_queries.expr]
-          in
-          [%expr ([%e e_with_scope] : [%t typed_expr_type])])
+      match from with From_none -> e | From _ -> [%expr [%e e] __q])
   | Syntax.E_ocaml_expr ocaml_code -> parse_ocaml_expr ~loc ocaml_code
   | Syntax.E_in (expr, in_query) -> (
       let expr = stage_expr ~params ~from expr in
@@ -303,7 +298,7 @@ let rec stage_expr ~params ~(from : from_ctx) expr =
       | Syntax.In_query query ->
           let query = stage_query query in
           [%expr Ch_queries.in_ [%e expr] (Ch_queries.In_query [%e query])]
-      | Syntax.In_expr { node = E_param (param, _typ); _ } ->
+      | Syntax.In_expr { node = E_param param; _ } ->
           (* special for [E in ?param], we don't treat it as expression *)
           let loc = to_location param in
           let param = param.node in
@@ -322,7 +317,7 @@ and stage_dimensions ~loc ~from dimensions =
   let body =
     List.map dimensions ~f:(function
       | Syntax.Dimension_splice id ->
-          let e = Syntax.make_expr ~loc:id.loc (E_param (id, None)) in
+          let e = Syntax.make_expr ~loc:id.loc (E_param id) in
           stage_expr ~params:[] ~from e
       | Syntax.Dimension_expr expr ->
           let expr = stage_expr ~params:[] ~from expr in
@@ -334,7 +329,7 @@ and stage_order_by ~loc ~from order_by =
   let xs =
     List.map order_by ~f:(function
       | Syntax.Order_by_splice id ->
-          let e = Syntax.make_expr ~loc:id.loc (E_param (id, None)) in
+          let e = Syntax.make_expr ~loc:id.loc (E_param id) in
           stage_expr ~params:[] ~from e
       | Syntax.Order_by_expr (expr, dir) ->
           let expr = stage_expr ~params:[] ~from expr in
@@ -364,14 +359,12 @@ and stage_settings ~loc settings =
                 Location.raise_errorf ~loc
                   "INTERVAL is not supported in settings"
             | Syntax.Setting_param param ->
-                let e =
-                  Syntax.make_expr ~loc:param.loc (E_param (param, None))
-                in
+                let e = Syntax.make_expr ~loc:param.loc (E_param param) in
                 stage_expr ~params:[] ~from:From_none e
           in
           [%expr [ ([%e id_str], [%e value_expr]) ]]
       | Syntax.Setting_splice id ->
-          let e = Syntax.make_expr ~loc:id.loc (E_param (id, None)) in
+          let e = Syntax.make_expr ~loc:id.loc (E_param id) in
           stage_expr ~params:[] ~from:From_none e)
   in
   [%expr List.concat [%e elist ~loc body]]
@@ -389,7 +382,7 @@ and stage_field ~from idx { Syntax.expr; alias } =
           match expr.node with
           | E_id id -> (id.node, loc)
           | E_col (_, id) -> (id.node, loc)
-          | E_param (id, _) -> (id.node, loc)
+          | E_param id -> (id.node, loc)
           | _ -> ("_" ^ string_of_int idx, loc))
     in
     Located.mk ~loc name

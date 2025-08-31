@@ -46,6 +46,7 @@
 %left PLUS MINUS
 %left STAR SLASH
 %right UMINUS  (* unary minus *)
+%left COLONCOLON
 
 %start a_query a_expr a_typ a_from
 %type <Syntax.query> a_query
@@ -267,9 +268,7 @@ expr:
   | fn=id LPAREN args=separated_list(COMMA, expr) RPAREN OVER LPAREN window_spec=window_spec RPAREN
     { make_expr $startpos $endpos (E_window (fn, args, window_spec)) }
   | param=param
-    { make_expr $startpos $endpos (E_param (param, None)) }
-  | param=param COLONCOLON typ=typ
-    { make_expr $startpos $endpos (E_param (param, Some typ)) }
+    { make_expr $startpos $endpos (E_param param) }
   | ocaml_expr=OCAML_EXPR
     { make_expr $startpos $endpos (E_ocaml_expr ocaml_expr) }
   | param_type=CH_PARAM
@@ -280,3 +279,5 @@ expr:
     { make_expr $startpos $endpos (E_in (e, In_expr e_rhs)) }
   | param=id ARROW body=expr
     { make_expr $startpos $endpos (E_lambda (param, body)) }
+  | e=expr COLONCOLON t=typ
+    { make_expr $startpos $endpos (E_ascribe (e, t)) }
