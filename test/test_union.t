@@ -11,12 +11,7 @@ Programmatic union
   4 | let users = [%q $users1 UNION $users2"];;
                       ^
   Error: Syntax error
-  >>> RUNNING
-  File "./test_query.ml", line 10, characters 16-17:
-  10 | let users = [%q $users1 UNION $users2"];;
-                       ^
-  Error: Syntax error
-  [2]
+  [1]
 
 UNION syntax:
   $ ./compile_and_run '

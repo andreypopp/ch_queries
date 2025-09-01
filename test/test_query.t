@@ -73,10 +73,7 @@ otherwise, an error is raised:
   >>> PREPROCESSING
   File "-", line 2, characters 24-25:
   Error: ambiguous column reference
-  >>> RUNNING
-  File "./test_query.ml", line 8, characters 24-25:
-  Error: ambiguous column reference
-  [2]
+  [1]
 
 select from a subquery:
   $ ./compile_and_run '

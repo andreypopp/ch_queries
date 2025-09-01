@@ -91,19 +91,13 @@ maps:
      Ch_queries.map)
     Ch_queries.expr
 
-  $ ./compile_and_run "let x = [%e \"map('a', 1, 'b')\"]" > out 2> err
-  [2]
-  $ cat out
+  $ ./compile_and_run "let x = {%e|map('a', 1, 'b')|}"
   >>> PREPROCESSING
-  >>> RUNNING
-  $ cat err | sed 's|/.*/_build/install/default/|%DUNEDIR%/|' |sed "s|/tmp/build.*'|%TESTDIR%'|"
-  Fatal error: exception Failure("map(k, v, ...): odd number of arguments")
-  Fatal error: exception Failure("map(k, v, ...): odd number of arguments")
-  File "./test_query.ml", line 1:
-  Error: Error while running external preprocessor
-  Command line: %DUNEDIR%/lib/ch_queries/ppx/./ppx.exe --as-ppx '%TESTDIR%'
-  
-  $ ./compile_and_run "let x = [%e \"map('a', 1, 'b', 2)['b']\"]
+  File "-", line 1, characters 12-28:
+  Error: map(k, v, ...): odd number of arguments
+  [1]
+
+  $ ./compile_and_run "let x = {%e|map('a', 1, 'b', 2)['b']|}
   > ;;
   > #show x;;"
   >>> PREPROCESSING

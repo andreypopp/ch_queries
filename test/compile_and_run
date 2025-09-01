@@ -1,4 +1,6 @@
 #!/bin/bash
+set -o pipefail
+set -e
 rm -f test_query.ml
 echo '
 #use "topfind"
