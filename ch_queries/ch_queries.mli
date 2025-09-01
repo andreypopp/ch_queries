@@ -124,21 +124,9 @@ val from_table :
   'a scope from_one
 
 module Expr : sig
-  val assumeNotNull : ([< null ] nullable, 'b) expr -> (non_null, 'a) expr
-  val toNullable : (_, 'a) expr -> (null nullable, 'a) expr
-  val coalesce : ('b, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
-  val eq : ('n, 'a) expr -> ('n, 'a) expr -> ('n, bool) expr
-  val ( = ) : ('n, 'a) expr -> ('n, 'a) expr -> ('n, bool) expr
-  val neq : ('n, 'a) expr -> ('n, 'a) expr -> ('n, bool) expr
-  val ( != ) : ('n, 'a) expr -> ('n, 'a) expr -> ('n, bool) expr
-  val gt : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
-  val ( > ) : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
-  val lt : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
-  val ( < ) : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
-  val ge : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
-  val ( >= ) : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
-  val le : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
-  val ( <= ) : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
+  (** {1 Regular functions} *)
+
+  (** {2 Arithmetic} *)
 
   val plus :
     ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
@@ -164,10 +152,7 @@ module Expr : sig
   val ( / ) :
     ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
 
-  val ( && ) : ('n, bool) expr -> ('n, bool) expr -> ('n, bool) expr
-  val ( || ) : ('n, bool) expr -> ('n, bool) expr -> ('n, bool) expr
-  val not_ : ('n, bool) expr -> ('n, bool) expr
-  val neg : ('n, 'a number) expr -> ('n, 'a number) expr
+  val negate : ('n, 'a number) expr -> ('n, 'a number) expr
   val abs : ('n, 'a number) expr -> ('n, 'a number) expr
 
   val intDiv :
@@ -176,9 +161,55 @@ module Expr : sig
   val modulo :
     ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
 
+  (** {2 Arrays} *)
+
+  val arrayElement :
+    (non_null, ('n, 'a) array) expr ->
+    (non_null, int number) expr ->
+    ('n, 'a) expr
+
+  val arrayElementOrNull :
+    (non_null, ('n, 'a) array) expr ->
+    (non_null, int number) expr ->
+    ('m, 'a) expr
+
+  val arrayFilter :
+    (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
+    ('m, ('n, 'a) array) expr ->
+    ('m, ('n, 'a) array) expr
+
+  val length : ('n, _ array) expr -> ('n, int number) expr
+
+  (** {2 Conditional} *)
+
+  val if_ : ('n, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
+
+  (** {2 Comparisons} *)
+
+  val equals : ('n, 'a) expr -> ('n, 'a) expr -> ('n, bool) expr
+  val ( = ) : ('n, 'a) expr -> ('n, 'a) expr -> ('n, bool) expr
+  val notEquals : ('n, 'a) expr -> ('n, 'a) expr -> ('n, bool) expr
+  val ( != ) : ('n, 'a) expr -> ('n, 'a) expr -> ('n, bool) expr
+  val ( <> ) : ('n, 'a) expr -> ('n, 'a) expr -> ('n, bool) expr
+  val greater : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
+  val ( > ) : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
+  val less : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
+  val ( < ) : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
+
+  val greaterOrEquals :
+    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
+
+  val ( >= ) : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
+
+  val lessOrEquals :
+    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
+
+  val ( <= ) : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
+
+  (** {2 Dates and times} *)
+
   val toDate : ('n, _) expr -> ('n, date timestamp) expr
   val toDateTime : ('n, _) expr -> ('n, datetime timestamp) expr
-  val if_ : ('n, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
   val now : unit -> (non_null, datetime timestamp) expr
   val today : unit -> (non_null, date timestamp) expr
   val yesterday : unit -> (non_null, date timestamp) expr
@@ -242,23 +273,58 @@ module Expr : sig
   val toStartOfDay : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
   val toStartOfHour : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
   val toStartOfMinute : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
+  val fromUnixTimestamp : ('n, int number) expr -> ('n, datetime timestamp) expr
 
-  val arrayElement :
-    (non_null, ('n, 'a) array) expr ->
-    (non_null, int number) expr ->
-    ('n, 'a) expr
+  (** {2 Logical} *)
 
-  val arrayElementOrNull :
-    (non_null, ('n, 'a) array) expr ->
-    (non_null, int number) expr ->
-    ('m, 'a) expr
+  val ( && ) : ('n, bool) expr -> ('n, bool) expr -> ('n, bool) expr
+  val ( || ) : ('n, bool) expr -> ('n, bool) expr -> ('n, bool) expr
+  val not_ : ('n, bool) expr -> ('n, bool) expr
 
-  val arrayFilter :
-    (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
-    ('m, ('n, 'a) array) expr ->
-    ('m, ('n, 'a) array) expr
+  (** {2 Map}*)
 
-  val length : ('n, _ array) expr -> ('n, int number) expr
+  val map :
+    (('nk, 'k) expr * ('nv, 'v) expr) list ->
+    (non_null, ('nk, 'k, 'nv, 'v) map) expr
+
+  val map_get :
+    (non_null, ('nk, 'k, 'nv, 'v) map) expr ->
+    (non_null, 'k) expr ->
+    ('nv, 'v) expr
+  (** compiles to clickhouse function {!arrayElement}, but is named differently
+      to allow its use on maps. *)
+
+  (** {2 Nullable} *)
+
+  val assumeNotNull : ([< null ] nullable, 'b) expr -> (non_null, 'a) expr
+  val coalesce : ('b, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
+  val toNullable : (_, 'a) expr -> (null nullable, 'a) expr
+
+  (** {2 String} *)
+
+  val empty : ('n, string) expr -> ('n, bool) expr
+  val notEmpty : ('n, string) expr -> ('n, bool) expr
+
+  (** {2 String replacement} *)
+
+  val replaceOne :
+    ('n, string) expr -> (non_null, string) expr -> ('n, string) expr
+
+  (** {2 String search} *)
+
+  val like : ('n, string) expr -> (non_null, string) expr -> ('n, bool) expr
+
+  (** {2 Type conversions} *)
+
+  val toUInt64 : ('n, string) expr -> ('n, int number) expr
+
+  (** {1 Aggregate functions} *)
+
+  val avg :
+    ?partition_by:a_expr list ->
+    ?order_by:(a_expr * [ `ASC | `DESC ]) list ->
+    ('n, 't number) expr ->
+    (non_null, 't number) expr
 
   val count :
     ?partition_by:a_expr list ->
@@ -277,15 +343,6 @@ module Expr : sig
     ?order_by:(a_expr * [ `ASC | `DESC ]) list ->
     ('n, _) expr ->
     (non_null, int number) expr
-
-  val map :
-    (('nk, 'k) expr * ('nv, 'v) expr) list ->
-    (non_null, ('nk, 'k, 'nv, 'v) map) expr
-
-  val map_get :
-    (non_null, ('nk, 'k, 'nv, 'v) map) expr ->
-    (non_null, 'k) expr ->
-    ('nv, 'v) expr
 end
 
 type json =
