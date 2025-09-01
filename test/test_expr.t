@@ -91,16 +91,18 @@ maps:
      Ch_queries.map)
     Ch_queries.expr
 
-  $ ./compile_and_run "let x = [%e \"map('a', 1, 'b')\"]"
+  $ ./compile_and_run "let x = [%e \"map('a', 1, 'b')\"]" > out 2> err
+  [2]
+  $ cat out
   >>> PREPROCESSING
-  Fatal error: exception Failure("map: odd number of arguments")
   >>> RUNNING
-  Fatal error: exception Failure("map: odd number of arguments")
+  $ cat err | sed 's|/.*/_build/install/default/|%DUNEDIR%/|' |sed "s|/tmp/build.*'|%TESTDIR%'|"
+  Fatal error: exception Failure("map(k, v, ...): odd number of arguments")
+  Fatal error: exception Failure("map(k, v, ...): odd number of arguments")
   File "./test_query.ml", line 1:
   Error: Error while running external preprocessor
-  Command line: /home/emile/ahrefs/ch_queries/_build/install/default/lib/ch_queries/ppx/./ppx.exe --as-ppx '/tmp/build_97c1d3_dune/camlppxf6a2b4' '/tmp/build_97c1d3_dune/camlppx29f12a'
-
-  [2]
+  Command line: %DUNEDIR%/lib/ch_queries/ppx/./ppx.exe --as-ppx '%TESTDIR%'
+  
   $ ./compile_and_run "let x = [%e \"map('a', 1, 'b', 2)['b']\"]
   > ;;
   > #show x;;"
@@ -114,7 +116,7 @@ maps:
          ])
       (Ch_queries.string "b")
   >>> RUNNING
-  val x : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr
+  val x : ('a, int Ch_queries.number) Ch_queries.expr
 
   $ ./compile_and_run '
   > let x = [%e "arrayElement([1,2,3], 1)"]

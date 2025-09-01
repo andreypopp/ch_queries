@@ -279,7 +279,7 @@ let rec stage_expr ~params ~(from : from_ctx) expr =
               match args with
               | [] -> []
               | k :: v :: args -> (k, v) :: loop args
-              | _ -> failwith "map: odd number of arguments"
+              | [ _ ] -> failwith "map(k, v, ...): odd number of arguments"
             in
             loop args
           in
@@ -295,7 +295,7 @@ let rec stage_expr ~params ~(from : from_ctx) expr =
                     pexp_tuple ~loc
                       [ stage_expr ~params ~from k; stage_expr ~params ~from v ])
           in
-          eapply ~loc f [(elist ~loc args)]
+          eapply ~loc f [ elist ~loc args ]
       | Func name ->
           let f =
             let loc = to_location name in
