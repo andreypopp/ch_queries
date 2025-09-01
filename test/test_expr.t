@@ -116,7 +116,7 @@ maps:
          ])
       (Ch_queries.string "b")
   >>> RUNNING
-  val x : ('a, int Ch_queries.number) Ch_queries.expr
+  val x : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr
 
   $ ./compile_and_run '
   > let x = [%e "arrayElement([1,2,3], 1)"]

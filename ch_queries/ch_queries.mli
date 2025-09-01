@@ -283,9 +283,9 @@ module Expr : sig
     (non_null, ('nk, 'k, 'nv, 'v) map) expr
 
   val map_get :
-    (non_null, (_, 'k, 'nv, 'v) map) expr ->
+    (non_null, ('nk, 'k, 'nv, 'v) map) expr ->
     (non_null, 'k) expr ->
-    ('nb, 'v) expr
+    ('nv, 'v) expr
 end
 
 type json =
