@@ -373,10 +373,11 @@ module Expr = struct
   let def n args =
     Syntax.make_expr (Syntax.E_call (Syntax.Func (Syntax.make_id n), args))
 
-  let assumeNotNull x = def "assumeNotNull" [ x ]
-  let toNullable x = def "toNullable" [ x ]
-  let coalesce x y = def "coalesce" [ x; y ]
+  (** {1 Regular functions} *)
+
+  (** {2 Arithmetic} *)
   let plus x y = def "+" [ x; y ]
+
   let ( + ) = plus
   let minus x y = def "-" [ x; y ]
   let ( - ) = minus
@@ -384,30 +385,41 @@ module Expr = struct
   let ( * ) = multiply
   let divide x y = def "/" [ x; y ]
   let ( / ) = divide
-  let eq x y = def "=" [ x; y ]
-  let ( = ) = eq
-  let neq x y = def "!=" [ x; y ]
-  let ( != ) = neq
-  let gt x y = def ">" [ x; y ]
-  let ( > ) = gt
-  let lt x y = def "<" [ x; y ]
-  let ( < ) = lt
-  let ge x y = def ">=" [ x; y ]
-  let ( >= ) = ge
-  let le x y = def "<=" [ x; y ]
-  let ( <= ) = le
-  let ( && ) x y = def "AND" [ x; y ]
-  let ( || ) x y = def "OR" [ x; y ]
-  let not_ x = def "NOT" [ x ]
-  let neg x = def "-" [ x ]
+  let negate x = def "-" [ x ]
   let abs x = def "abs" [ x ]
   let intDiv x y = def "intDiv" [ x; y ]
   let modulo x y = def "modulo" [ x; y ]
+
+  (** {2 Arrays} *)
+
+  let arrayElement arr i = def "arrayElement" [ arr; i ]
+  let arrayElementOrNull arr i = def "arrayElementOrNull" [ arr; i ]
   let arrayFilter f x = def "arrayFilter" [ f; x ]
   let length x = def "length" [ x ]
+
+  (** {2 Conditional} *)
+  let if_ c x y = def "if" [ c; x; y ]
+
+  (** {2 Comparisons} *)
+  let equals x y = def "=" [ x; y ]
+
+  let ( = ) = equals
+  let notEquals x y = def "!=" [ x; y ]
+  let ( != ) = notEquals
+  let ( <> ) = notEquals
+  let greater x y = def ">" [ x; y ]
+  let ( > ) = greater
+  let less x y = def "<" [ x; y ]
+  let ( < ) = less
+  let greaterOrEquals x y = def ">=" [ x; y ]
+  let ( >= ) = greaterOrEquals
+  let lessOrEquals x y = def "<=" [ x; y ]
+  let ( <= ) = lessOrEquals
+
+  (** {2 Dates and times} *)
+
   let toDate x = def "toDate" [ x ]
   let toDateTime x = def "toDateTime" [ x ]
-  let if_ c x y = def "if" [ c; x; y ]
   let now () = def "now" []
   let today () = def "today" []
   let yesterday () = def "yesterday" []
@@ -436,8 +448,48 @@ module Expr = struct
   let toStartOfDay date = def "toStartOfDay" [ date ]
   let toStartOfHour datetime = def "toStartOfHour" [ datetime ]
   let toStartOfMinute datetime = def "toStartOfMinute" [ datetime ]
-  let arrayElement arr i = def "arrayElement" [ arr; i ]
-  let arrayElementOrNull arr i = def "arrayElementOrNull" [ arr; i ]
+  let fromUnixTimestamp x = def "fromUnixTimestamp" [ x ]
+
+  (** {2 Logical} *)
+  let ( && ) x y = def "AND" [ x; y ]
+
+  let ( || ) x y = def "OR" [ x; y ]
+  let not_ x = def "NOT" [ x ]
+
+  (** {2 Map} *)
+
+  let map xs =
+    Syntax.make_expr
+      (E_call
+         ( Syntax.Func (Syntax.make_id "map"),
+           List.concat_map xs ~f:(fun (k, v) -> [ k; v ]) ))
+
+  let map_get m k = def "map_get" [ m; k ]
+
+  (** {2 Nullable} *)
+
+  let assumeNotNull x = def "assumeNotNull" [ x ]
+  let toNullable x = def "toNullable" [ x ]
+  let coalesce x y = def "coalesce" [ x; y ]
+
+  (** {2 String} *)
+
+  let empty str = def "empty" [ str ]
+  let notEmpty str = def "notEmpty" [ str ]
+
+  (** {2 String replacement} *)
+
+  let replaceOne hay needle = def "replaceOne" [ hay; needle ]
+
+  (** {2 String search} *)
+
+  let like hay needle = def "like" [ hay; needle ]
+
+  (** {2 Type conversions} *)
+
+  let toUInt64 x = def "toUint64" [ x ]
+
+  (** {1 Aggregate functions} *)
 
   let make_window f ?partition_by ?order_by args =
     match (partition_by, order_by) with
@@ -457,6 +509,9 @@ module Expr = struct
         let window = { Syntax.partition_by; order_by } in
         Syntax.make_expr (E_window (Syntax.make_id f, args, window))
 
+  let avg ?partition_by ?order_by x =
+    make_window ?partition_by ?order_by "avg" [ x ]
+
   let count ?partition_by ?order_by x =
     make_window ?partition_by ?order_by "count" [ x ]
 
@@ -465,14 +520,6 @@ module Expr = struct
 
   let uniq ?partition_by ?order_by x =
     make_window ?partition_by ?order_by "uniq" [ x ]
-
-  let map xs =
-    Syntax.make_expr
-      (E_call
-         ( Syntax.Func (Syntax.make_id "map"),
-           List.concat_map xs ~f:(fun (k, v) -> [ k; v ]) ))
-
-  let map_get m k = def "map_get" [ m; k ]
 end
 
 let in_ x xs =

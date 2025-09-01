@@ -164,7 +164,7 @@ let map_operator_to_expr ~loc op arity =
   | "OR", 2 -> [%expr Ch_queries.Expr.( || )]
   | "AND", 2 -> [%expr Ch_queries.Expr.( && )]
   | "NOT", 1 -> [%expr Ch_queries.Expr.not_]
-  | "-", 1 -> [%expr Ch_queries.Expr.neg]
+  | "-", 1 -> [%expr Ch_queries.Expr.negate]
   | ">", 2 -> [%expr Ch_queries.Expr.( > )]
   | "<", 2 -> [%expr Ch_queries.Expr.( < )]
   | ">=", 2 -> [%expr Ch_queries.Expr.( >= )]

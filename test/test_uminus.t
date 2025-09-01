@@ -3,7 +3,7 @@ Basic unary minus:
   > let x = [%e "-5"]
   > '
   >>> PREPROCESSING
-  let x = Ch_queries.Expr.neg (Ch_queries.int 5)
+  let x = Ch_queries.Expr.negate (Ch_queries.int 5)
   >>> RUNNING
 
 Unary minus precedence with addition:
@@ -13,7 +13,7 @@ Unary minus precedence with addition:
   >>> PREPROCESSING
   let x =
     Ch_queries.Expr.( + )
-      (Ch_queries.Expr.neg (Ch_queries.int 5))
+      (Ch_queries.Expr.negate (Ch_queries.int 5))
       (Ch_queries.int 3)
   >>> RUNNING
 
@@ -23,7 +23,7 @@ Unary minus with parentheses:
   > '
   >>> PREPROCESSING
   let x =
-    Ch_queries.Expr.neg
+    Ch_queries.Expr.negate
       (Ch_queries.Expr.( + ) (Ch_queries.int 5) (Ch_queries.int 3))
   >>> RUNNING
 
@@ -32,7 +32,7 @@ Double unary minus:
   > let x = [%e "--5"]
   > '
   >>> PREPROCESSING
-  let x = Ch_queries.Expr.neg (Ch_queries.Expr.neg (Ch_queries.int 5))
+  let x = Ch_queries.Expr.negate (Ch_queries.Expr.negate (Ch_queries.int 5))
   >>> RUNNING
 
 Unary minus with multiplication:
@@ -42,6 +42,6 @@ Unary minus with multiplication:
   >>> PREPROCESSING
   let x =
     Ch_queries.Expr.( * )
-      (Ch_queries.Expr.neg (Ch_queries.int 5))
+      (Ch_queries.Expr.negate (Ch_queries.int 5))
       (Ch_queries.int 3)
   >>> RUNNING
