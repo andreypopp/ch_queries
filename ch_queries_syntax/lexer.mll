@@ -15,6 +15,7 @@
     ("FALSE", FALSE);
     ("AND", AND);
     ("OR", OR);
+    ("LIKE", LIKE);
     ("NOT", NOT);
     ("JOIN", JOIN);
     ("INNER", INNER);
@@ -98,6 +99,7 @@
     | Parser.NOT_EQUAL -> "NOT_EQUAL"
     | Parser.AND -> "AND"
     | Parser.OR -> "OR"
+    | Parser.LIKE -> "LIKE"
     | Parser.NOT -> "NOT"
     | Parser.INNER -> "INNER"
     | Parser.JOIN -> "JOIN"

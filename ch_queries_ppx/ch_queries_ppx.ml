@@ -163,6 +163,7 @@ let map_operator_to_expr ~loc op arity =
   match (op, arity) with
   | "OR", 2 -> [%expr Ch_queries.Expr.( || )]
   | "AND", 2 -> [%expr Ch_queries.Expr.( && )]
+  | "LIKE", 2 -> [%expr Ch_queries.Expr.like]
   | "NOT", 1 -> [%expr Ch_queries.Expr.not_]
   | "-", 1 -> [%expr Ch_queries.Expr.negate]
   | ">", 2 -> [%expr Ch_queries.Expr.( > )]
