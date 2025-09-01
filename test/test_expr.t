@@ -64,6 +64,59 @@ arrays:
          but an expression was expected of type
            (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr
          Type bool is not compatible with type int Ch_queries.number
+string literal:
+  $ echo "let x = [%e \"'hello world'\"]"
+  let x = [%e "'hello world'"]
+  $ ./compile_and_run "let x = [%e \"'hello world'\"]"
+  >>> PREPROCESSING
+  let x = Ch_queries.string "hello world"
+  >>> RUNNING
+
+maps:
+  $ ./compile_and_run "let x = [%e \"map('aac', 1, 'bb', 2, 'cc', 3)\"]
+  > ;;
+  > #show x;;"
+  >>> PREPROCESSING
+  let x =
+    Ch_queries.Expr.map
+      [
+        (Ch_queries.string "aac", Ch_queries.int 1);
+        (Ch_queries.string "bb", Ch_queries.int 2);
+        (Ch_queries.string "cc", Ch_queries.int 3);
+      ]
+  >>> RUNNING
+  val x :
+    (Ch_queries.non_null,
+     (Ch_queries.non_null, string, Ch_queries.non_null, int Ch_queries.number)
+     Ch_queries.map)
+    Ch_queries.expr
+
+  $ ./compile_and_run "let x = [%e \"map('a', 1, 'b')\"]" > out 2> err
+  [2]
+  $ cat out
+  >>> PREPROCESSING
+  >>> RUNNING
+  $ cat err | sed 's|/.*/_build/install/default/|%DUNEDIR%/|' |sed "s|/tmp/build.*'|%TESTDIR%'|"
+  Fatal error: exception Failure("map(k, v, ...): odd number of arguments")
+  Fatal error: exception Failure("map(k, v, ...): odd number of arguments")
+  File "./test_query.ml", line 1:
+  Error: Error while running external preprocessor
+  Command line: %DUNEDIR%/lib/ch_queries/ppx/./ppx.exe --as-ppx '%TESTDIR%'
+  
+  $ ./compile_and_run "let x = [%e \"map('a', 1, 'b', 2)['b']\"]
+  > ;;
+  > #show x;;"
+  >>> PREPROCESSING
+  let x =
+    Ch_queries.Expr.map_get
+      (Ch_queries.Expr.map
+         [
+           (Ch_queries.string "a", Ch_queries.int 1);
+           (Ch_queries.string "b", Ch_queries.int 2);
+         ])
+      (Ch_queries.string "b")
+  >>> RUNNING
+  val x : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr
 
   $ ./compile_and_run '
   > let x = [%e "arrayElement([1,2,3], 1)"]

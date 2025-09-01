@@ -9,6 +9,7 @@ type 'a number = private A_number
 
 type 'a timestamp = private A_timestamp
 type ('null, 'a) array = private A_array
+type ('nullk, 'k, 'nullv, 'v) map = private A_map
 type ('null, 'a) typ = private A_typ
 type ('x, 'y) tuple2 = private A_tuple2
 type date = private Date
@@ -276,6 +277,15 @@ module Expr : sig
     ?order_by:(a_expr * [ `ASC | `DESC ]) list ->
     ('n, _) expr ->
     (non_null, int number) expr
+
+  val map :
+    (('nk, 'k) expr * ('nv, 'v) expr) list ->
+    (non_null, ('nk, 'k, 'nv, 'v) map) expr
+
+  val map_get :
+    (non_null, ('nk, 'k, 'nv, 'v) map) expr ->
+    (non_null, 'k) expr ->
+    ('nv, 'v) expr
 end
 
 type json =

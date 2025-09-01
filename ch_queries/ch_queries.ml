@@ -8,6 +8,7 @@ type 'a timestamp = private A_timestamp
 type date = private Date
 type datetime = private DateTime
 type ('null, 'a) array = private A_array
+type ('nullk, 'k, 'nullv, 'v) map = private A_map
 type ('null, 'a) typ = private A_typ
 type ('x, 'y) tuple2 = private A_tuple2
 type interval = private Interval
@@ -464,6 +465,14 @@ module Expr = struct
 
   let uniq ?partition_by ?order_by x =
     make_window ?partition_by ?order_by "uniq" [ x ]
+
+  let map xs =
+    Syntax.make_expr
+      (E_call
+         ( Syntax.Func (Syntax.make_id "map"),
+           List.concat_map xs ~f:(fun (k, v) -> [ k; v ]) ))
+
+  let map_get m k = def "map_get" [ m; k ]
 end
 
 let in_ x xs =

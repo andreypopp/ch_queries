@@ -273,6 +273,29 @@ let rec stage_expr ~params ~(from : from_ctx) expr =
       | Func { node = "["; _ } ->
           let xs = elist ~loc (List.map args ~f:(stage_expr ~params ~from)) in
           [%expr Ch_queries.array [%e xs]]
+      | Func ({ node = "map"; _ } as name) ->
+          let args =
+            let rec loop args =
+              match args with
+              | [] -> []
+              | k :: v :: args -> (k, v) :: loop args
+              | [ _ ] -> failwith "map(k, v, ...): odd number of arguments"
+            in
+            loop args
+          in
+          let f =
+            let loc = to_location name in
+            map_operator_to_expr ~loc name.node (List.length args)
+          in
+          let args =
+            match args with
+            | [] -> [ [%expr ()] ]
+            | args ->
+                List.map args ~f:(fun (k, v) ->
+                    pexp_tuple ~loc
+                      [ stage_expr ~params ~from k; stage_expr ~params ~from v ])
+          in
+          eapply ~loc f [ elist ~loc args ]
       | Func name ->
           let f =
             let loc = to_location name in

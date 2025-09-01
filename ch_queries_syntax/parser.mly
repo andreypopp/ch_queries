@@ -1,9 +1,9 @@
 %{
   open Syntax
-  
-  let make_loc start_pos end_pos = 
+
+  let make_loc start_pos end_pos =
     { Loc.start_pos; end_pos }
-  
+
   let make_expr start_pos end_pos node = make_expr ~loc:(make_loc start_pos end_pos) node
   let make_typ start_pos end_pos node = make_typ ~loc:(make_loc start_pos end_pos) node
   let make_query start_pos end_pos node = make_query ~loc:(make_loc start_pos end_pos) node
@@ -46,6 +46,7 @@
 %left PLUS MINUS
 %left STAR SLASH
 %right UMINUS  (* unary minus *)
+%left LBRACKET
 %left COLONCOLON
 
 %start a_query a_expr a_typ a_from
@@ -231,6 +232,8 @@ expr:
     { make_expr $startpos $endpos (E_lit (L_interval (n, unit))) }
   | LPAREN e=expr RPAREN
     { e }
+  | m=expr LBRACKET k=expr RBRACKET
+    { make_expr $startpos $endpos (E_call (Func (make_id $startpos $endpos "map_get"), [m; k])) }
   | LBRACKET es=separated_list(COMMA, expr) RBRACKET
     { make_expr $startpos $endpos (E_call (Func (make_id $startpos $endpos "["), es)) }
   | e1=expr PLUS e2=expr
