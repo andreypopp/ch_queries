@@ -157,6 +157,11 @@ let rec pp_expr opts ~parent_prec expr =
               pp_expr opts ~parent_prec:prec left
               ^/^ string "OR"
               ^/^ pp_expr opts ~parent_prec:prec right
+          | "LIKE", [ left; right ] ->
+              parens_if_needed @@ fun prec ->
+              pp_expr opts ~parent_prec:prec left
+              ^/^ string "LIKE"
+              ^/^ pp_expr opts ~parent_prec:prec right
           | "NOT", [ operand ] ->
               parens_if_needed @@ fun prec ->
               string "NOT" ^/^ pp_expr opts ~parent_prec:prec operand
