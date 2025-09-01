@@ -280,7 +280,9 @@ let rec stage_expr ~params ~(from : from_ctx) expr =
               match args with
               | [] -> []
               | k :: v :: args -> (k, v) :: loop args
-              | [ _ ] -> failwith "map(k, v, ...): odd number of arguments"
+              | [ _ ] ->
+                  Location.raise_errorf ~loc
+                    "map(k, v, ...): odd number of arguments"
             in
             loop args
           in
