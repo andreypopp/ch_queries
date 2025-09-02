@@ -136,6 +136,12 @@ let rec stage_typ typ =
       ([%type: Ch_queries.non_null], [%type: ([%t n], [%t t]) Ch_queries.array])
   | T_app ({ node = "Array"; _ }, _) ->
       Location.raise_errorf ~loc "Array(..) requires exactly one argument"
+  | T_app ({ node = "Map"; _ }, [ k; v ]) ->
+      let nk, k = stage_typ k in
+      let nv, v = stage_typ v in
+      ([%type: Ch_queries.non_null], [%type: ([%t nk], [%t k], [%t nv], [%t v]) Ch_queries.map])
+  | T_app ({ node = "Map"; _ }, _) ->
+      Location.raise_errorf ~loc "Map(..) requires exactly two argument"
   | T_app ({ node = "Tuple"; _ }, [ x; y ]) ->
       let xn, xt = stage_typ x in
       let yn, yt = stage_typ y in
