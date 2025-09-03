@@ -481,7 +481,8 @@ module Expr = struct
 
   (** {2 String replacement} *)
 
-  let replaceOne hay needle replacement = def "replaceOne" [ hay; needle; replacement ]
+  let replaceOne hay needle replacement =
+    def "replaceOne" [ hay; needle; replacement ]
 
   (** {2 String search} *)
 

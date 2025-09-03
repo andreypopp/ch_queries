@@ -194,7 +194,9 @@ let normalise_col name =
   |> String.concat ~sep:"__dot__"
 
 let refer_to_scope ~loc ?map scope id =
-  let e = pexp_send ~loc [%expr __q] (Located.mk ~loc (normalise_col id.Syntax.node)) in
+  let e =
+    pexp_send ~loc [%expr __q] (Located.mk ~loc (normalise_col id.Syntax.node))
+  in
   let e = match map with None -> e | Some f -> f e in
   query_scope ~loc scope e
 

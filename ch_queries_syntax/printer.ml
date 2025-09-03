@@ -262,7 +262,10 @@ and pp_with_field opts with_field =
   match with_field with
   | Syntax.With_expr field -> pp_field opts field
   | Syntax.With_query (id, query) ->
-      group (pp_id id ^^ string " AS (" ^^ nest 2 (break 1 ^^ pp_query opts query) ^^ break 1 ^^ string ")")
+      group
+        (pp_id id ^^ string " AS ("
+        ^^ nest 2 (break 1 ^^ pp_query opts query)
+        ^^ break 1 ^^ string ")")
 
 and pp_from_one opts from_one =
   match from_one.node with
@@ -338,7 +341,9 @@ and pp_query opts { node; eq = _; loc = _ } =
         | [] -> None
         | fields ->
             let pp_with_fields =
-              separate (string "," ^^ break 1) (List.map ~f:(pp_with_field opts) fields)
+              separate
+                (string "," ^^ break 1)
+                (List.map ~f:(pp_with_field opts) fields)
             in
             Some (group (string "WITH" ^^ nest 2 (break 1 ^^ pp_with_fields)))
       in
