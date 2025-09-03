@@ -49,6 +49,14 @@ val users :
   select = <abstr>
 ```
 
+> [!IMPORTANT]
+> To reference columns from tables/subqueries in the `FROM` clause, you need to
+> use fully qualified names, e.g. `users.id` instead of just `id`.
+>
+> The unqualified names are only allowed outside of the `SELECT` fields (but
+> allowed in `WHERE`, `GROUP BY`, etc) and they resolve to the columns defined
+> in `SELECT` fields.
+
 The `$param` syntax is used for parameters. If a parameter appears in the
 expression position, then it is expected to be a function which takes the current
 scope and returns an expression:
