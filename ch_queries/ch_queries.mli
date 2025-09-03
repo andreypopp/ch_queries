@@ -384,6 +384,7 @@ module Row : sig
   val int64_opt : ([< null ], int64 number) expr -> int64 option t
   val float : (non_null, float number) expr -> float t
   val float_opt : ([< null ], float number) expr -> float option t
+  val any : (json -> 'a) -> _ expr -> 'a t
 
   exception Parse_error of json option * string
 

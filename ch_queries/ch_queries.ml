@@ -687,6 +687,7 @@ module Row = struct
   let int64_opt expr = Row_col_number_opt (expr, int64_of_json)
   let float expr = Row_col_number (expr, float_of_json)
   let float_opt expr = Row_col_number_opt (expr, float_of_json)
+  let any f expr = Row_col (expr, f)
 
   let parse : type a. a t -> json list -> a =
     let rec aux : type a. a t -> json list -> a * json list =
