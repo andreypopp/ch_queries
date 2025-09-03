@@ -7,6 +7,7 @@ type 'a number = private A_number
 type 'a timestamp = private A_timestamp
 type date = private Date
 type datetime = private DateTime
+type datetime64 = private DateTime64
 type ('null, 'a) array = private A_array
 type ('nullk, 'k, 'nullv, 'v) map = private A_map
 type ('null, 'a) typ = private A_typ
@@ -479,7 +480,7 @@ module Expr = struct
 
   (** {2 String replacement} *)
 
-  let replaceOne hay needle = def "replaceOne" [ hay; needle ]
+  let replaceOne hay needle replacement = def "replaceOne" [ hay; needle; replacement ]
 
   (** {2 String search} *)
 
@@ -487,7 +488,8 @@ module Expr = struct
 
   (** {2 Type conversions} *)
 
-  let toUInt64 x = def "toUint64" [ x ]
+  let toInt64 x = def "toInt64" [ x ]
+  let toUInt64 x = def "toUInt64" [ x ]
 
   (** {1 Aggregate functions} *)
 
@@ -688,6 +690,7 @@ module Row = struct
   let float expr = Row_col_number (expr, float_of_json)
   let float_opt expr = Row_col_number_opt (expr, float_of_json)
   let any f expr = Row_col (expr, f)
+  let ignore expr = Row_col (expr, ignore)
 
   let parse : type a. a t -> json list -> a =
     let rec aux : type a. a t -> json list -> a * json list =
