@@ -14,6 +14,7 @@ type ('null, 'a) typ = private A_typ
 type ('x, 'y) tuple2 = private A_tuple2
 type date = private Date
 type datetime = private DateTime
+type datetime64 = private DateTime64
 type interval = private Interval
 
 type (+'null, +'typ) expr
@@ -191,20 +192,20 @@ module Expr : sig
   val notEquals : ('n, 'a) expr -> ('n, 'a) expr -> ('n, bool) expr
   val ( != ) : ('n, 'a) expr -> ('n, 'a) expr -> ('n, bool) expr
   val ( <> ) : ('n, 'a) expr -> ('n, 'a) expr -> ('n, bool) expr
-  val greater : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
-  val ( > ) : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
-  val less : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
-  val ( < ) : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
+  val greater : ('n, 'a number) expr -> ('n, 'b number) expr -> ('n, bool) expr
+  val ( > ) : ('n, 'a number) expr -> ('n, 'b number) expr -> ('n, bool) expr
+  val less : ('n, 'a number) expr -> ('n, 'b number) expr -> ('n, bool) expr
+  val ( < ) : ('n, 'a number) expr -> ('n, 'b number) expr -> ('n, bool) expr
 
   val greaterOrEquals :
-    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
+    ('n, 'a number) expr -> ('n, 'b number) expr -> ('n, bool) expr
 
-  val ( >= ) : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
+  val ( >= ) : ('n, 'a number) expr -> ('n, 'b number) expr -> ('n, bool) expr
 
   val lessOrEquals :
-    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
+    ('n, 'a number) expr -> ('n, 'b number) expr -> ('n, bool) expr
 
-  val ( <= ) : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, bool) expr
+  val ( <= ) : ('n, 'a number) expr -> ('n, 'b number) expr -> ('n, bool) expr
 
   (** {2 Dates and times} *)
 
@@ -308,7 +309,10 @@ module Expr : sig
   (** {2 String replacement} *)
 
   val replaceOne :
-    ('n, string) expr -> (non_null, string) expr -> ('n, string) expr
+    ('n, string) expr ->
+    (non_null, string) expr ->
+    (non_null, string) expr ->
+    ('n, string) expr
 
   (** {2 String search} *)
 
@@ -316,6 +320,7 @@ module Expr : sig
 
   (** {2 Type conversions} *)
 
+  val toInt64 : ('n, string) expr -> ('n, int number) expr
   val toUInt64 : ('n, string) expr -> ('n, int number) expr
 
   (** {1 Aggregate functions} *)
@@ -385,6 +390,7 @@ module Row : sig
   val float : (non_null, float number) expr -> float t
   val float_opt : ([< null ], float number) expr -> float option t
   val any : (json -> 'a) -> _ expr -> 'a t
+  val ignore : ('n, 'a) expr -> unit t
 
   exception Parse_error of json option * string
 

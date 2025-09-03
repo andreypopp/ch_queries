@@ -111,6 +111,9 @@ let rec stage_typ typ =
   | T { node = "Date"; _ } ->
       ( [%type: Ch_queries.non_null],
         [%type: Ch_queries.date Ch_queries.timestamp] )
+  | T { node = "DateTime64"; _ } ->
+      ( [%type: Ch_queries.non_null],
+        [%type: Ch_queries.datetime64 Ch_queries.timestamp] )
   | T { node = "DateTime"; _ } ->
       ( [%type: Ch_queries.non_null],
         [%type: Ch_queries.datetime Ch_queries.timestamp] )
@@ -121,7 +124,7 @@ let rec stage_typ typ =
       ([%type: Ch_queries.non_null], [%type: int Ch_queries.number])
   | T { node = "Int64" | "UInt64"; _ } ->
       ([%type: Ch_queries.non_null], [%type: int64 Ch_queries.number])
-  | T { node = "Float32" | "Float64"; _ } ->
+  | T { node = "Float32" | "Float64" | "Float"; _ } ->
       ([%type: Ch_queries.non_null], [%type: float Ch_queries.number])
   | T { node = t; _ } ->
       Location.raise_errorf ~loc "unknown ClickHouse type: %s" t
@@ -138,7 +141,8 @@ let rec stage_typ typ =
   | T_app ({ node = "Map"; _ }, [ k; v ]) ->
       let nk, k = stage_typ k in
       let nv, v = stage_typ v in
-      ([%type: Ch_queries.non_null], [%type: ([%t nk], [%t k], [%t nv], [%t v]) Ch_queries.map])
+      ( [%type: Ch_queries.non_null],
+        [%type: ([%t nk], [%t k], [%t nv], [%t v]) Ch_queries.map] )
   | T_app ({ node = "Map"; _ }, _) ->
       Location.raise_errorf ~loc "Map(..) requires exactly two argument"
   | T_app ({ node = "Tuple"; _ }, [ x; y ]) ->
@@ -159,8 +163,13 @@ let query_scope ~loc scope expr =
   let e' = pexp_send ~loc e (Located.mk ~loc "query") in
   [%expr [%e e'] (fun __q -> [%e expr])]
 
+let normalise_col name =
+  (if Char.is_uppercase_ascii name.[0] then "_" ^ name else name)
+  |> String.split_on_char ~by:'.'
+  |> String.concat ~sep:"__dot__"
+
 let refer_to_scope ~loc ?map scope id =
-  let e = pexp_send ~loc [%expr __q] (Located.mk ~loc id.Syntax.node) in
+  let e = pexp_send ~loc [%expr __q] (Located.mk ~loc (normalise_col id.Syntax.node)) in
   let e = match map with None -> e | Some f -> f e in
   query_scope ~loc scope e
 
