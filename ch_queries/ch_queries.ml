@@ -260,6 +260,7 @@ module To_syntax = struct
           let from = from_to_syntax from in
           Q_select
             {
+              with_fields = [];
               select = Select_fields select;
               from;
               prewhere;
@@ -752,6 +753,7 @@ let query q f =
   let select =
     Syntax.Q_select
       {
+        with_fields = [];
         from =
           Syntax.make_from
             (F

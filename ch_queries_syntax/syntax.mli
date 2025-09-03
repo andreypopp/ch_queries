@@ -3,7 +3,7 @@ type 'a node = private { node : 'a; loc : Loc.t; eq : 'a Eq_class.t }
 (** Data annotated with its location in the source code along with an
     equivalence class (used for fast equality comparison and fast hashing). *)
 
-type id = string node [@@deriving hash, equal]
+type id = string node [@@deriving hash, equal, compare]
 
 type expr = exprsyn node [@@deriving hash, equal]
 
@@ -54,10 +54,15 @@ and dimension = Dimension_expr of expr | Dimension_splice of id
 and field = { expr : expr; alias : id option }
 (** used for SELECT *)
 
+and with_field =
+  | With_expr of field  (** WITH <expr> AS <id> *)
+  | With_query of id * query  (** WITH <id> AS <query> *)
+
 and query = querysyn node
 
 and querysyn =
   | Q_select of {
+      with_fields : with_field list;
       select : select;
       from : from;
       prewhere : expr option;

@@ -7,6 +7,7 @@ type !'a t
     (precomputed). *)
 
 val equal : 'a t Equal.t
+val compare : 'a t Ord.t
 val hash : 'a t Hash.t
 val hash_fold_t : 'a t Ppx_hash_lib.hash_fold
 

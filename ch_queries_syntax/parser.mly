@@ -21,7 +21,7 @@
 %token <int> NUMBER
 %token TRUE FALSE
 %token SELECT FROM PREWHERE WHERE AS DOT COLONCOLON
-%token LPAREN RPAREN LBRACKET RBRACKET COMMA
+%token AS_LPAREN LPAREN RPAREN LBRACKET RBRACKET COMMA
 %token PLUS MINUS STAR SLASH EQUALS GT LT GE LE NOT_EQUAL
 %token AND OR NOT LIKE
 %token INNER JOIN LEFT OPTIONAL ON
@@ -35,6 +35,7 @@
 %token INTERVAL
 %token YEAR MONTH WEEK DAY HOUR MINUTE SECOND
 %token ARROW
+%token WITH
 %token EOF
 
 %left UNION
@@ -74,10 +75,19 @@ a_from:
     FROM f=from EOF { f }
 
 query_no_param:
-    SELECT select=select FROM from=from prewhere=prewhere? where=where? qualify=qualify? group_by=group_by? having=having? order_by=order_by? limit=limit? offset=offset? settings=settings?
-    { make_query $startpos $endpos (Syntax.Q_select { select; from; prewhere; where; qualify; group_by; having; order_by; limit; offset; settings = Option.value settings ~default:[] }) }
+    with_fields=with_fields? SELECT select=select FROM from=from prewhere=prewhere? where=where? qualify=qualify? group_by=group_by? having=having? order_by=order_by? limit=limit? offset=offset? settings=settings?
+    { make_query $startpos $endpos (Syntax.Q_select { with_fields = Option.value with_fields ~default:[]; select; from; prewhere; where; qualify; group_by; having; order_by; limit; offset; settings = Option.value settings ~default:[] }) }
   | q1=query UNION q2=query
     { make_query $startpos $endpos (Syntax.Q_union (q1, q2)) }
+
+with_fields:
+  WITH xs=separated_nonempty_list(COMMA, with_field) { xs }
+
+with_field:
+    id=id AS_LPAREN q=query RPAREN
+    { With_query (id, q) }
+  | expr=expr AS alias=id
+    { With_expr { expr = expr; alias = Some alias } }
 
 query:
     q=query_no_param { q }

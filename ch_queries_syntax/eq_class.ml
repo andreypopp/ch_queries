@@ -1,6 +1,7 @@
 type !'a t = { hash : int }
 
 let equal a b = Equal.physical a b
+let compare a b = Int.compare a.hash b.hash
 let hash a = a.hash
 let hash_fold_t s a = Ppx_hash_lib.Std.Hash.fold_int s a.hash
 

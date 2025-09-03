@@ -52,6 +52,7 @@
     ("MINUTES", MINUTE);
     ("SECOND", SECOND);
     ("SECONDS", SECOND);
+    ("WITH", WITH);
   ]
 
   let keyword_table = Hashtbl.create 16
@@ -83,6 +84,7 @@
     | Parser.DOT -> "DOT"
     | Parser.COLONCOLON -> "COLONCOLON"
     | Parser.LPAREN -> "LPAREN"
+    | Parser.AS_LPAREN -> "AS_LPAREN"
     | Parser.RPAREN -> "RPAREN"
     | Parser.LBRACKET -> "LBRACKET"
     | Parser.RBRACKET -> "RBRACKET"
@@ -132,6 +134,7 @@
     | Parser.MINUTE -> "MINUTE"
     | Parser.SECOND -> "SECOND"
     | Parser.ARROW -> "ARROW"
+    | Parser.WITH -> "WITH"
     | Parser.EOF -> "EOF"
 
 }
@@ -173,6 +176,7 @@ rule token = parse
   | param_char (id as s)       { PARAM s }
   | id as s             { get_keyword_or_id s }
   | '('                 { LPAREN }
+  | 'A' 'S' (' '|'\n'|'\t')+ '(' { AS_LPAREN }
   | ')'                 { RPAREN }
   | '['                 { LBRACKET }
   | ']'                 { RBRACKET }

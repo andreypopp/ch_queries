@@ -5,8 +5,9 @@ type 'a node = { node : 'a; loc : Loc.t; eq : 'a Eq_class.t }
 
 let hash_fold_node _ h { node = _; loc = _; eq } = Eq_class.hash_fold_t h eq
 let equal_node _ a b = Eq_class.equal a.eq b.eq
+let compare_node _ a b = Eq_class.compare a.eq b.eq
 
-type id = string node [@@deriving hash, equal]
+type id = string node [@@deriving hash, equal, compare]
 
 type expr = exprsyn node [@@deriving hash, equal]
 
@@ -53,10 +54,15 @@ and dimension = Dimension_expr of expr | Dimension_splice of id
 and field = { expr : expr; alias : id option }
 (** used for SELECT *)
 
+and with_field =
+  | With_expr of field  (** WITH <expr> AS <id> *)
+  | With_query of id * query  (** WITH <id> AS <query> *)
+
 and query = querysyn node
 
 and querysyn =
   | Q_select of {
+      with_fields : with_field list;
       select : select;
       from : from;
       prewhere : expr option;

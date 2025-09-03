@@ -46,32 +46,57 @@ let rec from_scope_expr' from =
   match from.node with
   | F from_one ->
       let alias = alias from_one in
-      [ (alias.node, evar ~loc:(to_location alias) alias.node) ]
+      [ (alias, evar ~loc:(to_location alias) alias.node) ]
   | F_join { from; join; _ } ->
       let x = from_scope_expr' from in
       let y =
         let alias = alias join in
-        (alias.node, evar ~loc:(to_location alias) alias.node)
+        (alias, evar ~loc:(to_location alias) alias.node)
       in
       y :: x
 
-let from_scope_expr ~local_bindings from =
+let located_of_id id =
+  let loc = to_location id in
+  Located.mk ~loc id.node
+
+module Id_set = Set.Make (struct
+  type t = Syntax.id
+
+  let compare = Syntax.compare_id
+end)
+
+let from_scope_expr ~scopes from =
   let loc = to_location from in
   let make fields =
-    pexp_object ~loc { pcstr_self = ppat_any ~loc; pcstr_fields = fields }
+    pexp_object ~loc
+      { pcstr_self = ppat_any ~loc; pcstr_fields = List.map fields ~f:snd }
   in
-  let fields =
+  let merge_scopes x y =
+    let seen = List.to_seq y |> Seq.map fst |> Id_set.of_seq in
+    let x = List.filter x ~f:(fun (id, _) -> not (Id_set.mem id seen)) in
+    x @ y
+  in
+  let from =
     from_scope_expr' from
-    |> List.rev_map ~f:(fun (name, expr) ->
-           pcf_method ~loc
-             (Located.mk ~loc name, Public, Cfk_concrete (Fresh, expr)))
+    |> List.rev_map ~f:(fun (id, expr) ->
+           ( id,
+             pcf_method ~loc
+               (located_of_id id, Public, Cfk_concrete (Fresh, expr)) ))
   in
-  match local_bindings with
-  | [] -> make fields
-  | local_bindings ->
-      [%expr
-        let __q = [%e make fields] in
-        [%e make (local_bindings @ fields)]]
+  let rec build curr_scope = function
+    | [] -> failwith "impossible: should have at least FROM scope"
+    | x :: [] ->
+        let curr_scope = merge_scopes curr_scope x in
+        let curr_scope = merge_scopes curr_scope from in
+        make curr_scope
+    | x :: xs ->
+        let curr_scope = merge_scopes curr_scope x in
+        [%expr
+          let __q = [%e make curr_scope] in
+          [%e build (merge_scopes curr_scope x) xs]]
+  in
+  let scopes = List.filter scopes ~f:(fun scope -> not (List.is_empty scope)) in
+  build [] (from :: scopes)
 
 let from_one_scope_pattern from_one =
   match from_one.Syntax.node with
@@ -406,24 +431,21 @@ and stage_settings ~loc settings =
 and stage_field ~from idx { Syntax.expr; alias } =
   let idx = idx + 1 in
   let loc = to_location expr in
-  let name, name_of_alias =
+  let name =
     match alias with
-    | Some name ->
-        let loc = to_location name in
-        (Located.mk ~loc name.node, true)
+    | Some name -> located_of_id name
     | None ->
         let name =
           match expr.node with
-          | E_id id -> id.node
-          | E_col (_, id) -> id.node
-          | E_param id -> id.node
-          | _ -> "_" ^ string_of_int idx
+          | E_id id -> id
+          | E_col (_, id) -> id
+          | E_param id -> id
+          | _ -> Syntax.make_id ~loc:expr.loc ("_" ^ string_of_int idx)
         in
-        (Located.mk ~loc name, false)
+        located_of_id name
   in
   let expr = stage_expr ~params:[] ~from expr in
-  ( pcf_method ~loc (name, Public, Cfk_concrete (Fresh, expr)),
-    if name_of_alias then Some name else None )
+  (pcf_method ~loc (name, Public, Cfk_concrete (Fresh, expr)), alias)
 
 and stage_query ({ node; _ } as q) =
   match node with
@@ -437,6 +459,7 @@ and stage_query ({ node; _ } as q) =
       evar ~loc id.node
   | Q_select
       {
+        with_fields;
         select;
         from;
         prewhere;
@@ -450,35 +473,49 @@ and stage_query ({ node; _ } as q) =
         settings;
       } ->
       let loc = to_location q in
-      let select, local_bindings =
+      let scope_of_with =
+        List.map with_fields ~f:(function
+          | Syntax.With_expr ({ alias = Some id; _ } as field) ->
+              (id, fst (stage_field ~from:From 0 field))
+          | Syntax.With_expr { alias = None; expr } ->
+              let loc = to_location expr in
+              Location.raise_errorf ~loc "WITH <expr> requires an alias"
+          | Syntax.With_query (id, _) ->
+              let loc = to_location id in
+              Location.raise_errorf ~loc
+                "WITH <id> AS <query> is not supported yet")
+      in
+      let select, scopes =
         match select with
         | Syntax.Select_fields fields ->
             let fields = List.mapi fields ~f:(stage_field ~from:From) in
             let pcstr_fields =
               List.map fields ~f:(function
                 | expr, None -> expr
-                | _expr, Some name ->
+                | _expr, Some alias ->
+                    let name = located_of_id alias in
                     let expr = pexp_send ~loc [%expr __q] name in
                     pcf_method ~loc (name, Public, Cfk_concrete (Fresh, expr)))
             in
             let select_obj =
               pexp_object ~loc { pcstr_self = ppat_any ~loc; pcstr_fields }
             in
-            let local_bindings =
-              List.filter_map fields ~f:(fun (m, alias) ->
-                  if Option.is_some alias then Some m else None)
+            let scope_of_select =
+              List.filter_map fields ~f:(function
+                | m, Some alias -> Some (alias, m)
+                | _, None -> None)
             in
-            (make_hole ~loc select_obj, local_bindings)
+            (make_hole ~loc select_obj, [ scope_of_with; scope_of_select ])
         | Syntax.Select_splice id ->
             let loc = to_location id in
-            (evar ~loc id.node, [])
+            (evar ~loc id.node, [ scope_of_with ])
       in
       let args =
         let from =
           [%expr
             Ch_queries.map_from_scope [%e stage_from from]
               (fun [%p from_scope_pattern from] ->
-                [%e from_scope_expr ~local_bindings from])]
+                [%e from_scope_expr ~scopes from])]
         in
         [ (Labelled "select", select); (Labelled "from", from) ]
       in
@@ -584,7 +621,7 @@ and stage_from from =
       let on =
         [%expr
           fun [%p from_scope_pattern ~kind:`INNER_JOIN from] ->
-            let __q = [%e from_scope_expr ~local_bindings:[] from] in
+            let __q = [%e from_scope_expr ~scopes:[] from] in
             [%e stage_expr ~params:[] ~from:From on]]
       in
       [%expr [%e f] [%e stage_from base] [%e stage_from_one join] ~on:[%e on]]
@@ -645,7 +682,7 @@ let expand_from ~ctxt:_ expr =
       [%expr
         Ch_queries.map_from_scope [%e stage_from from]
           (fun [%p from_scope_pattern from] ->
-            [%e from_scope_expr ~local_bindings:[] from])]
+            [%e from_scope_expr ~scopes:[] from])]
   | _ -> Location.raise_errorf "expected a string literal for the '%%f"
 
 let expand_expr ~ctxt:_ expr =

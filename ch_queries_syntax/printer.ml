@@ -258,6 +258,12 @@ and pp_field opts { expr; alias } =
 
 and pp_as id = group (nest 2 (break 1 ^^ string (sprintf "AS %s" id.node)))
 
+and pp_with_field opts with_field =
+  match with_field with
+  | Syntax.With_expr field -> pp_field opts field
+  | Syntax.With_query (id, query) ->
+      group (pp_id id ^^ string " AS (" ^^ nest 2 (break 1 ^^ pp_query opts query) ^^ break 1 ^^ string ")")
+
 and pp_from_one opts from_one =
   match from_one.node with
   | F_table { db; table; alias; final } ->
@@ -306,6 +312,7 @@ and pp_query opts { node; eq = _; loc = _ } =
   | Q_param id -> string "?" ^^ pp_id id
   | Q_select
       {
+        with_fields;
         select;
         from;
         prewhere;
@@ -325,6 +332,15 @@ and pp_query opts { node; eq = _; loc = _ } =
               (string "," ^^ break 1)
               (List.map ~f:(pp_field opts) fields)
         | Select_splice id -> pp_id id ^^ string "..."
+      in
+      let with_clause =
+        match with_fields with
+        | [] -> None
+        | fields ->
+            let pp_with_fields =
+              separate (string "," ^^ break 1) (List.map ~f:(pp_with_field opts) fields)
+            in
+            Some (group (string "WITH" ^^ nest 2 (break 1 ^^ pp_with_fields)))
       in
       let select = group (string "SELECT" ^^ nest 2 (break 1 ^^ pp_fields)) in
       let from = group (string "FROM " ^^ pp_from opts from) in
@@ -433,6 +449,7 @@ and pp_query opts { node; eq = _; loc = _ } =
         (separate (break 1)
            (List.filter_map ~f:Fun.id
               [
+                with_clause;
                 Some select;
                 Some from;
                 prewhere;
