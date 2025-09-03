@@ -635,33 +635,33 @@ type json =
 (** JSON value (compatible with Yojson.Basic.t) *)
 
 module Row = struct
-  exception Parse_error of string
+  exception Parse_error of json option * string
 
-  let parse_error msg = raise (Parse_error msg)
+  let parse_error ?json msg = raise (Parse_error (json, msg))
 
   let string_of_json = function
     | `String s -> s
-    | _ -> parse_error "expected a string"
+    | json -> parse_error ~json "expected a string"
 
   let int_of_json = function
     | `Int i -> i
-    | _ -> parse_error "expected an integer"
+    | json -> parse_error ~json "expected an integer"
 
   let int64_of_json = function
     | `Int i -> Int64.of_int i
-    | `String s -> (
+    | `String s as json -> (
         match Int64.of_string_opt s with
         | Some i -> i
-        | None -> parse_error "expected an integer")
-    | _ -> parse_error "expected an integer"
+        | None -> parse_error ~json "expected an integer")
+    | json -> parse_error ~json "expected an integer"
 
   let float_of_json = function
     | `Float f -> f
-    | _ -> parse_error "expected a float"
+    | json -> parse_error ~json "expected a float"
 
   let bool_of_json = function
     | `Bool b -> b
-    | _ -> parse_error "expected a boolean"
+    | json -> parse_error ~json "expected a boolean"
 
   type _ t =
     | Row_col : (non_null, 'a) expr * (json -> 'a) -> 'a t
@@ -714,7 +714,7 @@ module Row = struct
     fun rowspec row ->
       match aux rowspec row with
       | x, [] -> x
-      | _, _ -> parse_error "extra columns in row"
+      | _, json -> parse_error ~json:(`List json) "extra columns in row"
 
   let fields : type a. a t -> a_expr list =
     let rec aux : type a. a t -> a_expr list -> a_expr list =

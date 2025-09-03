@@ -385,7 +385,7 @@ module Row : sig
   val float : (non_null, float number) expr -> float t
   val float_opt : ([< null ], float number) expr -> float option t
 
-  exception Parse_error of string
+  exception Parse_error of json option * string
 
   val parse : 'a t -> json list -> 'a
   (** Parse a row from a JSON list.
