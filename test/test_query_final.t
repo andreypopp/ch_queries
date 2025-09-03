@@ -11,12 +11,18 @@ select from table with FINAL keyword:
         (Ch_queries.map_from_scope
            (Ch_queries.from (Ch_database.Public.users ~alias:"users" ~final:true))
            (fun (users : _ Ch_queries.scope) ->
+             let __q =
+               object
+                 method users = users
+               end
+             in
              object
+               method x = __q#users#query (fun __q -> __q#x)
                method users = users
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun __q -> __q#x)
+          method x = __q#x
         end)
       ~where:(fun __q -> __q#users#query (fun __q -> __q#is_active))
   
@@ -45,12 +51,18 @@ if FINAL keyword is applied to param, then it expects the table:
         (Ch_queries.map_from_scope
            (Ch_queries.from (table ~final:true ~alias:"users"))
            (fun (users : _ Ch_queries.scope) ->
+             let __q =
+               object
+                 method users = users
+               end
+             in
              object
+               method x = __q#users#query (fun __q -> __q#x)
                method users = users
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun __q -> __q#x)
+          method x = __q#x
         end)
       ~where:(fun __q -> __q#users#query (fun __q -> __q#is_active))
   

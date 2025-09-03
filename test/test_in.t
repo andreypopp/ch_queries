@@ -12,12 +12,18 @@ test IN expression with subquery:
            (Ch_queries.from
               (Ch_database.Public.users ~alias:"users" ~final:false))
            (fun (users : _ Ch_queries.scope) ->
+             let __q =
+               object
+                 method users = users
+               end
+             in
              object
+               method x = __q#users#query (fun __q -> __q#x)
                method users = users
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun __q -> __q#x)
+          method x = __q#x
         end)
       ~where:(fun __q ->
         Ch_queries.in_
@@ -29,12 +35,18 @@ test IN expression with subquery:
                      (Ch_queries.from
                         (Ch_database.Public.users ~alias:"users" ~final:false))
                      (fun (users : _ Ch_queries.scope) ->
+                       let __q =
+                         object
+                           method users = users
+                         end
+                       in
                        object
+                         method _1 = __q#users#query (fun __q -> __q#id)
                          method users = users
                        end))
                 ~select:(fun __q ->
                   object
-                    method _1 = __q#users#query (fun __q -> __q#id)
+                    method _1 = __q#_1
                   end))))
   
   let sql, _parse_row =
@@ -63,12 +75,18 @@ test IN expression with expression::
            (Ch_queries.from
               (Ch_database.Public.users ~alias:"users" ~final:false))
            (fun (users : _ Ch_queries.scope) ->
+             let __q =
+               object
+                 method users = users
+               end
+             in
              object
+               method x = __q#users#query (fun __q -> __q#x)
                method users = users
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun __q -> __q#x)
+          method x = __q#x
         end)
       ~where:(fun __q ->
         Ch_queries.in_
@@ -99,12 +117,18 @@ test IN expression with parameter:
            (Ch_queries.from
               (Ch_database.Public.users ~alias:"users" ~final:false))
            (fun (users : _ Ch_queries.scope) ->
+             let __q =
+               object
+                 method users = users
+               end
+             in
              object
+               method x = __q#users#query (fun __q -> __q#x)
                method users = users
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun __q -> __q#x)
+          method x = __q#x
         end)
       ~where:(fun __q -> Ch_queries.in_ (__q#users#query (fun __q -> __q#id)) ids)
   >>> RUNNING

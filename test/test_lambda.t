@@ -12,18 +12,25 @@ test IN expression with subquery:
            (Ch_queries.from
               (Ch_database.Public.users ~alias:"users" ~final:false))
            (fun (users : _ Ch_queries.scope) ->
+             let __q =
+               object
+                 method users = users
+               end
+             in
              object
+               method x =
+                 Ch_queries.Expr.length
+                   (Ch_queries.Expr.arrayFilter
+                      (Ch_queries.lambda "x" (fun x ->
+                           Ch_queries.Expr.( = ) (Ch_queries.unsafe "x")
+                             (Ch_queries.int 1)))
+                      (__q#users#query (fun __q -> __q#xs)))
+  
                method users = users
              end))
       ~select:(fun __q ->
         object
-          method x =
-            Ch_queries.Expr.length
-              (Ch_queries.Expr.arrayFilter
-                 (Ch_queries.lambda "x" (fun x ->
-                      Ch_queries.Expr.( = ) (Ch_queries.unsafe "x")
-                        (Ch_queries.int 1)))
-                 (__q#users#query (fun __q -> __q#xs)))
+          method x = __q#x
         end)
   
   let sql, _parse_row =

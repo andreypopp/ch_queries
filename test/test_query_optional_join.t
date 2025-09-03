@@ -28,14 +28,22 @@ optional join with a table (elimination):
                   (__q#u#query (fun __q -> __q#id))
                   (__q#p#query (fun __q -> __q#user_id))))
            (fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.nullable_scope)) ->
+             let __q =
+               object
+                 method u = u
+                 method p = p
+               end
+             in
              object
+               method user_id = __q#u#query (fun __q -> __q#id)
+               method user_name = __q#p#query (fun __q -> __q#name)
                method u = u
                method p = p
              end))
       ~select:(fun __q ->
         object
-          method user_id = __q#u#query (fun __q -> __q#id)
-          method user_name = __q#p#query (fun __q -> __q#name)
+          method user_id = __q#user_id
+          method user_name = __q#user_name
         end)
   
   let sql, _parse_row =
@@ -76,14 +84,22 @@ optional join with a table (in use):
                   (__q#u#query (fun __q -> __q#id))
                   (__q#p#query (fun __q -> __q#user_id))))
            (fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.nullable_scope)) ->
+             let __q =
+               object
+                 method u = u
+                 method p = p
+               end
+             in
              object
+               method user_id = __q#u#query (fun __q -> __q#id)
+               method user_name = __q#p#query (fun __q -> __q#name)
                method u = u
                method p = p
              end))
       ~select:(fun __q ->
         object
-          method user_id = __q#u#query (fun __q -> __q#id)
-          method user_name = __q#p#query (fun __q -> __q#name)
+          method user_id = __q#user_id
+          method user_name = __q#user_name
         end)
   
   let sql, _parse_row =
@@ -123,13 +139,20 @@ optional join with a subquery (elimination):
                          (Ch_queries.from
                             (Ch_database.Public.profiles ~alias:"p" ~final:false))
                          (fun (p : _ Ch_queries.scope) ->
+                           let __q =
+                             object
+                               method p = p
+                             end
+                           in
                            object
+                             method user_id = __q#p#query (fun __q -> __q#user_id)
+                             method name = __q#p#query (fun __q -> __q#name)
                              method p = p
                            end))
                     ~select:(fun __q ->
                       object
-                        method user_id = __q#p#query (fun __q -> __q#user_id)
-                        method name = __q#p#query (fun __q -> __q#name)
+                        method user_id = __q#user_id
+                        method name = __q#name
                       end))
                  ~alias:"p")
               ~on:(fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.scope)) ->
@@ -143,14 +166,22 @@ optional join with a subquery (elimination):
                   (__q#u#query (fun __q -> __q#id))
                   (__q#p#query (fun __q -> __q#user_id))))
            (fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.nullable_scope)) ->
+             let __q =
+               object
+                 method u = u
+                 method p = p
+               end
+             in
              object
+               method user_id = __q#u#query (fun __q -> __q#id)
+               method user_name = __q#p#query (fun __q -> __q#name)
                method u = u
                method p = p
              end))
       ~select:(fun __q ->
         object
-          method user_id = __q#u#query (fun __q -> __q#id)
-          method user_name = __q#p#query (fun __q -> __q#name)
+          method user_id = __q#user_id
+          method user_name = __q#user_name
         end)
   
   let sql, _parse_row =
@@ -186,13 +217,20 @@ optional join with a subquery (in use):
                          (Ch_queries.from
                             (Ch_database.Public.profiles ~alias:"p" ~final:false))
                          (fun (p : _ Ch_queries.scope) ->
+                           let __q =
+                             object
+                               method p = p
+                             end
+                           in
                            object
+                             method user_id = __q#p#query (fun __q -> __q#user_id)
+                             method name = __q#p#query (fun __q -> __q#name)
                              method p = p
                            end))
                     ~select:(fun __q ->
                       object
-                        method user_id = __q#p#query (fun __q -> __q#user_id)
-                        method name = __q#p#query (fun __q -> __q#name)
+                        method user_id = __q#user_id
+                        method name = __q#name
                       end))
                  ~alias:"p")
               ~on:(fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.scope)) ->
@@ -206,14 +244,22 @@ optional join with a subquery (in use):
                   (__q#u#query (fun __q -> __q#id))
                   (__q#p#query (fun __q -> __q#user_id))))
            (fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.nullable_scope)) ->
+             let __q =
+               object
+                 method u = u
+                 method p = p
+               end
+             in
              object
+               method user_id = __q#u#query (fun __q -> __q#id)
+               method user_name = __q#p#query (fun __q -> __q#name)
                method u = u
                method p = p
              end))
       ~select:(fun __q ->
         object
-          method user_id = __q#u#query (fun __q -> __q#id)
-          method user_name = __q#p#query (fun __q -> __q#name)
+          method user_id = __q#user_id
+          method user_name = __q#user_name
         end)
   
   let sql, _parse_row =

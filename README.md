@@ -59,7 +59,8 @@ scope and returns an expression:
     WHERE users.is_active AND $where
   |}
 val users :
-  where:(< users : < id : (non_null, int number) expr;
+  where:(< id : (non_null, int number) expr; name : (non_null, string) expr;
+           users : < id : (non_null, int number) expr;
                      is_active : (non_null, bool) expr;
                      name : (non_null, string) expr >
                    scope > ->
@@ -71,7 +72,7 @@ val users :
 Finally to generate SQL from the query, one needs to define what exactly to
 select and how to parse each column:
 ```ocaml
-# let sql, parse_row = Ch_queries.query {%q|SELECT id FROM db.users|} Row.(fun __q -> int {%e|q.id|});;
+# let sql, parse_row = Ch_queries.query {%q|SELECT users.id FROM db.users|} Row.(fun __q -> int {%e|q.id|});;
 val sql : string =
   "SELECT q._1 FROM (SELECT users.id AS _1 FROM public.users AS users) AS q"
 val parse_row : json list -> int = <fun>
