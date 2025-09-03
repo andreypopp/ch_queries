@@ -114,12 +114,18 @@ The param within the scope receives the scope as argument:
         (Ch_queries.map_from_scope
            (Ch_queries.from (q1 ~alias:"q"))
            (fun (q : _ Ch_queries.scope) ->
+             let __q =
+               object
+                 method q = q
+               end
+             in
              object
+               method field = __q#q#query (fun __q -> field __q)
                method q = q
              end))
       ~select:(fun __q ->
         object
-          method field = __q#q#query (fun __q -> field __q)
+          method field = __q#field
         end)
   ;;
   

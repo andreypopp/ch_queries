@@ -62,14 +62,22 @@ select from a LEFT JOIN:
                   (__q#u#query (fun __q -> __q#id))
                   (__q#p#query (fun __q -> __q#user_id))))
            (fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.nullable_scope)) ->
+             let __q =
+               object
+                 method u = u
+                 method p = p
+               end
+             in
              object
+               method user_id = __q#u#query (fun __q -> __q#id)
+               method user_name = __q#p#query (fun __q -> __q#name)
                method u = u
                method p = p
              end))
       ~select:(fun __q ->
         object
-          method user_id = __q#u#query (fun __q -> __q#id)
-          method user_name = __q#p#query (fun __q -> __q#name)
+          method user_id = __q#user_id
+          method user_name = __q#user_name
         end)
   >>> RUNNING
   val q :
@@ -108,14 +116,22 @@ select from an OCaml value with JOIN:
                   (__q#u#query (fun __q -> __q#id))
                   (__q#p#query (fun __q -> __q#user_id))))
            (fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.nullable_scope)) ->
+             let __q =
+               object
+                 method u = u
+                 method p = p
+               end
+             in
              object
+               method user_id = __q#u#query (fun __q -> __q#id)
+               method user_name = __q#p#query (fun __q -> __q#name)
                method u = u
                method p = p
              end))
       ~select:(fun __q ->
         object
-          method user_id = __q#u#query (fun __q -> __q#id)
-          method user_name = __q#p#query (fun __q -> __q#name)
+          method user_id = __q#user_id
+          method user_name = __q#user_name
         end)
   
   let q = q (Ch_database.Public.profiles ~final:false)
@@ -178,14 +194,22 @@ splicing ocaml values into JOIN-ON:
            (fun ( ((u : _ Ch_queries.scope), (p : _ Ch_queries.nullable_scope)),
                   (p2 : _ Ch_queries.nullable_scope) )
               ->
+             let __q =
+               object
+                 method u = u
+                 method p = p
+                 method p2 = p2
+               end
+             in
              object
+               method one = Ch_queries.int 1
                method u = u
                method p = p
                method p2 = p2
              end))
       ~select:(fun __q ->
         object
-          method one = Ch_queries.int 1
+          method one = __q#one
         end)
   >>> RUNNING
   val q :

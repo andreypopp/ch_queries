@@ -32,11 +32,17 @@ OCaml expression in query:
         (Ch_queries.map_from_scope
            (Ch_queries.from (users ~alias:"users"))
            (fun (users : _ Ch_queries.scope) ->
+             let __q =
+               object
+                 method users = users
+               end
+             in
              object
+               method x = x + 1
                method users = users
              end))
       ~select:(fun __q ->
         object
-          method x = x + 1
+          method x = __q#x
         end)
   >>> RUNNING

@@ -28,12 +28,18 @@ UNION syntax:
               (Ch_queries.from
                  (Ch_database.Public.users ~alias:"users" ~final:false))
               (fun (users : _ Ch_queries.scope) ->
+                let __q =
+                  object
+                    method users = users
+                  end
+                in
                 object
+                  method x = Ch_queries.int 1
                   method users = users
                 end))
          ~select:(fun __q ->
            object
-             method x = Ch_queries.int 1
+             method x = __q#x
            end))
       (Ch_queries.select ()
          ~from:
@@ -41,12 +47,18 @@ UNION syntax:
               (Ch_queries.from
                  (Ch_database.Public.users ~alias:"users" ~final:false))
               (fun (users : _ Ch_queries.scope) ->
+                let __q =
+                  object
+                    method users = users
+                  end
+                in
                 object
+                  method x = Ch_queries.int 2
                   method users = users
                 end))
          ~select:(fun __q ->
            object
-             method x = Ch_queries.int 2
+             method x = __q#x
            end))
   
   let sql, _parse_row =

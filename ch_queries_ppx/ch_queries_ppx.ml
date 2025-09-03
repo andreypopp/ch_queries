@@ -39,15 +39,7 @@ let alias from_one =
     ->
       alias
 
-type from_ctx = From_none | From of { non_ambigious : Syntax.id option }
-
-let make_from_ctx from =
-  let non_ambigious =
-    match from.Syntax.node with
-    | Syntax.F from_one -> Some (alias from_one)
-    | F_join _ -> None
-  in
-  From { non_ambigious }
+type from_ctx = From_none | From
 
 let rec from_scope_expr' from =
   let open Syntax in
@@ -63,16 +55,23 @@ let rec from_scope_expr' from =
       in
       y :: x
 
-let from_scope_expr from =
+let from_scope_expr ~local_bindings from =
   let loc = to_location from in
-  let es = List.rev (from_scope_expr' from) in
-  (* create an object with fields *)
-  let fields =
-    List.map es ~f:(fun (name, expr) ->
-        pcf_method ~loc
-          (Located.mk ~loc name, Public, Cfk_concrete (Fresh, expr)))
+  let make fields =
+    pexp_object ~loc { pcstr_self = ppat_any ~loc; pcstr_fields = fields }
   in
-  pexp_object ~loc { pcstr_self = ppat_any ~loc; pcstr_fields = fields }
+  let fields =
+    from_scope_expr' from
+    |> List.rev_map ~f:(fun (name, expr) ->
+           pcf_method ~loc
+             (Located.mk ~loc name, Public, Cfk_concrete (Fresh, expr)))
+  in
+  match local_bindings with
+  | [] -> make fields
+  | local_bindings ->
+      [%expr
+        let __q = [%e make fields] in
+        [%e make (local_bindings @ fields)]]
 
 let from_one_scope_pattern from_one =
   match from_one.Syntax.node with
@@ -218,17 +217,11 @@ let rec stage_expr ~params ~(from : from_ctx) expr =
       [%expr Ch_queries.unsafe [%e estring ~loc id.node]]
   | Syntax.E_col (scope, id) -> refer_to_scope ~loc scope id
   | Syntax.E_query (scope, expr) ->
-      query_scope ~loc scope
-        (stage_expr ~params:[] ~from:(From { non_ambigious = None }) expr)
+      query_scope ~loc scope (stage_expr ~params:[] ~from:From expr)
   | Syntax.E_id id -> (
       match CCList.mem id params ~eq:Syntax.equal_id with
       | true -> [%expr Ch_queries.unsafe [%e estring ~loc id.node]]
-      | false -> (
-          match from with
-          | From_none | From { non_ambigious = None } ->
-              Location.raise_errorf ~loc "ambiguous column reference" id.node
-          | From { non_ambigious = Some scope } -> refer_to_scope ~loc scope id)
-      )
+      | false -> pexp_send ~loc [%expr __q] (Located.mk ~loc id.Syntax.node))
   | Syntax.E_lit (L_int n) -> [%expr Ch_queries.int [%e eint ~loc n]]
   | Syntax.E_lit (L_float n) ->
       [%expr Ch_queries.float [%e efloat ~loc (string_of_float n)]]
@@ -316,7 +309,7 @@ let rec stage_expr ~params ~(from : from_ctx) expr =
               eapply ~loc e staged_args))
   | Syntax.E_param var -> (
       let e = evar ~loc var.node in
-      match from with From_none -> e | From _ -> [%expr [%e e] __q])
+      match from with From_none -> e | From -> [%expr [%e e] __q])
   | Syntax.E_ocaml_expr ocaml_code -> parse_ocaml_expr ~loc ocaml_code
   | Syntax.E_in (expr, in_query) -> (
       let expr = stage_expr ~params ~from expr in
@@ -398,23 +391,24 @@ and stage_settings ~loc settings =
 and stage_field ~from idx { Syntax.expr; alias } =
   let idx = idx + 1 in
   let loc = to_location expr in
-  let name =
-    let name, loc =
-      match alias with
-      | Some name ->
-          let loc = to_location name in
-          (name.node, loc)
-      | None -> (
+  let name, name_of_alias =
+    match alias with
+    | Some name ->
+        let loc = to_location name in
+        (Located.mk ~loc name.node, true)
+    | None ->
+        let name =
           match expr.node with
-          | E_id id -> (id.node, loc)
-          | E_col (_, id) -> (id.node, loc)
-          | E_param id -> (id.node, loc)
-          | _ -> ("_" ^ string_of_int idx, loc))
-    in
-    Located.mk ~loc name
+          | E_id id -> id.node
+          | E_col (_, id) -> id.node
+          | E_param id -> id.node
+          | _ -> "_" ^ string_of_int idx
+        in
+        (Located.mk ~loc name, false)
   in
-  pcf_method ~loc
-    (name, Public, Cfk_concrete (Fresh, stage_expr ~params:[] ~from expr))
+  let expr = stage_expr ~params:[] ~from expr in
+  ( pcf_method ~loc (name, Public, Cfk_concrete (Fresh, expr)),
+    if name_of_alias then Some name else None )
 
 and stage_query ({ node; _ } as q) =
   match node with
@@ -441,26 +435,35 @@ and stage_query ({ node; _ } as q) =
         settings;
       } ->
       let loc = to_location q in
-      let select =
+      let select, local_bindings =
         match select with
         | Syntax.Select_fields fields ->
-            let select_methods =
-              List.mapi fields ~f:(stage_field ~from:(make_from_ctx from))
+            let fields = List.mapi fields ~f:(stage_field ~from:From) in
+            let pcstr_fields =
+              List.map fields ~f:(function
+                | expr, None -> expr
+                | _expr, Some name ->
+                    let expr = pexp_send ~loc [%expr __q] name in
+                    pcf_method ~loc (name, Public, Cfk_concrete (Fresh, expr)))
             in
             let select_obj =
-              pexp_object ~loc
-                { pcstr_self = ppat_any ~loc; pcstr_fields = select_methods }
+              pexp_object ~loc { pcstr_self = ppat_any ~loc; pcstr_fields }
             in
-            make_hole ~loc select_obj
+            let local_bindings =
+              List.filter_map fields ~f:(fun (m, alias) ->
+                  if Option.is_some alias then Some m else None)
+            in
+            (make_hole ~loc select_obj, local_bindings)
         | Syntax.Select_splice id ->
             let loc = to_location id in
-            evar ~loc id.node
+            (evar ~loc id.node, [])
       in
       let args =
         let from =
           [%expr
             Ch_queries.map_from_scope [%e stage_from from]
-              (fun [%p from_scope_pattern from] -> [%e from_scope_expr from])]
+              (fun [%p from_scope_pattern from] ->
+                [%e from_scope_expr ~local_bindings from])]
         in
         [ (Labelled "select", select); (Labelled "from", from) ]
       in
@@ -470,8 +473,7 @@ and stage_query ({ node; _ } as q) =
         | Some prewhere ->
             let loc = to_location prewhere in
             let prewhere =
-              make_hole ~loc
-                (stage_expr ~params:[] ~from:(make_from_ctx from) prewhere)
+              make_hole ~loc (stage_expr ~params:[] ~from:From prewhere)
             in
             (Labelled "prewhere", prewhere) :: args
       in
@@ -481,8 +483,7 @@ and stage_query ({ node; _ } as q) =
         | Some where ->
             let loc = to_location where in
             let where =
-              make_hole ~loc
-                (stage_expr ~params:[] ~from:(make_from_ctx from) where)
+              make_hole ~loc (stage_expr ~params:[] ~from:From where)
             in
             (Labelled "where", where) :: args
       in
@@ -492,8 +493,7 @@ and stage_query ({ node; _ } as q) =
         | Some qualify ->
             let loc = to_location qualify in
             let qualify =
-              make_hole ~loc
-                (stage_expr ~params:[] ~from:(make_from_ctx from) qualify)
+              make_hole ~loc (stage_expr ~params:[] ~from:From qualify)
             in
             (Labelled "qualify", qualify) :: args
       in
@@ -502,9 +502,7 @@ and stage_query ({ node; _ } as q) =
         | None -> args
         | Some dimensions ->
             let loc = to_location q in
-            let group_by =
-              stage_dimensions ~loc ~from:(make_from_ctx from) dimensions
-            in
+            let group_by = stage_dimensions ~loc ~from:From dimensions in
             let group_by = make_hole ~loc group_by in
             (Labelled "group_by", group_by) :: args
       in
@@ -514,8 +512,7 @@ and stage_query ({ node; _ } as q) =
         | Some having ->
             let loc = to_location having in
             let having =
-              make_hole ~loc
-                (stage_expr ~params:[] ~from:(make_from_ctx from) having)
+              make_hole ~loc (stage_expr ~params:[] ~from:From having)
             in
             (Labelled "having", having) :: args
       in
@@ -524,9 +521,7 @@ and stage_query ({ node; _ } as q) =
         | None -> args
         | Some order_by ->
             let loc = to_location q in
-            let order_by =
-              stage_order_by ~loc ~from:(make_from_ctx from) order_by
-            in
+            let order_by = stage_order_by ~loc ~from:From order_by in
             let order_by = make_hole ~loc order_by in
             (Labelled "order_by", order_by) :: args
       in
@@ -535,8 +530,7 @@ and stage_query ({ node; _ } as q) =
         | None -> args
         | Some expr ->
             let limit =
-              make_hole ~loc
-                (stage_expr ~params:[] ~from:(make_from_ctx from) expr)
+              make_hole ~loc (stage_expr ~params:[] ~from:From expr)
             in
             (Labelled "limit", limit) :: args
       in
@@ -545,8 +539,7 @@ and stage_query ({ node; _ } as q) =
         | None -> args
         | Some expr ->
             let offset =
-              make_hole ~loc
-                (stage_expr ~params:[] ~from:(make_from_ctx from) expr)
+              make_hole ~loc (stage_expr ~params:[] ~from:From expr)
             in
             (Labelled "offset", offset) :: args
       in
@@ -576,8 +569,8 @@ and stage_from from =
       let on =
         [%expr
           fun [%p from_scope_pattern ~kind:`INNER_JOIN from] ->
-            let __q = [%e from_scope_expr from] in
-            [%e stage_expr ~params:[] ~from:(make_from_ctx from) on]]
+            let __q = [%e from_scope_expr ~local_bindings:[] from] in
+            [%e stage_expr ~params:[] ~from:From on]]
       in
       [%expr [%e f] [%e stage_from base] [%e stage_from_one join] ~on:[%e on]]
 
@@ -636,7 +629,8 @@ let expand_from ~ctxt:_ expr =
       let from = parse_from ~loc txt in
       [%expr
         Ch_queries.map_from_scope [%e stage_from from]
-          (fun [%p from_scope_pattern from] -> [%e from_scope_expr from])]
+          (fun [%p from_scope_pattern from] ->
+            [%e from_scope_expr ~local_bindings:[] from])]
   | _ -> Location.raise_errorf "expected a string literal for the '%%f"
 
 let expand_expr ~ctxt:_ expr =
