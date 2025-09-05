@@ -72,3 +72,105 @@ UNION syntax:
     SELECT 1 AS _1 FROM public.users AS users
     UNION
     SELECT 2 AS _1 FROM public.users AS users) AS q
+
+test edge case with dynamic scopes:
+  $ ./compile_and_run '
+  > let select_x __q = object
+  >   method get = function | `X -> Ch_queries.string "dup" | `Y -> Ch_queries.string "X_Y" | `Z -> Ch_queries.string "dup"
+  > end;;
+  > let select_y __q = object
+  >   method get = function | `X -> Ch_queries.string "dup" | `Y -> Ch_queries.string "dup" | `Z -> Ch_queries.string "Y_Z"
+  > end;;
+  > let select_z __q = object
+  >   method get = function | `X -> Ch_queries.string "Z_X" | `Y -> Ch_queries.string "dup" | `Z -> Ch_queries.string "dup"
+  > end;;
+  > let users = [%q "SELECT $select_x... FROM public.users UNION SELECT $select_y... FROM public.users UNION SELECT $select_z... FROM public.users"];;
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> 
+  >   let open Ch_queries.Row in
+  >   let+ _ = Ch_queries.Row.string [%e "q.get(${`X})"]
+  >   and+ _ = Ch_queries.Row.string [%e "q.get(${`Y})"]
+  >   and+ _ = Ch_queries.Row.string [%e "q.get(${`Z})"]
+  >   and+ _ = Ch_queries.Row.string [%e "q.get(${`Z})"]
+  >   in ();;
+  > let () = print_endline sql;;
+  > '
+  >>> PREPROCESSING
+  let select_x __q =
+    object
+      method get =
+        function
+        | `X -> Ch_queries.string "dup"
+        | `Y -> Ch_queries.string "X_Y"
+        | `Z -> Ch_queries.string "dup"
+    end
+  
+  let select_y __q =
+    object
+      method get =
+        function
+        | `X -> Ch_queries.string "dup"
+        | `Y -> Ch_queries.string "dup"
+        | `Z -> Ch_queries.string "Y_Z"
+    end
+  
+  let select_z __q =
+    object
+      method get =
+        function
+        | `X -> Ch_queries.string "Z_X"
+        | `Y -> Ch_queries.string "dup"
+        | `Z -> Ch_queries.string "dup"
+    end
+  
+  let users =
+    Ch_queries.union
+      (Ch_queries.union
+         (Ch_queries.select ()
+            ~from:
+              (Ch_queries.map_from_scope
+                 (Ch_queries.from
+                    (Ch_database.Public.users ~alias:"users" ~final:false))
+                 (fun (users : _ Ch_queries.scope) ->
+                   object
+                     method users = users
+                   end))
+            ~select:select_x)
+         (Ch_queries.select ()
+            ~from:
+              (Ch_queries.map_from_scope
+                 (Ch_queries.from
+                    (Ch_database.Public.users ~alias:"users" ~final:false))
+                 (fun (users : _ Ch_queries.scope) ->
+                   object
+                     method users = users
+                   end))
+            ~select:select_y))
+      (Ch_queries.select ()
+         ~from:
+           (Ch_queries.map_from_scope
+              (Ch_queries.from
+                 (Ch_database.Public.users ~alias:"users" ~final:false))
+              (fun (users : _ Ch_queries.scope) ->
+                object
+                  method users = users
+                end))
+         ~select:select_z)
+  
+  let sql, _parse_row =
+    Ch_queries.query users @@ fun __q ->
+    let open Ch_queries.Row in
+    let+ _ = Ch_queries.Row.string (__q#q#query (fun __q -> __q#get `X))
+    and+ _ = Ch_queries.Row.string (__q#q#query (fun __q -> __q#get `Y))
+    and+ _ = Ch_queries.Row.string (__q#q#query (fun __q -> __q#get `Z))
+    and+ _ = Ch_queries.Row.string (__q#q#query (fun __q -> __q#get `Z)) in
+    ()
+  
+  let () = print_endline sql
+  >>> RUNNING
+  SELECT q._1, q._2, q._3, q._3
+  FROM (
+    SELECT 'dup' AS _1, 'X_Y' AS _2, 'dup' AS _3 FROM public.users AS users
+    UNION
+    SELECT 'dup' AS _1, 'dup' AS _2, 'Y_Z' AS _3 FROM public.users AS users
+    UNION
+    SELECT 'Z_X' AS _1, 'dup' AS _2, 'dup' AS _3 FROM public.users AS users) AS q

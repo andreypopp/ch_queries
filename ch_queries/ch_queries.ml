@@ -23,33 +23,47 @@ and 'a in_rhs =
 and a_expr = A_expr : _ expr -> a_expr
 
 and 'a scope =
-  < query : 'n 'e. ('a -> ('n, 'e) expr) -> ('n, 'e) expr
+  < query' :
+      'n 'e.
+      ('a -> ('n, 'e) expr) -> ('n, 'e) expr * (force:bool -> ('n, 'e) expr)
+  ; query : 'n 'e. ('a -> ('n, 'e) expr) -> ('n, 'e) expr
   ; query_many : ('a -> a_expr list) -> a_expr list >
 
 and 'a nullable_scope =
-  < query : 'n 'e. ('a -> ('n, 'e) expr) -> (null, 'e) expr
+  < query' :
+      'n 'e.
+      ('a -> ('n, 'e) expr) -> ('n, 'e) expr * (force:bool -> (null, 'e) expr)
+  ; query : 'n 'e. ('a -> ('n, 'e) expr) -> (null, 'e) expr
   ; query_many : ('a -> a_expr list) -> a_expr list >
 
 and a_field = A_field : Ch_queries_syntax.Syntax.expr * string -> a_field
 
+and 'scope select_payload = {
+  from : a_from0;
+  scope : 'scope;  (** scope of the query, once it is queried *)
+  prewhere : a_expr option;
+  where : a_expr option;
+  qualify : a_expr option;
+  group_by : a_expr list option;
+  having : a_expr option;
+  order_by : (a_expr * [ `ASC | `DESC ]) list option;
+  limit : a_expr option;
+  offset : a_expr option;
+  settings :
+    (string * [ `Int of int | `String of string | `Bool of bool ]) list;
+  mutable fields : a_field list;  (** list of fields build within the SELECT *)
+}
+
+and 'scope union_payload = {
+  x : 'scope select0;
+  y : 'scope select0;
+  scope : 'scope;
+  mutable exprs : a_expr list;  (** list of expressions built within the UNION *)
+}
+
 and 'scope select0 =
-  | Select of {
-      from : a_from0;
-      scope : 'scope;  (** scope of the query, once it is queried *)
-      prewhere : a_expr option;
-      where : a_expr option;
-      qualify : a_expr option;
-      group_by : a_expr list option;
-      having : a_expr option;
-      order_by : (a_expr * [ `ASC | `DESC ]) list option;
-      limit : a_expr option;
-      offset : a_expr option;
-      settings :
-        (string * [ `Int of int | `String of string | `Bool of bool ]) list;
-      mutable fields : a_field list;
-          (** list of fields build within the SELECT *)
-    }
-  | Union of { x : 'scope select0; y : 'scope select0 }
+  | Select of 'scope select_payload
+  | Union of 'scope union_payload
 
 and 'scope select = alias:string -> 'scope select0
 
@@ -110,14 +124,20 @@ let from_table ~db ~table scope =
            table;
            alias;
            scope =
-             (object
-                method query f =
-                  let () =
-                    match Lazy.force t with
-                    | From_table t -> t.used <- true
-                    | _ -> ()
+             (object (self)
+                method query' f =
+                  let e = f scope in
+                  let commit ~force:_ =
+                    let () =
+                      match Lazy.force t with
+                      | From_table t -> t.used <- true
+                      | _ -> ()
+                    in
+                    e
                   in
-                  f scope
+                  (e, commit)
+
+                method query f = snd (self#query' f) ~force:false
 
                 method query_many f =
                   let () =
@@ -134,24 +154,8 @@ let from_table ~db ~table scope =
   in
   Lazy.force t
 
-let rec scope_from_select select : _ scope =
-  match select with
-  | Select { scope; _ } -> scope
-  | Union { x; y } ->
-      let scope_x = scope_from_select x in
-      let scope_y = scope_from_select y in
-      (object
-         method query f =
-           let e_x = scope_x#query f in
-           let _e_y : _ expr = scope_y#query f in
-           e_x
-
-         method query_many f =
-           let xs = scope_x#query_many f in
-           let _ys : a_expr list = scope_y#query_many f in
-           xs
-       end
-        : _ scope)
+let scope_from_select select : _ scope =
+  match select with Select { scope; _ } -> scope | Union { scope; _ } -> scope
 
 let scope_from_one = function
   | From_table { scope; _ } -> scope
@@ -183,14 +187,16 @@ let left_join ?(optional = false) from (join : 'a scope from_one) ~on () =
   let scope_from = scope_from from in
   let scope_join' : _ scope =
     object
+      method query' f = (scope_from_one join)#query' f
       method query f = (scope_from_one join)#query f
       method query_many f = (scope_from_one join)#query_many f
     end
   in
   let scope_join : _ nullable_scope =
     object
+      method query' f = scope_join'#query' f
       method query f = scope_join'#query f
-      method query_many = fun f -> scope_join'#query_many f
+      method query_many f = scope_join'#query_many f
     end
   in
   From_join
@@ -273,7 +279,8 @@ module To_syntax = struct
               offset;
               settings;
             }
-      | Union { x; y } -> Q_union (to_syntax x, to_syntax y)
+      | Union { x; y; exprs = _; scope = _ } ->
+          Q_union (to_syntax x, to_syntax y)
     and from_one_to_syntax : type a. a from_one0 -> Syntax.from_one = function
       | From_table { db; table; alias; final; _ } ->
           Syntax.make_from_one
@@ -322,12 +329,10 @@ module To_syntax = struct
               let should_eliminate =
                 match join with
                 | From_table { used; _ } -> not used
-                | From_select { select; _ } ->
-                    let rec fields = function
-                      | Select { fields; _ } -> fields
-                      | Union { x; y = _ } -> fields x
-                    in
-                    List.is_empty (fields select)
+                | From_select { select; _ } -> (
+                    match select with
+                    | Select { fields; _ } -> List.is_empty fields
+                    | Union { exprs; _ } -> List.is_empty exprs)
               in
               if not should_eliminate then translate () else from_to_syntax from
           | `LEFT_JOIN | `INNER_JOIN -> translate ())
@@ -534,31 +539,28 @@ let in_ x xs =
       let () =
         (* need to "use" the field so it materializses *)
         let scope = scope_from_select select in
-        let _ : _ expr = scope#query (fun scope -> scope#_1) in
+        let (_ : _ expr) = scope#query (fun scope -> scope#_1) in
         ()
       in
       let select = To_syntax.to_syntax select in
       Syntax.make_expr (Syntax.E_in (x, In_query select))
 
-let rec add_field expr select =
-  match select with
-  | Select s -> (
-      match
-        List.find_map s.fields ~f:(function
-          | A_field (expr', alias) when Syntax.equal_expr expr expr' ->
-              Some alias
-          | _ -> None)
-      with
-      | None ->
-          let alias = Printf.sprintf "_%d" (List.length s.fields + 1) in
-          let field = A_field (expr, alias) in
-          s.fields <- field :: s.fields;
-          alias
-      | Some alias -> alias)
-  | Union u ->
-      let alias = add_field expr u.x in
-      let _alias = add_field expr u.y in
-      alias
+let mem_field expr select =
+  List.find_map select.fields ~f:(function
+    | A_field (expr', alias) when Syntax.equal_expr expr expr' -> Some alias
+    | _ -> None)
+
+let add_field ?(force = false) expr select =
+  let do_add () =
+    let alias = Printf.sprintf "_%d" (List.length select.fields + 1) in
+    let field = A_field (expr, alias) in
+    select.fields <- field :: select.fields;
+    alias
+  in
+  match mem_field expr select with
+  | None -> do_add ()
+  | Some _ when force -> do_add ()
+  | Some alias -> alias
 
 let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit
     ?offset ?(settings = []) ~select () ~alias : _ scope select0 =
@@ -579,38 +581,89 @@ let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit
   let offset = Option.map (fun offset -> A_expr (offset inner_scope)) offset in
   let rec select =
     lazy
-      (Select
-         {
-           from = A_from from;
-           scope =
-             (object
-                method query f =
-                  let e = f scope' in
-                  let c = add_field e (Lazy.force select) in
-                  unsafe (Printf.sprintf "%s.%s" alias c)
+      {
+        from = A_from from;
+        scope =
+          (object (self)
+             method query' f =
+               let e = f scope' in
+               ( e,
+                 fun ~force ->
+                   let c = add_field ~force e (Lazy.force select) in
+                   unsafe (Printf.sprintf "%s.%s" alias c) )
 
-                method query_many f =
-                  let xs = f scope' in
-                  List.map xs ~f:(fun (A_expr e) ->
-                      let c = add_field e (Lazy.force select) in
-                      A_expr (unsafe (Printf.sprintf "%s.%s" alias c)))
-              end
-               : _ scope);
-           prewhere;
-           where;
-           qualify;
-           group_by;
-           having;
-           order_by;
-           limit;
-           offset;
-           settings;
-           fields = [];
-         })
+             method query f = snd (self#query' f) ~force:false
+
+             method query_many f =
+               let xs = f scope' in
+               List.map xs ~f:(fun (A_expr e) ->
+                   let c = add_field e (Lazy.force select) in
+                   A_expr (unsafe (Printf.sprintf "%s.%s" alias c)))
+           end
+            : _ scope);
+        prewhere;
+        where;
+        qualify;
+        group_by;
+        having;
+        order_by;
+        limit;
+        offset;
+        settings;
+        fields = [];
+      }
   in
-  Lazy.force select
+  Select (Lazy.force select)
 
-let union x y ~alias = Union { x = x ~alias; y = y ~alias }
+let union x y ~alias =
+  let x = x ~alias in
+  let y = y ~alias in
+  let scope_x = scope_from_select x in
+  let scope_y = scope_from_select y in
+  let rec union =
+    lazy
+      {
+        x;
+        y;
+        scope =
+          object (self)
+            method query' f =
+              let e_x, commit_x = scope_x#query' f in
+              let e_y, commit_y = scope_y#query' f in
+              ( Syntax.make_expr
+                  (E_call (Func (Syntax.make_id "tuple"), [ e_x; e_y ])),
+                fun ~force ->
+                  let union = Lazy.force union in
+                  let mem_expr expr =
+                    List.exists union.exprs ~f:(fun (A_expr e) ->
+                        Syntax.equal_expr e expr)
+                  in
+                  match (mem_expr e_x, mem_expr e_y) with
+                  | false, false ->
+                      union.exprs <- A_expr e_x :: A_expr e_y :: union.exprs;
+                      commit_y ~force:true |> ignore;
+                      commit_x ~force:true
+                  | true, false ->
+                      union.exprs <- A_expr e_y :: union.exprs;
+                      commit_y ~force:true |> ignore;
+                      commit_x ~force:true
+                  | false, true ->
+                      union.exprs <- A_expr e_x :: union.exprs;
+                      commit_y ~force:true |> ignore;
+                      commit_x ~force:true
+                  | true, true -> commit_x ~force )
+
+            method query f = snd (self#query' f) ~force:false
+
+            method query_many f =
+              let xs = scope_x#query_many f in
+              let _ys : a_expr list = scope_y#query_many f in
+              xs
+          end;
+        exprs = [];
+      }
+  in
+  Union (Lazy.force union)
 
 let grouping_sets (gs : a_expr list list) =
   let u = unsafe in

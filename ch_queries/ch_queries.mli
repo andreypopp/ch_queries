@@ -25,12 +25,18 @@ type (+'null, +'typ) expr
 type a_expr = A_expr : _ expr -> a_expr
 
 type 'a scope =
-  < query : 'n 'e. ('a -> ('n, 'e) expr) -> ('n, 'e) expr
+  < query' :
+      'n 'e.
+      ('a -> ('n, 'e) expr) -> ('n, 'e) expr * (force:bool -> ('n, 'e) expr)
+  ; query : 'n 'e. ('a -> ('n, 'e) expr) -> ('n, 'e) expr
   ; query_many : ('a -> a_expr list) -> a_expr list >
 (** Represents a table's or a subquery's scope. *)
 
 and 'a nullable_scope =
-  < query : 'n 'e. ('a -> ('n, 'e) expr) -> (null, 'e) expr
+  < query' :
+      'n 'e.
+      ('a -> ('n, 'e) expr) -> ('n, 'e) expr * (force:bool -> (null, 'e) expr)
+  ; query : 'n 'e. ('a -> ('n, 'e) expr) -> (null, 'e) expr
   ; query_many : ('a -> a_expr list) -> a_expr list >
 (** Represents a table's or a subquery's scope when one is used on the right
     side of a LEFT JOIN. *)
