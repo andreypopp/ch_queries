@@ -1,7 +1,7 @@
 select from table with FINAL keyword:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x AS x FROM public.users AS users FINAL WHERE users.is_active"];;
-  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.string [%e "q.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.ignore [%e "q.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -28,7 +28,7 @@ select from table with FINAL keyword:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -41,7 +41,7 @@ if FINAL keyword is applied to param, then it expects the table:
   $ ./compile_and_run '
   > let users table = [%q "SELECT users.x AS x FROM $table AS users FINAL WHERE users.is_active"];;
   > let users = users Ch_database.Public.users;;
-  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.string [%e "q.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.ignore [%e "q.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -70,7 +70,7 @@ if FINAL keyword is applied to param, then it expects the table:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING

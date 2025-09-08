@@ -385,18 +385,28 @@ module Row : sig
   val return : 'a -> 'a t
   (** Return a constant value. *)
 
-  val string : (non_null, string) expr -> string t
-  val string_opt : ([< null ], string) expr -> string option t
-  val bool : (non_null, bool) expr -> bool t
-  val bool_opt : ([< null ], bool) expr -> bool option t
-  val int : (non_null, int number) expr -> int t
-  val int_opt : ([< null ], int number) expr -> int option t
-  val int64 : (non_null, int64 number) expr -> int64 t
-  val int64_opt : ([< null ], int64 number) expr -> int64 option t
-  val float : (non_null, float number) expr -> float t
-  val float_opt : ([< null ], float number) expr -> float option t
-  val any : (json -> 'a) -> _ expr -> 'a t
+  type ('null, 'sql_type, 'ocaml_type) parser
+
+  val col : ('n, 's) expr -> ('n, 's, 'o) parser -> 'o t
   val ignore : ('n, 'a) expr -> unit t
+
+  (* Parsers *)
+
+  val string : (non_null, string, string) parser
+  val bool : (non_null, bool, bool) parser
+  val int : (non_null, int number, int) parser
+  val int64 : (non_null, int64 number, int64) parser
+  val float : (non_null, float number, float) parser
+  val date : (non_null, date timestamp, float) parser
+  val datetime : (non_null, datetime timestamp, float) parser
+  val any : (_, _, json) parser
+  val nullable : ('n, 's, 'o) parser -> (null, 's, 'o option) parser
+  val array : ('n, 's, 'o) parser -> (non_null, ('n, 's) array, 'o list) parser
+
+  val map :
+    ('nk, 'sk, 'ok) parser ->
+    ('nv, 'sv, 'ov) parser ->
+    (non_null, ('nk, 'sk, 'nv, 'sv) map, ('ok * 'ov) list) parser
 
   exception Parse_error of json option * string
 

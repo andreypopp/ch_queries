@@ -6,7 +6,7 @@ optional join with a table (elimination):
   >   LEFT JOIN OPTIONAL public.profiles AS p
   >   ON u.id = p.user_id
   > |};;
-  > let sql, _parse_row = Ch_queries.(query q @@ fun __q -> Row.int [%e "q.user_id"]);;
+  > let sql, _parse_row = Ch_queries.(query q @@ fun __q -> Row.ignore [%e "q.user_id"]);;
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -48,7 +48,7 @@ optional join with a table (elimination):
   
   let sql, _parse_row =
     let open Ch_queries in
-    query q @@ fun __q -> Row.int (__q#q#query (fun __q -> __q#user_id))
+    query q @@ fun __q -> Row.ignore (__q#q#query (fun __q -> __q#user_id))
   
   let () = print_endline sql
   >>> RUNNING
@@ -62,7 +62,7 @@ optional join with a table (in use):
   >   LEFT JOIN OPTIONAL public.profiles AS p
   >   ON u.id = p.user_id
   > |};;
-  > let sql, _parse_row = Ch_queries.(query q @@ fun __q -> Row.string_opt {%e|q.user_name|});;
+  > let sql, _parse_row = Ch_queries.(query q @@ fun __q -> Row.ignore {%e|q.user_name|});;
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -104,7 +104,7 @@ optional join with a table (in use):
   
   let sql, _parse_row =
     let open Ch_queries in
-    query q @@ fun __q -> Row.string_opt (__q#q#query (fun __q -> __q#user_name))
+    query q @@ fun __q -> Row.ignore (__q#q#query (fun __q -> __q#user_name))
   
   let () = print_endline sql
   >>> RUNNING
@@ -122,7 +122,7 @@ optional join with a subquery (elimination):
   >   LEFT JOIN OPTIONAL (SELECT p.user_id AS user_id, p.name AS name FROM public.profiles AS p) AS p
   >   ON u.id = p.user_id
   > |};;
-  > let sql, _parse_row = Ch_queries.(query q @@ fun __q -> Row.int [%e "q.user_id"]);;
+  > let sql, _parse_row = Ch_queries.(query q @@ fun __q -> Row.ignore [%e "q.user_id"]);;
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -186,7 +186,7 @@ optional join with a subquery (elimination):
   
   let sql, _parse_row =
     let open Ch_queries in
-    query q @@ fun __q -> Row.int (__q#q#query (fun __q -> __q#user_id))
+    query q @@ fun __q -> Row.ignore (__q#q#query (fun __q -> __q#user_id))
   
   let () = print_endline sql
   >>> RUNNING
@@ -200,7 +200,7 @@ optional join with a subquery (in use):
   >   LEFT JOIN OPTIONAL (SELECT p.user_id AS user_id, p.name AS name FROM public.profiles AS p) AS p
   >   ON u.id = p.user_id
   > |};;
-  > let sql, _parse_row = Ch_queries.(query q @@ fun __q -> Row.string_opt [%e "q.user_name"]);;
+  > let sql, _parse_row = Ch_queries.(query q @@ fun __q -> Row.ignore [%e "q.user_name"]);;
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -264,7 +264,7 @@ optional join with a subquery (in use):
   
   let sql, _parse_row =
     let open Ch_queries in
-    query q @@ fun __q -> Row.string_opt (__q#q#query (fun __q -> __q#user_name))
+    query q @@ fun __q -> Row.ignore (__q#q#query (fun __q -> __q#user_name))
   
   let () = print_endline sql
   >>> RUNNING

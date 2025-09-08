@@ -1,7 +1,7 @@
 LIMIT with literal value:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x FROM public.users LIMIT 1"];;
-  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.string [%e "q.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.ignore [%e "q.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -23,7 +23,7 @@ LIMIT with literal value:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -67,7 +67,7 @@ LIMIT with parameter:
 OFFSET with literal value:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x FROM public.users OFFSET 1"];;
-  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.string [%e "q.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.ignore [%e "q.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -89,7 +89,7 @@ OFFSET with literal value:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING

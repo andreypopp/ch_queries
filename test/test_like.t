@@ -1,7 +1,7 @@
 test IN expression with subquery:
   $ ./compile_and_run "
   > let users = [%q \"SELECT users.x AS x FROM public.users WHERE (users.x LIKE '123%')\"];;
-  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.string [%e \"q.x\"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.ignore [%e \"q.x\"]
   > let () = print_endline sql;;
   > "
   >>> PREPROCESSING
@@ -32,7 +32,7 @@ test IN expression with subquery:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING

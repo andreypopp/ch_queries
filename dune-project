@@ -19,6 +19,6 @@
 (package
  (name ch_queries)
  (synopsis "Type safe queries for ClickHouse")
- (depends ocaml menhir pprint ppxlib ppx_hash ppx_compare cmdliner containers (ocamlformat :with-test) (mdx :with-test))
+ (depends ocaml menhir pprint ppxlib ppx_hash ppx_compare cmdliner containers extunix (ocamlformat :with-test) (mdx :with-test))
  (tags
   (database sql dsl clickhouse)))

@@ -1,7 +1,7 @@
 ORDER BY single column (default ASC):
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x FROM public.users ORDER BY users.x"];;
-  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.string [%e "q.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.ignore [%e "q.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -25,7 +25,7 @@ ORDER BY single column (default ASC):
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -35,7 +35,7 @@ ORDER BY single column (default ASC):
 ORDER BY with DESC:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x FROM public.users ORDER BY users.x DESC"];;
-  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.string [%e "q.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.ignore [%e "q.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -59,7 +59,7 @@ ORDER BY with DESC:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -70,7 +70,7 @@ ORDER BY with DESC:
 ORDER BY multiple columns:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x FROM public.users ORDER BY users.x, users.id DESC"];;
-  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.string [%e "q.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.ignore [%e "q.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -97,7 +97,7 @@ ORDER BY multiple columns:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING

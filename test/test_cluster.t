@@ -1,7 +1,7 @@
 test cluster syntax parsing:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x AS x FROM cluster(my_cluster, view(SELECT users.x AS x, users.is_active AS is_active FROM public.users)) AS users WHERE users.is_active"];;
-  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.string [%e "q.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.ignore [%e "q.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -54,7 +54,7 @@ test cluster syntax parsing:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -69,7 +69,7 @@ test cluster syntax parsing:
 test parameterized cluster syntax:
   $ ./compile_and_run '
   > let users cluster_name = [%q "SELECT users.x AS x FROM cluster($cluster_name, view(SELECT users.x AS x, users.is_active AS is_active FROM public.users)) AS users WHERE users.is_active"];;
-  > let sql, _parse_row = Ch_queries.query (users "test_cluster") @@ fun __q -> Ch_queries.Row.string [%e "q.x"]
+  > let sql, _parse_row = Ch_queries.query (users "test_cluster") @@ fun __q -> Ch_queries.Row.ignore [%e "q.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -122,7 +122,7 @@ test parameterized cluster syntax:
   
   let sql, _parse_row =
     Ch_queries.query (users "test_cluster") @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING

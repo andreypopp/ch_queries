@@ -4,7 +4,7 @@
   >   ~from:[%f "FROM public.users JOIN public.profiles ON users.id = profiles.user_id"]
   >   ~select:(fun __q -> object method users = __q#users method profiles = __q#profiles end)
   > ;;
-  > let sql, _parse_row = Ch_queries.query q Ch_queries.Row.(fun __q -> string {%e|q.(coalesce(profiles.name, users.x))|}) in
+  > let sql, _parse_row = Ch_queries.query q Ch_queries.Row.(fun __q -> ignore {%e|q.(coalesce(profiles.name, users.x))|}) in
   > print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -44,7 +44,7 @@
     Ch_queries.query q
       (let open Ch_queries.Row in
        fun __q ->
-         string
+         ignore
            (__q#q#query (fun __q ->
                 Ch_queries.Expr.coalesce
                   (__q#profiles#query (fun __q -> __q#name))
@@ -72,7 +72,7 @@ The param within the scope receives the scope as argument:
   > ;;
   > #show q2;;
   > let q = q2 ~field:(fun __q -> {%e|coalesce(profiles.name, users.x)|}) in
-  > let sql, _parse_row = Ch_queries.query q Ch_queries.Row.(fun __q -> string {%e|q.field|}) in
+  > let sql, _parse_row = Ch_queries.query q Ch_queries.Row.(fun __q -> ignore {%e|q.field|}) in
   > print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -138,7 +138,7 @@ The param within the scope receives the scope as argument:
   let sql, _parse_row =
     Ch_queries.query q
       (let open Ch_queries.Row in
-       fun __q -> string (__q#q#query (fun __q -> __q#field)))
+       fun __q -> ignore (__q#q#query (fun __q -> __q#field)))
   in
   print_endline sql
   >>> RUNNING

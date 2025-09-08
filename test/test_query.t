@@ -1,7 +1,7 @@
 basic form:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x AS x FROM public.users WHERE users.is_active"];;
-  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.string [%e "q.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.ignore [%e "q.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -29,7 +29,7 @@ basic form:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -40,7 +40,7 @@ basic form:
 select from a subquery:
   $ ./compile_and_run '
   > let users = [%q "SELECT q.x AS x FROM (SELECT users.x AS x, users.is_active AS is_active FROM public.users) AS q WHERE q.is_active"];;
-  > let sql, _parse_row = Ch_queries.(query users @@ fun __q -> Row.string [%e "q.x"])
+  > let sql, _parse_row = Ch_queries.(query users @@ fun __q -> Row.ignore [%e "q.x"])
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -93,7 +93,7 @@ select from a subquery:
   
   let sql, _parse_row =
     let open Ch_queries in
-    query users @@ fun __q -> Row.string (__q#q#query (fun __q -> __q#x))
+    query users @@ fun __q -> Row.ignore (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -107,7 +107,7 @@ select from a subquery:
 select from a subquery (no alias default to "q"):
   $ ./compile_and_run '
   > let users = [%q "SELECT q.x AS x FROM (SELECT users.x AS x, users.is_active AS is_active FROM public.users) WHERE q.is_active"];;
-  > let sql, _parse_row = Ch_queries.(query users @@ fun __q -> Row.string [%e "q.x"])
+  > let sql, _parse_row = Ch_queries.(query users @@ fun __q -> Row.ignore [%e "q.x"])
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -160,7 +160,7 @@ select from a subquery (no alias default to "q"):
   
   let sql, _parse_row =
     let open Ch_queries in
-    query users @@ fun __q -> Row.string (__q#q#query (fun __q -> __q#x))
+    query users @@ fun __q -> Row.ignore (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -384,7 +384,7 @@ splicing ocaml values into SELECT as scope:
 select with PREWHERE clause:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x AS x FROM public.users PREWHERE users.is_active WHERE users.id = 10"];;
-  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.string [%e "q.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.ignore [%e "q.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -416,7 +416,7 @@ select with PREWHERE clause:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -430,7 +430,7 @@ select with PREWHERE clause:
 expressions referenced multiple times result in a single column added to teh subquery:
   $ ./compile_and_run '
   > let users = [%q "SELECT q.is_active AS is_active FROM (SELECT users.is_active AS is_active FROM public.users) AS q WHERE q.is_active"];;
-  > let sql, _parse_row = Ch_queries.(query users @@ fun __q -> Row.bool [%e "q.is_active"])
+  > let sql, _parse_row = Ch_queries.(query users @@ fun __q -> Row.ignore [%e "q.is_active"])
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -480,7 +480,7 @@ expressions referenced multiple times result in a single column added to teh sub
   
   let sql, _parse_row =
     let open Ch_queries in
-    query users @@ fun __q -> Row.bool (__q#q#query (fun __q -> __q#is_active))
+    query users @@ fun __q -> Row.ignore (__q#q#query (fun __q -> __q#is_active))
   
   let () = print_endline sql
   >>> RUNNING

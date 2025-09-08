@@ -1,7 +1,7 @@
 GROUP BY single column:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x AS x FROM public.users GROUP BY users.x"];;
-  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.string [%e "q.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.ignore [%e "q.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -30,7 +30,7 @@ GROUP BY single column:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -40,7 +40,7 @@ GROUP BY single column:
 GROUP BY multiple columns:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x AS x FROM public.users GROUP BY users.x, users.id"];;
-  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.string [%e "q.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.ignore [%e "q.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -73,7 +73,7 @@ GROUP BY multiple columns:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -134,7 +134,7 @@ GROUP BY GROUPING SETS:
   $ ./compile_and_run '
   > let group_by __q = Ch_queries.grouping_sets [];;
   > let users = [%q "SELECT 1 as one FROM public.users GROUP BY $group_by"];;
-  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.int [%e "q.one"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.ignore [%e "q.one"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -164,7 +164,7 @@ GROUP BY GROUPING SETS:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.int (__q#q#query (fun __q -> __q#one))
+    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#one))
   
   let () = print_endline sql
   >>> RUNNING
@@ -174,7 +174,7 @@ GROUP BY GROUPING SETS:
   $ ./compile_and_run '
   > let group_by (__q : < u : _ Ch_queries.scope; .. >) = Ch_queries.grouping_sets [[A_expr {%e|u.x|}; A_expr {%e|u.id|}]; [A_expr {%e|u.id|}]];;
   > let users = [%q "SELECT 1 as one FROM public.users AS u GROUP BY $group_by"];;
-  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.int [%e "q.one"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.ignore [%e "q.one"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -211,7 +211,7 @@ GROUP BY GROUPING SETS:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.int (__q#q#query (fun __q -> __q#one))
+    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#one))
   
   let () = print_endline sql
   >>> RUNNING
@@ -224,7 +224,7 @@ GROUP BY GROUPING SETS:
 GROUP BY can refer to SELECTed columns:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x AS x FROM public.users GROUP BY x"];;
-  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.string [%e "q.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.ignore [%e "q.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -252,7 +252,7 @@ GROUP BY can refer to SELECTed columns:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING

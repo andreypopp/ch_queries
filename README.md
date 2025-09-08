@@ -80,7 +80,7 @@ val users :
 Finally to generate SQL from the query, one needs to define what exactly to
 select and how to parse each column:
 ```ocaml
-# let sql, parse_row = Ch_queries.query {%q|SELECT users.id FROM db.users|} Row.(fun __q -> int {%e|q.id|});;
+# let sql, parse_row = Ch_queries.query {%q|SELECT users.id FROM db.users|} Row.(fun __q -> col {%e|q.id|} int);;
 val sql : string =
   "SELECT q._1 FROM (SELECT users.id AS _1 FROM public.users AS users) AS q"
 val parse_row : json list -> int = <fun>

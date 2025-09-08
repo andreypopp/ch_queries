@@ -720,48 +720,86 @@ module Row = struct
     | `Bool b -> b
     | json -> parse_error ~json "expected a boolean"
 
+  let strptime fmt x = ExtUnix.Specific.(timegm (strptime fmt x))
+
+  let date_of_json = function
+    | `String "0000-00-00" -> 0.
+    | `String t -> strptime "%Y-%m-%d" t
+    | json -> parse_error ~json "expected a Date"
+
+  let datetime_of_json = function
+    | `String "0000-00-00 00:00:00" -> 0.
+    | `String t -> strptime "%Y-%m-%d %H:%M:%S" t
+    | json -> parse_error ~json "expected a DateTime"
+
+  type (_, _, _) parser =
+    | ANY : (_, _, json) parser
+    | NULLABLE : (_, 's, 'o) parser -> (null, 's, 'o option) parser
+    | VAL : (json -> 'ocaml_type) -> (non_null, _, 'ocaml_type) parser
+    | NUMBER : (json -> 'ocaml_type) -> (non_null, _ number, 'ocaml_type) parser
+    | ARRAY : ('n, 's, 'o) parser -> (non_null, ('n, 's) array, 'o list) parser
+    | MAP :
+        ('nk, 'sk, 'ok) parser * ('nv, 'sv, 'ov) parser
+        -> (non_null, ('nk, 'sk, 'nv, 'sv) map, ('ok * 'ov) list) parser
+
   type _ t =
-    | Row_col : (non_null, 'a) expr * (json -> 'a) -> 'a t
-    | Row_col_opt : (_ nullable, 'a) expr * (json -> 'a) -> 'a option t
-    | Row_col_number : (non_null, 'a number) expr * (json -> 'a) -> 'a t
-    | Row_col_number_opt :
-        (_ nullable, 'a number) expr * (json -> 'a)
-        -> 'a option t
+    | Row_col : ('null, 'sql_type) expr * ('null, 'sql_type, 'a) parser -> 'a t
     | Row_both : 'a t * 'b t -> ('a * 'b) t
     | Row_map : ('a -> 'b) * 'a t -> 'b t
     | Row_val : 'a -> 'a t
 
   let ( let+ ) x f = Row_map (f, x)
   let ( and+ ) x y = Row_both (x, y)
+  let nullable p = NULLABLE p
   let return x = Row_val x
-  let string expr = Row_col (expr, string_of_json)
-  let string_opt expr = Row_col_opt (expr, string_of_json)
-  let bool expr = Row_col (expr, bool_of_json)
-  let bool_opt expr = Row_col_opt (expr, bool_of_json)
-  let int expr = Row_col_number (expr, int_of_json)
-  let int_opt expr = Row_col_number_opt (expr, int_of_json)
-  let int64 expr = Row_col_number (expr, int64_of_json)
-  let int64_opt expr = Row_col_number_opt (expr, int64_of_json)
-  let float expr = Row_col_number (expr, float_of_json)
-  let float_opt expr = Row_col_number_opt (expr, float_of_json)
-  let any f expr = Row_col (expr, f)
-  let ignore expr = Row_col (expr, ignore)
+  let col e p = Row_col (e, p)
+  let string = VAL string_of_json
+  let bool = VAL bool_of_json
+  let int = NUMBER int_of_json
+  let int64 = NUMBER int64_of_json
+  let float = NUMBER float_of_json
+  let date = VAL date_of_json
+  let datetime = VAL datetime_of_json
+  let array p = ARRAY p
+  let map k v = MAP (k, v)
+  let any = ANY
+
+  let ignore expr =
+    let+ _ = Row_col (expr, any) in
+    ()
+
+  let rec parse : type n s o. (n, s, o) parser -> json -> o =
+   fun parser json ->
+    match parser with
+    | ANY -> json
+    | VAL parse -> parse json
+    | NUMBER parse -> parse json
+    | NULLABLE parser -> (
+        match json with `Null -> None | json -> Some (parse parser json))
+    | MAP (kparser, vparser) -> (
+        let parse_item = function
+          | `Assoc [ ("keys", key); ("values", value) ]
+          | `Assoc [ ("values", value); ("keys", key) ] ->
+              (parse kparser key, parse vparser value)
+          | json ->
+              parse_error ~json
+                {|expected an {"key":...,"value":...}, make sure output_format_json_map_as_array_of_tuples=1 is set|}
+        in
+        match json with
+        | `List items -> List.map items ~f:parse_item
+        | json -> parse_error ~json "expected an Map(K,V)")
+    | ARRAY parser -> (
+        match json with
+        | `List jsons -> List.map jsons ~f:(parse parser)
+        | json -> parse_error ~json "expected an Array(T)")
 
   let parse : type a. a t -> json list -> a =
     let rec aux : type a. a t -> json list -> a * json list =
      fun rowspec row ->
       match (rowspec, row) with
       | Row_val x, row -> (x, row)
-      | Row_col (_, _parse), [] -> parse_error "missing a column"
-      | Row_col (_, parse), col :: row -> (parse col, row)
-      | Row_col_opt (_, _parse), `Null :: row -> (None, row)
-      | Row_col_opt (_, _parse), [] -> parse_error "missing a column"
-      | Row_col_opt (_, parse), col :: row -> (Some (parse col), row)
-      | Row_col_number (_, _parse), [] -> parse_error "missing a column"
-      | Row_col_number (_, parse), col :: row -> (parse col, row)
-      | Row_col_number_opt (_, _parse), `Null :: row -> (None, row)
-      | Row_col_number_opt (_, _parse), [] -> parse_error "missing a column"
-      | Row_col_number_opt (_, parse), col :: row -> (Some (parse col), row)
+      | Row_col (_, _parser), [] -> parse_error "missing a column"
+      | Row_col (_, parser), col :: row -> (parse parser col, row)
       | Row_both (x, y), row ->
           let x, row = aux x row in
           let y, row = aux y row in
@@ -781,9 +819,6 @@ module Row = struct
       match rowspec with
       | Row_val _ -> acc
       | Row_col (expr, _) -> A_expr expr :: acc
-      | Row_col_opt (expr, _) -> A_expr expr :: acc
-      | Row_col_number (expr, _) -> A_expr expr :: acc
-      | Row_col_number_opt (expr, _) -> A_expr expr :: acc
       | Row_both (x, y) -> aux y (aux x acc)
       | Row_map (_, x) -> aux x acc
     in

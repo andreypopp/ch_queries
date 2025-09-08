@@ -1,7 +1,7 @@
 SETTINGS with literal values:
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x FROM public.users SETTINGS max_threads=4, use_cache='"'"'true'"'"'"];;
-  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.string [%e "q.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.ignore [%e "q.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -25,7 +25,7 @@ SETTINGS with literal values:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -160,7 +160,7 @@ SETTINGS with multiple splices:
 SETTINGS with boolean values (rendered as ints):
   $ ./compile_and_run '
   > let users = [%q "SELECT users.x FROM public.users SETTINGS enable_analyzer=false, use_cache=true"];;
-  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.string [%e "q.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.ignore [%e "q.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -184,7 +184,7 @@ SETTINGS with boolean values (rendered as ints):
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.string (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING

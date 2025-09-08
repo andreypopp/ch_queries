@@ -1,7 +1,7 @@
 can define expression for reuse with `WITH` clause:
   $ ./compile_and_run '
   > let users = {%q|WITH 1 AS x SELECT u.id, x + u.id AS id_and_x FROM public.users AS u|};;
-  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.int [%e "q.id_and_x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.ignore [%e "q.id_and_x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -38,7 +38,7 @@ can define expression for reuse with `WITH` clause:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.int (__q#q#query (fun __q -> __q#id_and_x))
+    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#id_and_x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -47,7 +47,7 @@ can define expression for reuse with `WITH` clause:
 select shadows `WITH` clause:
   $ ./compile_and_run '
   > let users = {%q|WITH 1 AS x SELECT x + u.id AS x FROM public.users AS u|};;
-  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.int [%e "q.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.ignore [%e "q.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -81,7 +81,7 @@ select shadows `WITH` clause:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.int (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -90,7 +90,7 @@ select shadows `WITH` clause:
 WITH has access to table columns:
   $ ./compile_and_run '
   > let users = {%q|WITH u.id AS x SELECT x + u.id AS y FROM public.users AS u|};;
-  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.int [%e "q.y"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.ignore [%e "q.y"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -126,7 +126,7 @@ WITH has access to table columns:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.int (__q#q#query (fun __q -> __q#y))
+    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#y))
   
   let () = print_endline sql
   >>> RUNNING

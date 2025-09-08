@@ -3,7 +3,7 @@ Programmatic union
   > let users1 = [%q "SELECT 1 AS x FROM public.users"];;
   > let users2 = [%q "SELECT 2 AS x FROM public.users"];;
   > let users = [%q $users1 UNION $users2"];;
-  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.int [%e "q.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.ignore [%e "q.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -16,7 +16,7 @@ Programmatic union
 UNION syntax:
   $ ./compile_and_run '
   > let users = [%q "SELECT 1 AS x FROM public.users UNION SELECT 2 AS x FROM public.users"];;
-  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.int [%e "q.x"]
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.ignore [%e "q.x"]
   > let () = print_endline sql;;
   > '
   >>> PREPROCESSING
@@ -63,7 +63,7 @@ UNION syntax:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.int (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -87,10 +87,10 @@ test edge case with dynamic scopes:
   > let users = [%q "SELECT $select_x... FROM public.users UNION SELECT $select_y... FROM public.users UNION SELECT $select_z... FROM public.users"];;
   > let sql, _parse_row = Ch_queries.query users @@ fun __q -> 
   >   let open Ch_queries.Row in
-  >   let+ _ = Ch_queries.Row.string [%e "q.get(${`X})"]
-  >   and+ _ = Ch_queries.Row.string [%e "q.get(${`Y})"]
-  >   and+ _ = Ch_queries.Row.string [%e "q.get(${`Z})"]
-  >   and+ _ = Ch_queries.Row.string [%e "q.get(${`Z})"]
+  >   let+ _ = Ch_queries.Row.ignore [%e "q.get(${`X})"]
+  >   and+ _ = Ch_queries.Row.ignore [%e "q.get(${`Y})"]
+  >   and+ _ = Ch_queries.Row.ignore [%e "q.get(${`Z})"]
+  >   and+ _ = Ch_queries.Row.ignore [%e "q.get(${`Z})"]
   >   in ();;
   > let () = print_endline sql;;
   > '
@@ -159,10 +159,10 @@ test edge case with dynamic scopes:
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
     let open Ch_queries.Row in
-    let+ _ = Ch_queries.Row.string (__q#q#query (fun __q -> __q#get `X))
-    and+ _ = Ch_queries.Row.string (__q#q#query (fun __q -> __q#get `Y))
-    and+ _ = Ch_queries.Row.string (__q#q#query (fun __q -> __q#get `Z))
-    and+ _ = Ch_queries.Row.string (__q#q#query (fun __q -> __q#get `Z)) in
+    let+ _ = Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#get `X))
+    and+ _ = Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#get `Y))
+    and+ _ = Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#get `Z))
+    and+ _ = Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#get `Z)) in
     ()
   
   let () = print_endline sql

@@ -110,9 +110,9 @@ let query_metric : type t sqlt.
   let open Ch_queries.Row in
   let metric m = {%e|q.metric(${m})|} in
   match m with
-  | Metric_count -> int (metric m)
-  | Metric_sum_id -> int (metric m)
-  | Metric_true -> bool (metric m)
+  | Metric_count -> col (metric m) int
+  | Metric_sum_id -> col (metric m) int
+  | Metric_true -> col (metric m) bool
 
 let users_stats =
   let stats =
@@ -146,6 +146,6 @@ let sql, parse_row =
       let+ x = query_metric __q Metric_count
       and+ y = query_metric __q Metric_true
       and+ z = query_metric __q Metric_sum_id
-      and+ z' = bool @@ {%e|q.metric(${Metric_true})|}
-      and+ s = string_opt {%e|q.oops|} in
+      and+ z' = col {%e|q.metric(${Metric_true})|} bool
+      and+ s = col {%e|q.oops|} (nullable string) in
       (x, y, z, s))
