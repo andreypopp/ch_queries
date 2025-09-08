@@ -149,3 +149,16 @@ let sql, parse_row =
       and+ z' = col {%e|q.metric(${Metric_true})|} bool
       and+ s = col {%e|q.oops|} (nullable string) in
       (x, y, z, s))
+
+let%ch.select stats =
+  {|SELECT
+      stats.oops::Nullable(String) AS oops,
+      ['a', 'b']::Array(String) AS empty_array,
+      2::Int32 AS two,
+      $name::String AS name
+    FROM $users_stats AS stats|}
+
+let _ : string * (Ch_queries.json list -> stats_row) =
+  stats ()
+    ~name:(fun _ -> Ch_queries.string "hello")
+    ~users_stats:(Ch_queries.from_select users_stats)
