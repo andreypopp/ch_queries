@@ -65,7 +65,7 @@ a_typ:
 typ:
     id=id
     { make_typ $startpos $endpos (T id) }
-  | id=id LPAREN args=separated_list(COMMA, typ) RPAREN
+  | id=id LPAREN args=flex_list(COMMA, typ) RPAREN
     { make_typ $startpos $endpos (T_app (id, args)) }
 
 a_query:
@@ -81,7 +81,7 @@ query_no_param:
     { make_query $startpos $endpos (Syntax.Q_union (q1, q2)) }
 
 with_fields:
-  WITH xs=separated_nonempty_list(COMMA, with_field) { xs }
+  WITH xs=nonempty_flex_list(COMMA, with_field) { xs }
 
 with_field:
     id=id AS_LPAREN q=query RPAREN
@@ -103,7 +103,7 @@ select:
     { Select_fields fs }
 
 fields:
-    separated_list(COMMA, field) { $1 }
+    nonempty_flex_list(COMMA, field) { $1 }
 
 field:
     e=expr a=alias?
@@ -138,14 +138,14 @@ having:
     HAVING e=expr { e }
 
 group_by:
-    GROUP BY dimensions=separated_list(COMMA, dimension) { dimensions }
+    GROUP BY dimensions=nonempty_flex_list(COMMA, dimension) { dimensions }
 
 dimension:
     e=param_splice { Dimension_splice e }
   | e=expr { Dimension_expr e }
 
 order_by:
-    ORDER BY items=separated_list(COMMA, order_by_item) { items }
+    ORDER BY items=nonempty_flex_list(COMMA, order_by_item) { items }
 
 order_by_item:
     e=param_splice { Order_by_splice e }
@@ -160,7 +160,7 @@ offset:
     OFFSET e=expr { e }
 
 settings:
-    SETTINGS items=separated_list(COMMA, setting_item) { items }
+    SETTINGS items=nonempty_flex_list(COMMA, setting_item) { items }
 
 setting_item:
     id=id EQUALS value=setting_value { Setting_item (id, value) }
@@ -191,7 +191,7 @@ window_spec:
     { { partition_by; order_by } }
 
 partition_by:
-    PARTITION BY dimensions=separated_list(COMMA, dimension) { dimensions }
+    PARTITION BY dimensions=nonempty_flex_list(COMMA, dimension) { dimensions }
 
 from:
     f=from_one
@@ -249,7 +249,7 @@ expr:
     { e }
   | m=expr LBRACKET k=expr RBRACKET
     { make_expr $startpos $endpos (E_call (Func (make_id $startpos $endpos "map_get"), [m; k])) }
-  | LBRACKET es=separated_list(COMMA, expr) RBRACKET
+  | LBRACKET es=flex_list(COMMA, expr) RBRACKET
     { make_expr $startpos $endpos (E_call (Func (make_id $startpos $endpos "["), es)) }
   | e1=expr PLUS e2=expr
     { make_expr $startpos $endpos (E_call (Func (make_id $startpos($2) $endpos($2) "+"), [e1; e2])) }
@@ -281,11 +281,11 @@ expr:
     { make_expr $startpos $endpos (E_call (Func (make_id $startpos($2) $endpos($2) "<="), [e1; e2])) }
   | e1=expr NOT_EQUAL e2=expr
     { make_expr $startpos $endpos (E_call (Func (make_id $startpos($2) $endpos($2) "!="), [e1; e2])) }
-  | fn=id LPAREN args=separated_list(COMMA, expr) RPAREN
+  | fn=id LPAREN args=flex_list(COMMA, expr) RPAREN
     { make_expr $startpos $endpos (E_call (Func fn, args)) }
-  | table=id DOT method_name=id LPAREN args=separated_list(COMMA, expr) RPAREN
+  | table=id DOT method_name=id LPAREN args=flex_list(COMMA, expr) RPAREN
     { make_expr $startpos $endpos (E_call (Func_method (table, method_name), args)) }
-  | fn=id LPAREN args=separated_list(COMMA, expr) RPAREN OVER LPAREN window_spec=window_spec RPAREN
+  | fn=id LPAREN args=flex_list(COMMA, expr) RPAREN OVER LPAREN window_spec=window_spec RPAREN
     { make_expr $startpos $endpos (E_window (fn, args, window_spec)) }
   | param=param
     { make_expr $startpos $endpos (E_param param) }
@@ -301,3 +301,24 @@ expr:
     { make_expr $startpos $endpos (E_lambda (param, body)) }
   | e=expr COLONCOLON t=typ
     { make_expr $startpos $endpos (E_ascribe (e, t)) }
+
+(* Utilities for flexible lists (and its non-empty version).
+
+   A flexible list [flex_list(delim, X)] is the delimited with [delim] list of
+   it [X] items where it is allowed to have a trailing [delim].
+
+   A non-empty [nonempty_flex_list(delim, X)] version of flexible list is
+   provided as well.
+
+   From http://gallium.inria.fr/blog/lr-lists/
+
+ *)
+
+flex_list(delim, X):
+    { [] }
+  | x = X { [x] }
+  | x = X; delim; xs = flex_list(delim, X) { x::xs }
+
+nonempty_flex_list(delim, X):
+    x = X { [x] }
+  | x = X; delim; xs = flex_list(delim, X) { x::xs }
