@@ -218,6 +218,28 @@ module To_syntax = struct
 
   type ctes = (Syntax.id * (Syntax.query * bool)) list
 
+  let find_cte ctes (query, materialized) =
+    List.find_map ctes ~f:(fun (alias', (query', materialized')) ->
+        match
+          Syntax.equal_query query query'
+          && Bool.equal materialized materialized'
+        with
+        | true -> Some alias'
+        | false -> None)
+
+  let pick_cte_name ctes name =
+    let rec aux idx =
+      let name =
+        match idx with
+        | 0 -> name
+        | n -> Syntax.make_id (Printf.sprintf "%s_%d" name.Syntax.node n)
+      in
+      match List.Assoc.mem ~eq:Syntax.equal_id name ctes with
+      | true -> aux (idx + 1)
+      | false -> name
+    in
+    aux 0
+
   let rec group_by_to_syntax dimensions =
     List.map dimensions ~f:(fun (A_expr expr) -> Syntax.Dimension_expr expr)
 
@@ -320,24 +342,11 @@ module To_syntax = struct
           (* TODO: handle cluster_name *)
           let alias = Syntax.make_id alias in
           let query = Syntax.make_query (select_to_syntax select) in
-          match
-            List.find_map ctes ~f:(fun (alias', (query', _)) ->
-                if Syntax.equal_query query query' then Some alias' else None)
-          with
+          match find_cte ctes (query, materialized) with
           | Some id ->
               (ctes, Syntax.make_from_one (F_param { id; alias; final = false }))
           | None ->
-              let rec pick_name idx =
-                let name =
-                  match idx with
-                  | 0 -> alias
-                  | n -> Syntax.make_id (Printf.sprintf "%s_%d" alias.node n)
-                in
-                match List.Assoc.mem ~eq:Syntax.equal_id name ctes with
-                | true -> pick_name (idx + 1)
-                | false -> name
-              in
-              let alias = pick_name 0 in
+              let alias = pick_cte_name ctes alias in
               ( (alias, (query, materialized)) :: ctes,
                 Syntax.make_from_one
                   (F_param { id = alias; alias; final = false }) ))
