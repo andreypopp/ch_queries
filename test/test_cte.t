@@ -23,8 +23,8 @@ CTE is supported:
                     end
                   in
                   object
-                    method x = __q#users#query (fun __q -> __q#x)
                     method users = users
+                    method x = __q#users#query (fun __q -> __q#x)
                   end))
            ~select:(fun __q ->
              object
@@ -55,10 +55,10 @@ CTE is supported:
                end
              in
              object
-               method a = __q#x#query (fun __q -> __q#x)
-               method b = __q#y#query (fun __q -> __q#x)
                method x = x
                method y = y
+               method a = __q#x#query (fun __q -> __q#x)
+               method b = __q#y#query (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -103,8 +103,8 @@ CTE can be also defined programmatically and then used as query params:
                   end
                 in
                 object
-                  method x = __q#users#query (fun __q -> __q#x)
                   method users = users
+                  method x = __q#users#query (fun __q -> __q#x)
                 end))
          ~select:(fun __q ->
            object
@@ -136,10 +136,10 @@ CTE can be also defined programmatically and then used as query params:
                end
              in
              object
-               method a = __q#x#query (fun __q -> __q#x)
-               method b = __q#y#query (fun __q -> __q#x)
                method x = x
                method y = y
+               method a = __q#x#query (fun __q -> __q#x)
+               method b = __q#y#query (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -187,8 +187,8 @@ materilized CTE is supported as well:
                     end
                   in
                   object
-                    method x = __q#users#query (fun __q -> __q#x)
                     method users = users
+                    method x = __q#users#query (fun __q -> __q#x)
                   end))
            ~select:(fun __q ->
              object
@@ -219,10 +219,10 @@ materilized CTE is supported as well:
                end
              in
              object
-               method a = __q#x#query (fun __q -> __q#x)
-               method b = __q#y#query (fun __q -> __q#x)
                method x = x
                method y = y
+               method a = __q#x#query (fun __q -> __q#x)
+               method b = __q#y#query (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object

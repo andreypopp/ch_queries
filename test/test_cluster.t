@@ -23,12 +23,11 @@ test cluster syntax parsing:
                              end
                            in
                            object
+                             method users = users
                              method x = __q#users#query (fun __q -> __q#x)
   
                              method is_active =
                                __q#users#query (fun __q -> __q#is_active)
-  
-                             method users = users
                            end))
                     ~select:(fun __q ->
                       object
@@ -43,8 +42,8 @@ test cluster syntax parsing:
                end
              in
              object
-               method x = __q#users#query (fun __q -> __q#x)
                method users = users
+               method x = __q#users#query (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -91,12 +90,11 @@ test parameterized cluster syntax:
                              end
                            in
                            object
+                             method users = users
                              method x = __q#users#query (fun __q -> __q#x)
   
                              method is_active =
                                __q#users#query (fun __q -> __q#is_active)
-  
-                             method users = users
                            end))
                     ~select:(fun __q ->
                       object
@@ -111,8 +109,8 @@ test parameterized cluster syntax:
                end
              in
              object
-               method x = __q#users#query (fun __q -> __q#x)
                method users = users
+               method x = __q#users#query (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object

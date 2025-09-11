@@ -17,8 +17,8 @@ select from table with FINAL keyword:
                end
              in
              object
-               method x = __q#users#query (fun __q -> __q#x)
                method users = users
+               method x = __q#users#query (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -57,8 +57,8 @@ if FINAL keyword is applied to param, then it expects the table:
                end
              in
              object
-               method x = __q#users#query (fun __q -> __q#x)
                method users = users
+               method x = __q#users#query (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object

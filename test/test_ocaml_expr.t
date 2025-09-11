@@ -38,8 +38,8 @@ OCaml expression in query:
                end
              in
              object
-               method x = x + 1
                method users = users
+               method x = x + 1
              end))
       ~select:(fun __q ->
         object

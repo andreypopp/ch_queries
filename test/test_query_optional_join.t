@@ -35,10 +35,10 @@ optional join with a table (elimination):
                end
              in
              object
-               method user_id = __q#u#query (fun __q -> __q#id)
-               method user_name = __q#p#query (fun __q -> __q#name)
                method u = u
                method p = p
+               method user_id = __q#u#query (fun __q -> __q#id)
+               method user_name = __q#p#query (fun __q -> __q#name)
              end))
       ~select:(fun __q ->
         object
@@ -91,10 +91,10 @@ optional join with a table (in use):
                end
              in
              object
-               method user_id = __q#u#query (fun __q -> __q#id)
-               method user_name = __q#p#query (fun __q -> __q#name)
                method u = u
                method p = p
+               method user_id = __q#u#query (fun __q -> __q#id)
+               method user_name = __q#p#query (fun __q -> __q#name)
              end))
       ~select:(fun __q ->
         object
@@ -145,9 +145,9 @@ optional join with a subquery (elimination):
                              end
                            in
                            object
+                             method p = p
                              method user_id = __q#p#query (fun __q -> __q#user_id)
                              method name = __q#p#query (fun __q -> __q#name)
-                             method p = p
                            end))
                     ~select:(fun __q ->
                       object
@@ -173,10 +173,10 @@ optional join with a subquery (elimination):
                end
              in
              object
-               method user_id = __q#u#query (fun __q -> __q#id)
-               method user_name = __q#p#query (fun __q -> __q#name)
                method u = u
                method p = p
+               method user_id = __q#u#query (fun __q -> __q#id)
+               method user_name = __q#p#query (fun __q -> __q#name)
              end))
       ~select:(fun __q ->
         object
@@ -223,9 +223,9 @@ optional join with a subquery (in use):
                              end
                            in
                            object
+                             method p = p
                              method user_id = __q#p#query (fun __q -> __q#user_id)
                              method name = __q#p#query (fun __q -> __q#name)
-                             method p = p
                            end))
                     ~select:(fun __q ->
                       object
@@ -251,10 +251,10 @@ optional join with a subquery (in use):
                end
              in
              object
-               method user_id = __q#u#query (fun __q -> __q#id)
-               method user_name = __q#p#query (fun __q -> __q#name)
                method u = u
                method p = p
+               method user_id = __q#u#query (fun __q -> __q#id)
+               method user_name = __q#p#query (fun __q -> __q#name)
              end))
       ~select:(fun __q ->
         object

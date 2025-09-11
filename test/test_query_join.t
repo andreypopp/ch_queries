@@ -69,10 +69,10 @@ select from a LEFT JOIN:
                end
              in
              object
-               method user_id = __q#u#query (fun __q -> __q#id)
-               method user_name = __q#p#query (fun __q -> __q#name)
                method u = u
                method p = p
+               method user_id = __q#u#query (fun __q -> __q#id)
+               method user_name = __q#p#query (fun __q -> __q#name)
              end))
       ~select:(fun __q ->
         object
@@ -123,10 +123,10 @@ select from an OCaml value with JOIN:
                end
              in
              object
-               method user_id = __q#u#query (fun __q -> __q#id)
-               method user_name = __q#p#query (fun __q -> __q#name)
                method u = u
                method p = p
+               method user_id = __q#u#query (fun __q -> __q#id)
+               method user_name = __q#p#query (fun __q -> __q#name)
              end))
       ~select:(fun __q ->
         object
@@ -202,10 +202,10 @@ splicing ocaml values into JOIN-ON:
                end
              in
              object
-               method one = Ch_queries.int 1
                method u = u
                method p = p
                method p2 = p2
+               method one = Ch_queries.int 1
              end))
       ~select:(fun __q ->
         object

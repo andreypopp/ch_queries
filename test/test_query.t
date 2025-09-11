@@ -18,8 +18,8 @@ basic form:
                end
              in
              object
-               method x = __q#users#query (fun __q -> __q#x)
                method users = users
+               method x = __q#users#query (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -62,12 +62,11 @@ select from a subquery:
                              end
                            in
                            object
+                             method users = users
                              method x = __q#users#query (fun __q -> __q#x)
   
                              method is_active =
                                __q#users#query (fun __q -> __q#is_active)
-  
-                             method users = users
                            end))
                     ~select:(fun __q ->
                       object
@@ -82,8 +81,8 @@ select from a subquery:
                end
              in
              object
-               method x = __q#q#query (fun __q -> __q#x)
                method q = q
+               method x = __q#q#query (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -129,12 +128,11 @@ select from a subquery (no alias default to "q"):
                              end
                            in
                            object
+                             method users = users
                              method x = __q#users#query (fun __q -> __q#x)
   
                              method is_active =
                                __q#users#query (fun __q -> __q#is_active)
-  
-                             method users = users
                            end))
                     ~select:(fun __q ->
                       object
@@ -149,8 +147,8 @@ select from a subquery (no alias default to "q"):
                end
              in
              object
-               method x = __q#q#query (fun __q -> __q#x)
                method q = q
+               method x = __q#q#query (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -246,8 +244,8 @@ splicing ocaml values into WHERE:
                end
              in
              object
-               method x = __q#users#query (fun __q -> __q#x)
                method users = users
+               method x = __q#users#query (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -288,8 +286,8 @@ splicing ocaml values into WHERE:
                end
              in
              object
-               method x = __q#users#query (fun __q -> __q#x)
                method users = users
+               method x = __q#users#query (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -331,8 +329,8 @@ splicing ocaml values into SELECT:
                end
              in
              object
-               method field = what __q
                method users = users
+               method field = what __q
              end))
       ~select:(fun __q ->
         object
@@ -401,8 +399,8 @@ select with PREWHERE clause:
                end
              in
              object
-               method x = __q#users#query (fun __q -> __q#x)
                method users = users
+               method x = __q#users#query (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -452,10 +450,10 @@ expressions referenced multiple times result in a single column added to teh sub
                              end
                            in
                            object
+                             method users = users
+  
                              method is_active =
                                __q#users#query (fun __q -> __q#is_active)
-  
-                             method users = users
                            end))
                     ~select:(fun __q ->
                       object
@@ -469,8 +467,8 @@ expressions referenced multiple times result in a single column added to teh sub
                end
              in
              object
-               method is_active = __q#q#query (fun __q -> __q#is_active)
                method q = q
+               method is_active = __q#q#query (fun __q -> __q#is_active)
              end))
       ~select:(fun __q ->
         object

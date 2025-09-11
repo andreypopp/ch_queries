@@ -120,8 +120,8 @@ The param within the scope receives the scope as argument:
                end
              in
              object
-               method field = __q#q#query (fun __q -> field __q)
                method q = q
+               method field = __q#q#query (fun __q -> field __q)
              end))
       ~select:(fun __q ->
         object

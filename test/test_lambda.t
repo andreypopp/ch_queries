@@ -18,6 +18,8 @@ test IN expression with subquery:
                end
              in
              object
+               method users = users
+  
                method x =
                  Ch_queries.Expr.length
                    (Ch_queries.Expr.arrayFilter
@@ -25,8 +27,6 @@ test IN expression with subquery:
                            Ch_queries.Expr.( = ) (Ch_queries.unsafe "x")
                              (Ch_queries.int 1)))
                       (__q#users#query (fun __q -> __q#xs)))
-  
-               method users = users
              end))
       ~select:(fun __q ->
         object

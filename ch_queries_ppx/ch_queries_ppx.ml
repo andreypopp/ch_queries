@@ -89,7 +89,6 @@ let from_scope_expr ~scopes from =
     | [] -> failwith "impossible: should have at least FROM scope"
     | x :: [] ->
         let curr_scope = merge_scopes curr_scope x in
-        let curr_scope = merge_scopes curr_scope from in
         make curr_scope
     | x :: xs ->
         let curr_scope = merge_scopes curr_scope x in

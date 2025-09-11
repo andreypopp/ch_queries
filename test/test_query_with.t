@@ -23,12 +23,11 @@ can define expression for reuse with `WITH` clause:
                end
              in
              object
+               method u = u
                method x = Ch_queries.int 1
   
                method id_and_x =
                  Ch_queries.Expr.( + ) __q#x (__q#u#query (fun __q -> __q#id))
-  
-               method u = u
              end))
       ~select:(fun __q ->
         object
@@ -69,10 +68,10 @@ select shadows `WITH` clause:
                end
              in
              object
+               method u = u
+  
                method x =
                  Ch_queries.Expr.( + ) __q#x (__q#u#query (fun __q -> __q#id))
-  
-               method u = u
              end))
       ~select:(fun __q ->
         object
@@ -112,12 +111,11 @@ WITH has access to table columns:
                end
              in
              object
+               method u = u
                method x = __q#u#query (fun __q -> __q#id)
   
                method y =
                  Ch_queries.Expr.( + ) __q#x (__q#u#query (fun __q -> __q#id))
-  
-               method u = u
              end))
       ~select:(fun __q ->
         object

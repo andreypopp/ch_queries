@@ -18,8 +18,8 @@ test IN expression with subquery:
                end
              in
              object
-               method x = __q#users#query (fun __q -> __q#x)
                method users = users
+               method x = __q#users#query (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -41,8 +41,8 @@ test IN expression with subquery:
                          end
                        in
                        object
-                         method _1 = __q#users#query (fun __q -> __q#id)
                          method users = users
+                         method _1 = __q#users#query (fun __q -> __q#id)
                        end))
                 ~select:(fun __q ->
                   object
@@ -81,8 +81,8 @@ test IN expression with expression::
                end
              in
              object
-               method x = __q#users#query (fun __q -> __q#x)
                method users = users
+               method x = __q#users#query (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -123,8 +123,8 @@ test IN expression with parameter:
                end
              in
              object
-               method x = __q#users#query (fun __q -> __q#x)
                method users = users
+               method x = __q#users#query (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object

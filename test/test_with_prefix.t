@@ -17,8 +17,8 @@ all syntax forms can be used with `%ch.*` prefix as well, we test just the `%ch.
                end
              in
              object
-               method x = __q#users#query (fun __q -> __q#x)
                method users = users
+               method x = __q#users#query (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object

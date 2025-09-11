@@ -34,8 +34,8 @@ UNION syntax:
                   end
                 in
                 object
-                  method x = Ch_queries.int 1
                   method users = users
+                  method x = Ch_queries.int 1
                 end))
          ~select:(fun __q ->
            object
@@ -53,8 +53,8 @@ UNION syntax:
                   end
                 in
                 object
-                  method x = Ch_queries.int 2
                   method users = users
+                  method x = Ch_queries.int 2
                 end))
          ~select:(fun __q ->
            object

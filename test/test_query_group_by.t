@@ -18,8 +18,8 @@ GROUP BY single column:
                end
              in
              object
-               method x = __q#users#query (fun __q -> __q#x)
                method users = users
+               method x = __q#users#query (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -57,8 +57,8 @@ GROUP BY multiple columns:
                end
              in
              object
-               method x = __q#users#query (fun __q -> __q#x)
                method users = users
+               method x = __q#users#query (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -101,8 +101,8 @@ GROUP BY with a parameter:
                end
              in
              object
-               method x = __q#users#query (fun __q -> __q#x)
                method users = users
+               method x = __q#users#query (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -153,8 +153,8 @@ GROUP BY GROUPING SETS:
                end
              in
              object
-               method one = Ch_queries.int 1
                method users = users
+               method one = Ch_queries.int 1
              end))
       ~select:(fun __q ->
         object
@@ -200,8 +200,8 @@ GROUP BY GROUPING SETS:
                end
              in
              object
-               method one = Ch_queries.int 1
                method u = u
+               method one = Ch_queries.int 1
              end))
       ~select:(fun __q ->
         object
@@ -241,8 +241,8 @@ GROUP BY can refer to SELECTed columns:
                end
              in
              object
-               method x = __q#users#query (fun __q -> __q#x)
                method users = users
+               method x = __q#users#query (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
