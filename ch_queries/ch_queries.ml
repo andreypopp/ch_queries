@@ -81,9 +81,11 @@ and 'a from_one0 =
       select : 'a select0;
       alias : string;
       cluster_name : string option;
+      cte : cte option;
     }
       -> 'a from_one0
 
+and cte = { materialized : bool }
 and 'a from_one = unit -> 'a from_one0
 
 and 'a from0 =
@@ -110,8 +112,8 @@ let rec scope_from : type scope. scope from0 -> scope = function
   | From_join { scope; _ } -> scope
   | From_map (from, f) -> f (scope_from from)
 
-let from_select ?cluster_name ~alias select () =
-  From_select { select = select ~alias; alias; cluster_name }
+let from_select ?cte ?cluster_name ~alias select () =
+  From_select { select = select ~alias; alias; cluster_name; cte }
 
 let from_table ~db ~table scope =
  fun ~final ~alias () : _ scope from_one0 ->
@@ -159,7 +161,7 @@ let scope_from_select select : _ scope =
 
 let scope_from_one = function
   | From_table { scope; _ } -> scope
-  | From_select { select; alias = _; cluster_name = _ } ->
+  | From_select { select; alias = _; cluster_name = _; cte = _ } ->
       scope_from_select select
 
 let from from () =
@@ -214,6 +216,8 @@ let map_from_scope : type x y. x from -> (x -> y) -> y from =
 module To_syntax = struct
   open Ch_queries_syntax
 
+  type ctes = (Syntax.id * (Syntax.query * bool)) list
+
   let rec group_by_to_syntax dimensions =
     List.map dimensions ~f:(fun (A_expr expr) -> Syntax.Dimension_expr expr)
 
@@ -263,10 +267,14 @@ module To_syntax = struct
                 in
                 Syntax.Setting_item (Syntax.make_id id, setting_value))
           in
-          let from = from_to_syntax from in
+          let ctes, from = from_to_syntax [] from in
+          let with_fields =
+            List.map ctes ~f:(fun (id, (query, materialized)) ->
+                Syntax.With_query (id, query, materialized))
+          in
           Q_select
             {
-              with_fields = [];
+              with_fields;
               select = Select_fields select;
               from;
               prewhere;
@@ -281,31 +289,65 @@ module To_syntax = struct
             }
       | Union { x; y; exprs = _; scope = _ } ->
           Q_union (to_syntax x, to_syntax y)
-    and from_one_to_syntax : type a. a from_one0 -> Syntax.from_one = function
+    and from_one_to_syntax : type a.
+        ctes -> a from_one0 -> ctes * Syntax.from_one =
+     fun ctes from ->
+      match from with
       | From_table { db; table; alias; final; _ } ->
-          Syntax.make_from_one
-            (F_table
-               {
-                 db = Syntax.make_id db;
-                 table = Syntax.make_id table;
-                 alias = Syntax.make_id alias;
-                 final;
-               })
-      | From_select { select; alias; cluster_name } ->
-          Syntax.make_from_one
-            (F_select
-               {
-                 select = Syntax.make_query (select_to_syntax select);
-                 alias = Syntax.make_id alias;
-                 cluster_name =
-                   Option.map
-                     (fun name -> Syntax.Cluster_name (Syntax.make_id name))
-                     cluster_name;
-               })
-    and from_to_syntax : type a. a from0 -> Syntax.from = function
-      | From_map (from, _f) -> from_to_syntax from
+          ( ctes,
+            Syntax.make_from_one
+              (F_table
+                 {
+                   db = Syntax.make_id db;
+                   table = Syntax.make_id table;
+                   alias = Syntax.make_id alias;
+                   final;
+                 }) )
+      | From_select { select; alias; cluster_name; cte = None } ->
+          ( ctes,
+            Syntax.make_from_one
+              (F_select
+                 {
+                   select = Syntax.make_query (select_to_syntax select);
+                   alias = Syntax.make_id alias;
+                   cluster_name =
+                     Option.map
+                       (fun name -> Syntax.Cluster_name (Syntax.make_id name))
+                       cluster_name;
+                 }) )
+      | From_select
+          { select; alias; cluster_name = _; cte = Some { materialized } } -> (
+          (* TODO: handle cluster_name *)
+          let alias = Syntax.make_id alias in
+          let query = Syntax.make_query (select_to_syntax select) in
+          match
+            List.find_map ctes ~f:(fun (alias', (query', _)) ->
+                if Syntax.equal_query query query' then Some alias' else None)
+          with
+          | Some id ->
+              (ctes, Syntax.make_from_one (F_param { id; alias; final = false }))
+          | None ->
+              let rec pick_name idx =
+                let name =
+                  match idx with
+                  | 0 -> alias
+                  | n -> Syntax.make_id (Printf.sprintf "%s_%d" alias.node n)
+                in
+                match List.Assoc.mem ~eq:Syntax.equal_id name ctes with
+                | true -> pick_name (idx + 1)
+                | false -> name
+              in
+              let alias = pick_name 0 in
+              ( (alias, (query, materialized)) :: ctes,
+                Syntax.make_from_one
+                  (F_param { id = alias; alias; final = false }) ))
+    and from_to_syntax : type a. ctes -> a from0 -> ctes * Syntax.from =
+     fun ctes from ->
+      match from with
+      | From_map (from, _f) -> from_to_syntax ctes from
       | From { from = A_from_one from; _ } ->
-          Syntax.make_from (F (from_one_to_syntax from))
+          let ctes, from = from_one_to_syntax ctes from in
+          (ctes, Syntax.make_from (F from))
       | From_join { kind; from = A_from from; join = A_from_one join; on; _ }
         -> (
           let translate () =
@@ -315,14 +357,9 @@ module To_syntax = struct
               | `LEFT_JOIN | `LEFT_JOIN_OPTIONAL -> `LEFT_JOIN
             in
             let (A_expr on) = Lazy.force on in
-            Syntax.make_from
-              (F_join
-                 {
-                   kind;
-                   from = from_to_syntax from;
-                   join = from_one_to_syntax join;
-                   on;
-                 })
+            let ctes, from = from_to_syntax ctes from in
+            let ctes, join = from_one_to_syntax ctes join in
+            (ctes, Syntax.make_from (F_join { kind; from; join; on }))
           in
           match kind with
           | `LEFT_JOIN_OPTIONAL ->
@@ -334,7 +371,8 @@ module To_syntax = struct
                     | Select { fields; _ } -> List.is_empty fields
                     | Union { exprs; _ } -> List.is_empty exprs)
               in
-              if not should_eliminate then translate () else from_to_syntax from
+              if not should_eliminate then translate ()
+              else from_to_syntax ctes from
           | `LEFT_JOIN | `INNER_JOIN -> translate ())
     in
     Syntax.make_query (select_to_syntax q)

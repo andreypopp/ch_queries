@@ -567,16 +567,13 @@ and stage_query ~on_evar ({ node; _ } as q) =
       } ->
       let loc = to_location q in
       let scope_of_with =
-        List.map with_fields ~f:(function
+        List.filter_map with_fields ~f:(function
           | Syntax.With_expr ({ alias = Some id; _ } as field) ->
-              (id, fst (stage_field ~on_evar ~from:From 0 field))
+              Some (id, fst (stage_field ~on_evar ~from:From 0 field))
           | Syntax.With_expr { alias = None; expr } ->
               let loc = to_location expr in
               Location.raise_errorf ~loc "WITH <expr> requires an alias"
-          | Syntax.With_query (id, _) ->
-              let loc = to_location id in
-              Location.raise_errorf ~loc
-                "WITH <id> AS <query> is not supported yet")
+          | Syntax.With_query (_, _, _) -> None)
       in
       let select, scopes =
         match select with
@@ -702,8 +699,27 @@ and stage_query ~on_evar ({ node; _ } as q) =
             let settings_expr = stage_settings ~on_evar ~loc settings in
             (Labelled "settings", settings_expr) :: args
       in
-      pexp_apply ~loc [%expr Ch_queries.select]
-        ((Nolabel, [%expr ()]) :: List.rev args)
+      let query =
+        pexp_apply ~loc [%expr Ch_queries.select]
+          ((Nolabel, [%expr ()]) :: List.rev args)
+      in
+      let query =
+        List.fold_left (List.rev with_fields) ~init:query ~f:(fun query w ->
+            match w with
+            | Syntax.With_expr _ -> query
+            | Syntax.With_query (alias, query', materialized) ->
+                let loc = to_location query' in
+                let materialized = ebool ~loc materialized in
+                let query' = stage_query ~on_evar query' in
+                [%expr
+                  let [%p pvar ~loc alias.node] =
+                    Ch_queries.from_select
+                      ~cte:{ materialized = [%e materialized] }
+                      [%e query']
+                  in
+                  [%e query]])
+      in
+      query
 
 and stage_from ~on_evar from =
   let open Syntax in

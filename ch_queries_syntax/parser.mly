@@ -36,6 +36,7 @@
 %token YEAR MONTH WEEK DAY HOUR MINUTE SECOND
 %token ARROW
 %token WITH
+%token AS_MATERIALIZED
 %token EOF
 
 %left UNION
@@ -85,7 +86,9 @@ with_fields:
 
 with_field:
     id=id AS_LPAREN q=query RPAREN
-    { With_query (id, q) }
+    { With_query (id, q, false) }
+  | id=id AS_MATERIALIZED LPAREN q=query RPAREN
+    { With_query (id, q, true) }
   | expr=expr AS alias=id
     { With_expr { expr = expr; alias = Some alias } }
 

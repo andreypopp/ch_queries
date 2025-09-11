@@ -135,6 +135,7 @@
     | Parser.SECOND -> "SECOND"
     | Parser.ARROW -> "ARROW"
     | Parser.WITH -> "WITH"
+    | Parser.AS_MATERIALIZED -> "AS_MATERIALIZED"
     | Parser.EOF -> "EOF"
 
 }
@@ -147,6 +148,9 @@ let id_char = letter | digit | '_'
 let id = (letter | '_') id_char*
 let number = digit+
 let param_char = '$'
+
+let as_ = ('a'|'A') ('s'|'S')
+let materialized_ = ('m'|'M') ('a'|'A') ('t'|'T') ('e'|'E') ('r'|'R') ('i'|'I') ('a'|'A') ('l'|'L') ('i'|'I') ('z'|'Z') ('e'|'E') ('d'|'D')
 
 rule token = parse
   | whitespace+         { token lexbuf }
@@ -176,7 +180,8 @@ rule token = parse
   | param_char (id as s)       { PARAM s }
   | id as s             { get_keyword_or_id s }
   | '('                 { LPAREN }
-  | 'A' 'S' (' '|'\n'|'\t')+ '(' { AS_LPAREN }
+  | as_ (' '|'\n'|'\t')+ '(' { AS_LPAREN }
+  | as_ (' '|'\n'|'\t')+ materialized_ { AS_MATERIALIZED }
   | ')'                 { RPAREN }
   | '['                 { LBRACKET }
   | ']'                 { RBRACKET }

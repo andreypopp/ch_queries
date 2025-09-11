@@ -56,7 +56,7 @@ and field = { expr : expr; alias : id option }
 
 and with_field =
   | With_expr of field  (** WITH <expr> AS <id> *)
-  | With_query of id * query  (** WITH <id> AS <query> *)
+  | With_query of id * query * bool  (** WITH <id> AS <query> *)
 
 and query = querysyn node
 
