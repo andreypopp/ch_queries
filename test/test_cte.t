@@ -2,7 +2,7 @@ CTE is supported:
   $ ./compile_and_run '
   > let q = {%q|
   >   WITH users AS (SELECT users.x AS x FROM public.users)
-  >   SELECT x.x AS a, y.x AS b FROM $users AS x JOIN $users AS y ON x.x = y.x
+  >   SELECT x.x AS a, y.x AS b FROM users AS x JOIN users AS y ON x.x = y.x
   > |};;
   > let sql, _parse_row = Ch_queries.query q @@ fun __q -> Ch_queries.Row.ignore [%e "[q.a, q.b]"];;
   > print_endline sql;;
@@ -166,7 +166,7 @@ materilized CTE is supported as well:
   $ ./compile_and_run '
   > let q = {%q|
   >   WITH users AS MATERIALIZED (SELECT users.x AS x FROM public.users)
-  >   SELECT x.x AS a, y.x AS b FROM $users AS x JOIN $users AS y ON x.x = y.x
+  >   SELECT x.x AS a, y.x AS b FROM users AS x JOIN users AS y ON x.x = y.x
   > |};;
   > let sql, _parse_row = Ch_queries.query q @@ fun __q -> Ch_queries.Row.ignore [%e "[q.a, q.b]"];;
   > print_endline sql;;
