@@ -8,8 +8,11 @@ echo '
 #require "ch_queries.ppx"
 #use "test_queries.ml"
 ' > test_query.ml
-echo '>>> PREPROCESSING'
-echo "$1" | grep -v '^#' | ch_queries_ppx -impl - | ocamlformat --enable-outside-detected-project --name test_query.ml --impl -
+# check for --run-only flag
+if [ "$2" != "--run-only" ]; then
+  echo '>>> PREPROCESSING'
+  echo "$1" | grep -v '^#' | ch_queries_ppx -impl - | ocamlformat --enable-outside-detected-project --name test_query.ml --impl -
+fi
 echo '>>> RUNNING'
 echo "$1" >> test_query.ml
 ocaml ./test_query.ml
