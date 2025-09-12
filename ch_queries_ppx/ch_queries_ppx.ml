@@ -565,14 +565,18 @@ and stage_query ~on_evar ({ node; _ } as q) =
         settings;
       } ->
       let loc = to_location q in
-      let scope_of_with =
-        List.filter_map with_fields ~f:(function
+      let scope_of_with, ctes =
+        List.partition_filter_map with_fields ~f:(function
           | Syntax.With_expr ({ alias = Some id; _ } as field) ->
-              Some (id, fst (stage_field ~on_evar ~from:From 0 field))
+              `Left (id, fst (stage_field ~on_evar ~from:From 0 field))
           | Syntax.With_expr { alias = None; expr } ->
               let loc = to_location expr in
               Location.raise_errorf ~loc "WITH <expr> requires an alias"
-          | Syntax.With_query (_, _, _) -> None)
+          | Syntax.With_query (alias, query, materialized) ->
+              let loc = to_location query in
+              let materialized = ebool ~loc materialized in
+              let query = stage_query ~on_evar query in
+              `Right (loc, alias, query, materialized))
       in
       let select, scopes =
         match select with
@@ -703,20 +707,12 @@ and stage_query ~on_evar ({ node; _ } as q) =
           ((Nolabel, [%expr ()]) :: List.rev args)
       in
       let query =
-        List.fold_left (List.rev with_fields) ~init:query ~f:(fun query w ->
-            match w with
-            | Syntax.With_expr _ -> query
-            | Syntax.With_query (alias, query', materialized) ->
-                let loc = to_location query' in
-                let materialized = ebool ~loc materialized in
-                let query' = stage_query ~on_evar query' in
-                [%expr
-                  let [%p pvar ~loc alias.node] =
-                    Ch_queries.from_select
-                      ~cte:{ materialized = [%e materialized] }
-                      [%e query']
-                  in
-                  [%e query]])
+        List.fold_left (List.rev ctes) ~init:query
+          ~f:(fun query (loc, alias, query', materialized) ->
+            [%expr
+              Ch_queries.with_cte ~materialized:[%e materialized]
+                ~alias:[%e estring ~loc alias.Syntax.node] [%e query']
+                (fun [%p pvar ~loc alias.Syntax.node] -> [%e query])])
       in
       query
 
@@ -756,26 +752,22 @@ and stage_from_one ~on_evar from_one =
       [%expr
         [%e evar ~loc qname] ~alias:[%e estring ~loc alias.node]
           ~final:[%e ebool ~loc final]]
-  | F_select { select; alias; cluster_name = Some cluster_name } ->
-      let select_expr = stage_query ~on_evar select in
-      let alias_expr = estring ~loc alias.node in
-      let cluster_name_expr =
+  | F_select { select; alias; cluster_name } ->
+      let select = stage_query ~on_evar select in
+      let alias = estring ~loc alias.node in
+      let args = [ (Nolabel, select); (Labelled "alias", alias) ] in
+      let args =
         match cluster_name with
-        | Cluster_name id ->
+        | None -> args
+        | Some (Cluster_name id) ->
             let loc = to_location id in
-            estring ~loc id.node
-        | Cluster_name_param id ->
+            (Labelled "cluster_name", estring ~loc id.node) :: args
+        | Some (Cluster_name_param id) ->
             on_evar id;
             let loc = to_location id in
-            evar ~loc id.node
+            (Labelled "cluster_name", evar ~loc id.node) :: args
       in
-      [%expr
-        Ch_queries.from_select ~cluster_name:[%e cluster_name_expr]
-          [%e select_expr] ~alias:[%e alias_expr]]
-  | F_select { select; alias; cluster_name = None } ->
-      let select_expr = stage_query ~on_evar select in
-      let alias_expr = estring ~loc alias.node in
-      [%expr Ch_queries.from_select [%e select_expr] ~alias:[%e alias_expr]]
+      pexp_apply ~loc [%expr Ch_queries.from_select] args
   | F_param { id; alias; final } -> (
       on_evar id;
       let loc = to_location id in

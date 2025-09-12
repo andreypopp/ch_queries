@@ -47,9 +47,6 @@ type 'scope select
 type 'a from_one
 (** Represents a single table or subquery in the FROM clause. *)
 
-type cte = { materialized : bool }
-(** Common Table Expression (CTE) options. *)
-
 type 'a from
 (** Represents the FROM clause of a query, which can contain multiple tables or
     subqueries. *)
@@ -123,11 +120,7 @@ val left_join :
 val map_from_scope : 'x from -> ('x -> 'y) -> 'y from
 
 val from_select :
-  ?cte:cte ->
-  ?cluster_name:string ->
-  alias:string ->
-  'a scope select ->
-  'a scope from_one
+  ?cluster_name:string -> alias:string -> 'a scope select -> 'a scope from_one
 
 val from_table :
   db:string ->
@@ -136,6 +129,13 @@ val from_table :
   final:bool ->
   alias:string ->
   'a scope from_one
+
+val with_cte :
+  ?materialized:bool ->
+  alias:string ->
+  'a scope select ->
+  ((alias:string -> 'a scope from_one) -> 'b select) ->
+  'b select
 
 module Expr : sig
   (** {1 Regular functions} *)

@@ -39,6 +39,7 @@ and 'a nullable_scope =
 and a_field = A_field : Ch_queries_syntax.Syntax.expr * string -> a_field
 
 and 'scope select_payload = {
+  mutable ctes : cte_query list;
   from : a_from0;
   scope : 'scope;  (** scope of the query, once it is queried *)
   prewhere : a_expr option;
@@ -53,6 +54,8 @@ and 'scope select_payload = {
     (string * [ `Int of int | `String of string | `Bool of bool ]) list;
   mutable fields : a_field list;  (** list of fields build within the SELECT *)
 }
+
+and cte_query = Cte_query : string * _ select0 * bool -> cte_query
 
 and 'scope union_payload = {
   x : 'scope select0;
@@ -81,11 +84,16 @@ and 'a from_one0 =
       select : 'a select0;
       alias : string;
       cluster_name : string option;
-      cte : cte option;
+    }
+      -> 'a from_one0
+  | From_cte_ref : {
+      cte : 'a from_one0;
+      cte_alias : string;
+      scope : 'a;
+      alias : string;
     }
       -> 'a from_one0
 
-and cte = { materialized : bool }
 and 'a from_one = unit -> 'a from_one0
 
 and 'a from0 =
@@ -112,8 +120,8 @@ let rec scope_from : type scope. scope from0 -> scope = function
   | From_join { scope; _ } -> scope
   | From_map (from, f) -> f (scope_from from)
 
-let from_select ?cte ?cluster_name ~alias select () =
-  From_select { select = select ~alias; alias; cluster_name; cte }
+let from_select ?cluster_name ~alias select () =
+  From_select { select = select ~alias; alias; cluster_name }
 
 let from_table ~db ~table scope =
  fun ~final ~alias () : _ scope from_one0 ->
@@ -161,8 +169,9 @@ let scope_from_select select : _ scope =
 
 let scope_from_one = function
   | From_table { scope; _ } -> scope
-  | From_select { select; alias = _; cluster_name = _; cte = _ } ->
+  | From_select { select; alias = _; cluster_name = _ } ->
       scope_from_select select
+  | From_cte_ref { scope; cte = _; cte_alias = _; alias = _ } -> scope
 
 let from from () =
   let from = from () in
@@ -216,30 +225,6 @@ let map_from_scope : type x y. x from -> (x -> y) -> y from =
 module To_syntax = struct
   open Ch_queries_syntax
 
-  type ctes = (Syntax.id * (Syntax.query * bool)) list
-
-  let find_cte ctes (query, materialized) =
-    List.find_map ctes ~f:(fun (alias', (query', materialized')) ->
-        match
-          Syntax.equal_query query query'
-          && Bool.equal materialized materialized'
-        with
-        | true -> Some alias'
-        | false -> None)
-
-  let pick_cte_name ctes name =
-    let rec aux idx =
-      let name =
-        match idx with
-        | 0 -> name
-        | n -> Syntax.make_id (Printf.sprintf "%s_%d" name.Syntax.node n)
-      in
-      match List.Assoc.mem ~eq:Syntax.equal_id name ctes with
-      | true -> aux (idx + 1)
-      | false -> name
-    in
-    aux 0
-
   let rec group_by_to_syntax dimensions =
     List.map dimensions ~f:(fun (A_expr expr) -> Syntax.Dimension_expr expr)
 
@@ -252,6 +237,7 @@ module To_syntax = struct
     let rec select_to_syntax : type a. a select0 -> Syntax.querysyn = function
       | Select
           {
+            ctes;
             from = A_from from;
             prewhere;
             where;
@@ -289,10 +275,13 @@ module To_syntax = struct
                 in
                 Syntax.Setting_item (Syntax.make_id id, setting_value))
           in
-          let ctes, from = from_to_syntax [] from in
+          let from = from_to_syntax from in
           let with_fields =
-            List.map ctes ~f:(fun (id, (query, materialized)) ->
-                Syntax.With_query (id, query, materialized))
+            List.map ctes ~f:(fun (Cte_query (alias, query, materialized)) ->
+                let query = query in
+                let query = to_syntax query in
+                let alias = Syntax.make_id alias in
+                Syntax.With_query (alias, query, materialized))
           in
           Q_select
             {
@@ -311,52 +300,40 @@ module To_syntax = struct
             }
       | Union { x; y; exprs = _; scope = _ } ->
           Q_union (to_syntax x, to_syntax y)
-    and from_one_to_syntax : type a.
-        ctes -> a from_one0 -> ctes * Syntax.from_one =
-     fun ctes from ->
+    and from_one_to_syntax : type a. a from_one0 -> Syntax.from_one =
+     fun from ->
       match from with
       | From_table { db; table; alias; final; _ } ->
-          ( ctes,
-            Syntax.make_from_one
-              (F_table
-                 {
-                   db = Syntax.make_id db;
-                   table = Syntax.make_id table;
-                   alias = Syntax.make_id alias;
-                   final;
-                 }) )
-      | From_select { select; alias; cluster_name; cte = None } ->
-          ( ctes,
-            Syntax.make_from_one
-              (F_select
-                 {
-                   select = Syntax.make_query (select_to_syntax select);
-                   alias = Syntax.make_id alias;
-                   cluster_name =
-                     Option.map
-                       (fun name -> Syntax.Cluster_name (Syntax.make_id name))
-                       cluster_name;
-                 }) )
-      | From_select
-          { select; alias; cluster_name = _; cte = Some { materialized } } -> (
-          (* TODO: handle cluster_name *)
+          Syntax.make_from_one
+            (F_table
+               {
+                 db = Syntax.make_id db;
+                 table = Syntax.make_id table;
+                 alias = Syntax.make_id alias;
+                 final;
+               })
+      | From_select { select; alias; cluster_name } ->
+          Syntax.make_from_one
+            (F_select
+               {
+                 select = Syntax.make_query (select_to_syntax select);
+                 alias = Syntax.make_id alias;
+                 cluster_name =
+                   Option.map
+                     (fun name -> Syntax.Cluster_name (Syntax.make_id name))
+                     cluster_name;
+               })
+      | From_cte_ref { cte_alias; alias; _ } ->
+          let id = Syntax.make_id cte_alias in
           let alias = Syntax.make_id alias in
-          let query = Syntax.make_query (select_to_syntax select) in
-          match find_cte ctes (query, materialized) with
-          | Some id ->
-              (ctes, Syntax.make_from_one (F_param { id; alias; final = false }))
-          | None ->
-              let alias = pick_cte_name ctes alias in
-              ( (alias, (query, materialized)) :: ctes,
-                Syntax.make_from_one
-                  (F_param { id = alias; alias; final = false }) ))
-    and from_to_syntax : type a. ctes -> a from0 -> ctes * Syntax.from =
-     fun ctes from ->
+          Syntax.make_from_one (F_param { id; alias; final = false })
+    and from_to_syntax : type a. a from0 -> Syntax.from =
+     fun from ->
       match from with
-      | From_map (from, _f) -> from_to_syntax ctes from
+      | From_map (from, _f) -> from_to_syntax from
       | From { from = A_from_one from; _ } ->
-          let ctes, from = from_one_to_syntax ctes from in
-          (ctes, Syntax.make_from (F from))
+          let from = from_one_to_syntax from in
+          Syntax.make_from (F from)
       | From_join { kind; from = A_from from; join = A_from_one join; on; _ }
         -> (
           let translate () =
@@ -366,28 +343,29 @@ module To_syntax = struct
               | `LEFT_JOIN | `LEFT_JOIN_OPTIONAL -> `LEFT_JOIN
             in
             let (A_expr on) = Lazy.force on in
-            let ctes, from = from_to_syntax ctes from in
-            let ctes, join = from_one_to_syntax ctes join in
-            (ctes, Syntax.make_from (F_join { kind; from; join; on }))
+            let from = from_to_syntax from in
+            let join = from_one_to_syntax join in
+            Syntax.make_from (F_join { kind; from; join; on })
           in
           match kind with
           | `LEFT_JOIN_OPTIONAL ->
-              let should_eliminate =
-                match join with
+              let rec should_eliminate = function
                 | From_table { used; _ } -> not used
+                | From_cte_ref { cte; _ } -> should_eliminate cte
                 | From_select { select; _ } -> (
                     match select with
                     | Select { fields; _ } -> List.is_empty fields
                     | Union { exprs; _ } -> List.is_empty exprs)
               in
-              if not should_eliminate then translate ()
-              else from_to_syntax ctes from
+              if not (should_eliminate join) then translate ()
+              else from_to_syntax from
           | `LEFT_JOIN | `INNER_JOIN -> translate ())
     in
     Syntax.make_query (select_to_syntax q)
 end
 
 let unsafe x = Syntax.make_expr (E_unsafe (Syntax.make_id x))
+let col q x = Syntax.make_expr (E_col (Syntax.make_id q, Syntax.make_id x))
 
 let unsafe_concat xs =
   let xs = List.map xs ~f:(fun (A_expr expr) -> expr) in
@@ -609,6 +587,58 @@ let add_field ?(force = false) expr select =
   | Some _ when force -> do_add ()
   | Some alias -> alias
 
+let with_cte ?(materialized = false) ~alias:cte_alias cte_query :
+    ((alias:string -> _ from_one) -> _ select) -> _ select =
+ fun query ~alias ->
+  let cte_query = cte_query ~alias in
+  let cte =
+    From_select { select = cte_query; alias = cte_alias; cluster_name = None }
+  in
+  let query =
+    query
+      (fun ~alias () ->
+        let scope' = scope_from_select cte_query in
+        let scope =
+          (object (self)
+             method query' f =
+               let witness, add = scope'#query' f in
+               let add ~force =
+                 let x = add ~force in
+                 match x.Syntax.node with
+                 | E_col (_, name) -> col alias name.node
+                 | _ -> failwith "invariant violation: expected column"
+               in
+               (witness, add)
+
+             method query f = snd (self#query' f) ~force:false
+
+             method query_many f =
+               let xs = scope'#query_many f in
+               List.map xs ~f:(fun (A_expr e) ->
+                   let e =
+                     match e.Syntax.node with
+                     | E_col (_, name) -> col alias name.node
+                     | _ -> failwith "invariant violation: expected column"
+                   in
+                   A_expr e)
+           end
+            : _ scope)
+        in
+        From_cte_ref { cte; cte_alias; scope; alias })
+      ~alias
+  in
+  let rec add_cte = function
+    | Select select ->
+        let cte = Cte_query (cte_alias, cte_query, materialized) in
+        select.ctes <- cte :: select.ctes
+    | Union union ->
+        (* TODO: not ideal as we push same CTE twice *)
+        add_cte union.x;
+        add_cte union.y
+  in
+  add_cte query;
+  query
+
 let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit
     ?offset ?(settings = []) ~select () ~alias : _ scope select0 =
   let from = from () in
@@ -629,6 +659,7 @@ let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit
   let rec select =
     lazy
       {
+        ctes = [];
         from = A_from from;
         scope =
           (object (self)
@@ -637,7 +668,7 @@ let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit
                ( e,
                  fun ~force ->
                    let c = add_field ~force e (Lazy.force select) in
-                   unsafe (Printf.sprintf "%s.%s" alias c) )
+                   col alias c )
 
              method query f = snd (self#query' f) ~force:false
 
@@ -645,7 +676,7 @@ let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit
                let xs = f scope' in
                List.map xs ~f:(fun (A_expr e) ->
                    let c = add_field e (Lazy.force select) in
-                   A_expr (unsafe (Printf.sprintf "%s.%s" alias c)))
+                   A_expr (col alias c))
            end
             : _ scope);
         prewhere;
