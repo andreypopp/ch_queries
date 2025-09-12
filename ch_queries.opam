@@ -12,7 +12,7 @@ depends: [
   "ocaml"
   "menhir"
   "pprint"
-  "ppxlib"
+  "ppxlib" {< "0.36"}
   "ppx_hash"
   "ppx_compare"
   "cmdliner"

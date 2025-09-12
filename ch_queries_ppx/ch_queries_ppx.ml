@@ -930,7 +930,7 @@ let select_extension name =
     Ast_pattern.(
       pstr
         (pstr_value nonrecursive
-           (value_binding ~pat:(ppat_var __') ~expr:__ ~constraint_:none ^:: nil)
+           (value_binding ~pat:(ppat_var __') ~expr:__ ^:: nil)
         ^:: nil))
     expand_select
 
