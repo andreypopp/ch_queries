@@ -110,12 +110,10 @@ expressions.
 Sometimes you need to construct an expression using syntax which is not
 supported by ch_queries.ppx. In this case you can use the `%eu` syntax:
 ```ocaml
-# let expr __q = {%eu|q.name || ' ' || q.surname|};;
+# let expr (__q : < q : _ Ch_queries.scope >) = {%eu|q.name || ' ' || q.surname|};;
 val expr :
-  < q : < query : (< name : 'a; surname : 'a; .. > -> 'a) -> ('b, 'c) expr;
-          .. >;
-    .. > ->
-  ('d, 'e) expr = <fun>
+  < q : < name : ('a, 'b) expr; surname : ('c, 'd) expr; .. > scope > ->
+  ('e, 'f) expr = <fun>
 ```
 
 Such syntax recognizes only `q.name` and `$param` constructs and passes the rest
