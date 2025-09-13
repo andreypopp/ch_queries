@@ -91,7 +91,7 @@ val parse_row : json list -> int = <fun>
 There's a `%e` syntax form which allows you to define standalone expressions, which
 can be spliced into queries later:
 ```ocaml
-# let ok {%scope|q (...)|} = {%e|q.is_active|};;
+# let ok {%s|q (...)|} = {%e|q.is_active|};;
 val ok : < q : < is_active : ('a, 'b) expr; .. > scope > -> ('a, 'b) expr =
   <fun>
 ```
@@ -110,7 +110,7 @@ expressions.
 Sometimes you need to construct an expression using syntax which is not
 supported by ch_queries.ppx. In this case you can use the `%eu` syntax:
 ```ocaml
-# let expr {%scope|q (...)|} = {%eu|q.name || ' ' || q.surname|};;
+# let expr {%s|q (...)|} = {%eu|q.name || ' ' || q.surname|};;
 val expr :
   < q : < name : ('a, 'b) expr; surname : ('c, 'd) expr; .. > scope > ->
   ('e, 'f) expr = <fun>

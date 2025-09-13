@@ -1012,12 +1012,18 @@ let scope_extension name =
 let rules =
   [
     Context_free.Rule.extension (query_extension "ch.q");
+    Context_free.Rule.extension (query_extension "ch.query");
     Context_free.Rule.extension (from_extension "ch.f");
+    Context_free.Rule.extension (from_extension "ch.from");
     Context_free.Rule.extension (expr_extension "ch.e");
+    Context_free.Rule.extension (expr_extension "ch.expr");
     Context_free.Rule.extension (typ_extension "ch.t");
+    Context_free.Rule.extension (typ_extension "ch.type");
     Context_free.Rule.extension (uexpr_extension "ch.eu");
+    Context_free.Rule.extension (uexpr_extension "ch.expr_unsafe");
     Context_free.Rule.extension (select_extension "ch.select");
     Context_free.Rule.extension (scope_extension "ch.scope");
+    Context_free.Rule.extension (scope_extension "ch.s");
   ]
 
 let () = Driver.register_transformation ~rules "queries_ppx"
