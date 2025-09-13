@@ -135,64 +135,69 @@ let rec from_scope_pattern ?kind from =
 
 let make_hole ~loc expr = [%expr fun __q -> [%e expr]]
 
+let nullable =
+  let loc = Location.none in
+  function
+  | `NULL -> [%type: Ch_queries.null]
+  | `NON_NULL -> [%type: Ch_queries.non_null]
+
 let rec stage_typ' typ =
   let open Syntax in
   let loc = to_location typ in
   match typ.node with
   | T { node = "Date"; _ } ->
-      ( [%type: Ch_queries.non_null],
-        [%type: Ch_queries.date Ch_queries.timestamp] )
+      (`NON_NULL, [%type: Ch_queries.date Ch_queries.timestamp])
   | T { node = "DateTime64"; _ } ->
-      ( [%type: Ch_queries.non_null],
-        [%type: Ch_queries.datetime64 Ch_queries.timestamp] )
+      (`NON_NULL, [%type: Ch_queries.datetime64 Ch_queries.timestamp])
   | T { node = "DateTime"; _ } ->
-      ( [%type: Ch_queries.non_null],
-        [%type: Ch_queries.datetime Ch_queries.timestamp] )
-  | T { node = "String"; _ } -> ([%type: Ch_queries.non_null], [%type: string])
-  | T { node = "Bool"; _ } -> ([%type: Ch_queries.non_null], [%type: bool])
+      (`NON_NULL, [%type: Ch_queries.datetime Ch_queries.timestamp])
+  | T { node = "String"; _ } -> (`NON_NULL, [%type: string])
+  | T { node = "Bool"; _ } -> (`NON_NULL, [%type: bool])
   | T { node = "Int8" | "UInt8" | "Int16" | "UInt16" | "Int32" | "UInt32"; _ }
     ->
-      ([%type: Ch_queries.non_null], [%type: int Ch_queries.number])
+      (`NON_NULL, [%type: int Ch_queries.number])
   | T { node = "Int64" | "UInt64"; _ } ->
-      ([%type: Ch_queries.non_null], [%type: int64 Ch_queries.number])
+      (`NON_NULL, [%type: int64 Ch_queries.number])
   | T { node = "Float32" | "Float64" | "Float"; _ } ->
-      ([%type: Ch_queries.non_null], [%type: float Ch_queries.number])
+      (`NON_NULL, [%type: float Ch_queries.number])
   | T { node = t; _ } ->
       Location.raise_errorf ~loc "unknown ClickHouse type: %s" t
   | T_app ({ node = "Nullable"; _ }, [ t ]) ->
       let _, t = stage_typ' t in
-      ([%type: Ch_queries.null], t)
+      (`NULL, t)
   | T_app ({ node = "Nullable"; _ }, _) ->
       Location.raise_errorf ~loc "Nullable(..) requires exactly one argument"
   | T_app ({ node = "Array"; _ }, [ t ]) ->
       let n, t = stage_typ' t in
-      ([%type: Ch_queries.non_null], [%type: ([%t n], [%t t]) Ch_queries.array])
+      (`NON_NULL, [%type: ([%t nullable n], [%t t]) Ch_queries.array])
   | T_app ({ node = "Array"; _ }, _) ->
       Location.raise_errorf ~loc "Array(..) requires exactly one argument"
   | T_app ({ node = "Map"; _ }, [ k; v ]) ->
       let nk, k = stage_typ' k in
       let nv, v = stage_typ' v in
-      ( [%type: Ch_queries.non_null],
-        [%type: ([%t nk], [%t k], [%t nv], [%t v]) Ch_queries.map] )
+      ( `NON_NULL,
+        [%type:
+          ([%t nullable nk], [%t k], [%t nullable nv], [%t v]) Ch_queries.map]
+      )
   | T_app ({ node = "Map"; _ }, _) ->
       Location.raise_errorf ~loc "Map(..) requires exactly two argument"
   | T_app ({ node = "Tuple"; _ }, [ x; y ]) ->
       let xn, xt = stage_typ' x in
       let yn, yt = stage_typ' y in
-      ( [%type: Ch_queries.non_null],
+      ( `NON_NULL,
         [%type:
-          ( ([%t xn], [%t xt]) Ch_queries.typ,
-            ([%t yn], [%t yt]) Ch_queries.typ )
+          ( ([%t nullable xn], [%t xt]) Ch_queries.typ,
+            ([%t nullable yn], [%t yt]) Ch_queries.typ )
           Ch_queries.tuple2] )
   | T_app ({ node = "Tuple"; _ }, _) ->
       Location.raise_errorf ~loc "only 2-element tuples are supported"
   | T_app ({ node = t; _ }, _) ->
       Location.raise_errorf ~loc "Unknown ClickHouse type: %s" t
   | T_scope (cols, is_open) ->
-      ( [%type: should_not_happen],
+      ( `NON_NULL,
         [%type: [%t stage_scope_columns ~loc ~is_open cols] Ch_queries.scope] )
   | T_nullable_scope (cols, is_open) ->
-      ( [%type: should_not_happen],
+      ( `NULL,
         [%type:
           [%t stage_scope_columns ~loc ~is_open cols] Ch_queries.nullable_scope]
       )
@@ -216,7 +221,7 @@ and stage_typ x =
       t
   | _ ->
       let n, t = stage_typ' x in
-      [%type: ([%t n], [%t t]) Ch_queries.expr]
+      [%type: ([%t nullable n], [%t t]) Ch_queries.expr]
 
 let rec stage_typ_to_parser typ =
   let open Syntax in
