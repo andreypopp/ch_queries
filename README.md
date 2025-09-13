@@ -86,14 +86,24 @@ val sql : string =
 val parse_row : json list -> int = <fun>
 ```
 
-## `%e` - expressions
+## `%e` - expressions, `%s` - scopes
 
 There's a `%e` syntax form which allows you to define standalone expressions, which
 can be spliced into queries later:
 ```ocaml
-# let ok {%s|q (...)|} = {%e|q.is_active|};;
-val ok : < q : < is_active : ('a, 'b) expr; .. > scope > -> ('a, 'b) expr =
-  <fun>
+# let two = {%e|1+1|};;
+val two : (non_null, int number) expr = <abstr>
+```
+
+Remember than query parameters are non just plain expressions but functions
+which take the query scope and return an expression. It is useful (and
+sometimes required) to annotate scope types explicitly. For that we have `%s`
+syntax form:
+```ocaml
+# let is_deleted {%s|q (is_active Bool, ...)|} = {%e|NOT q.is_active|};;
+val is_deleted :
+  < q : < is_active : (non_null, bool) expr; .. > scope > ->
+  (non_null, bool) expr = <fun>
 ```
 
 Note that `q` in `q.is_active` is being resolved in the current scope, thus
@@ -134,4 +144,11 @@ type ch_uint64 = (non_null, int64 number) expr
 type ch_nullable_string = (null, string) expr
 # type ch_array_string = {%t|Array(String)|};;
 type ch_array_string = (non_null, (non_null, string) Ch_queries.array) expr
+```
+
+Can also be used for scope types:
+```ocaml
+# type user_scope = {%t| (id UInt64, name Nullable(String)) |};;
+type user_scope =
+    < id : (non_null, int64 number) expr; name : (null, string) expr > scope
 ```
