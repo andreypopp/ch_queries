@@ -51,7 +51,7 @@ let users ~condition =
 
 let x =
   let users =
-    users ~condition:(fun __q -> {%e|u.is_active OR true|})
+    users ~condition:(fun {%s|...|} -> {%e|u.is_active OR true|})
     |> Ch_queries.from_select
   in
   let select {%s|u (...), p public.profiles?, ...|} =
@@ -96,10 +96,8 @@ type 'f stats =
 
 (** this function selects a metric from a table scope *)
 let select_metric : type t sqlt.
-    < users : _ Ch_queries.scope > ->
-    (t, sqlt) metric ->
-    (_, sqlt) Ch_queries.expr =
- fun __q -> function
+    {%s|users public.users|} -> (t, sqlt) metric -> (_, sqlt) Ch_queries.expr =
+ fun {%s|...|} -> function
   | Metric_count -> {%e|count(1)|}
   | Metric_sum_id -> {%e|sum(users.id)|}
   | Metric_true -> {%e|true|}
@@ -109,12 +107,12 @@ let merge_metric : type a sqlt.
     < stats : _ stats Ch_queries.scope > ->
     (a, sqlt) metric ->
     (_, sqlt) Ch_queries.expr =
- fun __q (m : (a, sqlt) metric) -> {%e|stats.metric(${m})|}
+ fun {%s|...|} (m : (a, sqlt) metric) -> {%e|stats.metric(${m})|}
 
 (** this function defines how to query/parse a metric from a query. *)
 let query_metric : type t sqlt.
     < q : _ stats Ch_queries.scope > -> (t, sqlt) metric -> t Ch_queries.Row.t =
- fun __q m ->
+ fun {%s|...|} m ->
   let open Ch_queries.Row in
   let metric m = {%e|q.metric(${m})|} in
   match m with
@@ -124,7 +122,7 @@ let query_metric : type t sqlt.
 
 let users_stats =
   let stats =
-    let select __q : _ stats =
+    let select {%s|...|} : _ stats =
       object
         method metric : type t sqlt.
             (t, sqlt) metric -> (_, sqlt) Ch_queries.expr =

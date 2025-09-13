@@ -899,6 +899,13 @@ let expand_scope ~ctxt:_ expr =
       [%pat? (__q : [%t object_type])]
   | _ -> Location.raise_errorf "expected a string literal for [%%scope ...]"
 
+let expand_scope_type ~ctxt:_ expr =
+  match expr.pexp_desc with
+  | Pexp_constant (Pconst_string (txt, loc, _)) ->
+      let cols, is_open = parse_scope_columns ~loc txt in
+      stage_scope_columns ~loc ~is_open cols
+  | _ -> Location.raise_errorf "expected a string literal for [%%scope ...]"
+
 let rec extract_typed_fields query =
   match query.Syntax.node with
   | Syntax.Q_select { select = Select_fields fields; _ } ->
@@ -1046,6 +1053,11 @@ let scope_extension name =
     Ast_pattern.(single_expr_payload __)
     expand_scope
 
+let scope_type_extension name =
+  Extension.V3.declare name Extension.Context.core_type
+    Ast_pattern.(single_expr_payload __)
+    expand_scope_type
+
 let rules =
   [
     Context_free.Rule.extension (query_extension "ch.q");
@@ -1061,6 +1073,8 @@ let rules =
     Context_free.Rule.extension (select_extension "ch.select");
     Context_free.Rule.extension (scope_extension "ch.scope");
     Context_free.Rule.extension (scope_extension "ch.s");
+    Context_free.Rule.extension (scope_type_extension "ch.scope");
+    Context_free.Rule.extension (scope_type_extension "ch.s");
   ]
 
 let () = Driver.register_transformation ~rules "queries_ppx"
