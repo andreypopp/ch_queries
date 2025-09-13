@@ -25,6 +25,11 @@ open Ch_queries
 
 module Ch_database = struct
   module Db = struct
+    type users = <
+      id : (non_null, int number) expr;
+      name : (non_null, string) expr;
+      is_active : (non_null, bool) expr;
+    >
     let users =
       let scope ~alias =
         let column name = unsafe (alias ^ "." ^ name) in
@@ -151,4 +156,10 @@ Can also be used for scope types:
 # type user_scope = {%t| (id UInt64, name Nullable(String)) |};;
 type user_scope =
     < id : (non_null, int64 number) expr; name : (null, string) expr > scope
+```
+
+Scope types can also be acquired by referencing scopes of database tables:
+```ocaml
+# type users = {%t|db.users|};;
+type users = Ch_database.Db.users scope
 ```
