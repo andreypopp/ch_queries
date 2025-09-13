@@ -54,7 +54,7 @@ let x =
     users ~condition:(fun {%s|...|} -> {%e|u.is_active OR true|})
     |> Ch_queries.from_select
   in
-  let select {%s|u (...), p public.profiles?, ...|} =
+  let select {%s|u ..., p public.profiles?, ...|} =
     object
       method name = {%e|u.x|}
       method pname = {%e|p.name|}

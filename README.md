@@ -125,7 +125,7 @@ expressions.
 Sometimes you need to construct an expression using syntax which is not
 supported by ch_queries.ppx. In this case you can use the `%eu` syntax:
 ```ocaml
-# let expr {%s|q (...)|} = {%eu|q.name || ' ' || q.surname|};;
+# let expr {%s|q ...|} = {%eu|q.name || ' ' || q.surname|};;
 val expr :
   < q : < name : ('a, 'b) expr; surname : ('c, 'd) expr; .. > scope > ->
   ('e, 'f) expr = <fun>

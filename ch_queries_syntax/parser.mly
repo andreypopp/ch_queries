@@ -82,6 +82,7 @@ typ:
     LPAREN columns=scope_columns RPAREN nullable=scope_nullable
     { let cols, is_open = columns in make_typ $startpos $endpos (T_scope (cols, is_open, nullable)) }
   | db=id DOT table=id nullable=scope_nullable { make_typ $startpos $endpos (T_db_table (db, table, nullable)) }
+  | DOT_DOT_DOT nullable=scope_nullable { make_typ $startpos $endpos (T_scope ([], `Open, nullable)) }
 
 scope_nullable:
     QUESTION { `NULL }
