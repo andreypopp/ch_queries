@@ -84,7 +84,6 @@
     | Parser.DOT -> "DOT"
     | Parser.COLONCOLON -> "COLONCOLON"
     | Parser.LPAREN -> "LPAREN"
-    | Parser.AS_LPAREN -> "AS_LPAREN"
     | Parser.RPAREN -> "RPAREN"
     | Parser.LBRACKET -> "LBRACKET"
     | Parser.RBRACKET -> "RBRACKET"
@@ -136,6 +135,8 @@
     | Parser.ARROW -> "ARROW"
     | Parser.WITH -> "WITH"
     | Parser.AS_MATERIALIZED -> "AS_MATERIALIZED"
+    | Parser.AS_LPAREN -> "AS_LPAREN"
+    | Parser.AS_PARAM s -> Printf.sprintf "AS_PARAM(%s)" s
     | Parser.QUESTION -> "QUESTION"
     | Parser.DOT_DOT_DOT -> "DOT_DOT_DOT"
     | Parser.EOF -> "EOF"
@@ -150,9 +151,6 @@ let id_char = letter | digit | '_'
 let id = (letter | '_') id_char*
 let number = digit+
 let param_char = '$'
-
-let as_ = ('a'|'A') ('s'|'S')
-let materialized_ = ('m'|'M') ('a'|'A') ('t'|'T') ('e'|'E') ('r'|'R') ('i'|'I') ('a'|'A') ('l'|'L') ('i'|'I') ('z'|'Z') ('e'|'E') ('d'|'D')
 
 rule token = parse
   | whitespace+         { token lexbuf }
@@ -179,11 +177,9 @@ rule token = parse
     let s = ch_param buf 0 lexbuf in
     lexbuf.Lexing.lex_start_p <- lex_start_p;
     CH_PARAM s }
-  | param_char (id as s)       { PARAM s }
+  | param_char (id as s) { PARAM s }
   | id as s             { get_keyword_or_id s }
   | '('                 { LPAREN }
-  | as_ (' '|'\n'|'\t')+ '(' { AS_LPAREN }
-  | as_ (' '|'\n'|'\t')+ materialized_ { AS_MATERIALIZED }
   | ')'                 { RPAREN }
   | '['                 { LBRACKET }
   | ']'                 { RBRACKET }
@@ -247,6 +243,41 @@ and ch_param buf brace_count = parse
   | eof                 { raise (Error "Unterminated param type expression: missing closing '}'") }
 
 {
+  type lexstate = {
+    mutable penging: Parser.token option;
+    mutable after_as: bool;
+  }
+
+  let token () = 
+    let state = {after_as=false; penging=None} in
+    let rec produce lexbuf =
+      match state.penging with
+      | Some tok -> 
+        state.penging <- None;
+        tok
+      | None ->
+      let tok = token lexbuf in
+      match state.after_as, tok with
+      | true, Parser.LPAREN ->
+        state.after_as <- false;
+        Parser.AS_LPAREN
+      | true, Parser.ID(id) when String.(equal (uppercase_ascii id) "MATERIALIZED") ->
+        state.after_as <- false;
+        Parser.AS_MATERIALIZED
+      | true, Parser.PARAM s ->
+        state.after_as <- false;
+        Parser.AS_PARAM s
+      | true, tok ->
+        state.after_as <- false;
+        state.penging <- Some tok;
+        Parser.AS
+      | false, Parser.AS ->
+        state.after_as <- true;
+        produce lexbuf
+      | false, tok -> tok
+    in
+    produce
+
   let tokenize_debug q =
     let string_of_pos start_pos end_pos =
       Printf.sprintf "line %d, col %d-%d" start_pos.Lexing.pos_lnum
@@ -254,6 +285,7 @@ and ch_param buf brace_count = parse
         (end_pos.Lexing.pos_cnum - end_pos.Lexing.pos_bol + 1)
     in
     let lexbuf = Lexing.from_string q in
+    let token = token () in
     try
       let rec loop () =
         let token = token lexbuf in
@@ -264,4 +296,5 @@ and ch_param buf brace_count = parse
       in
       loop ()
     with Error msg -> failwith ("Lexical error: " ^ msg)
+
 }

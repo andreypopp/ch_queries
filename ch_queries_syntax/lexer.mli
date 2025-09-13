@@ -1,6 +1,6 @@
 (** Lexer. *)
 
-val token : Lexing.lexbuf -> Parser.token
+val token : unit -> Lexing.lexbuf -> Parser.token
 (** tokenize input, raises [Error] on error *)
 
 exception Error of string

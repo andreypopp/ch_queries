@@ -77,6 +77,7 @@ and querysyn =
     }
   | Q_union of query * query
   | Q_param of id
+  | Q_ascribe of query * typ
 
 and setting = Setting_lit of lit | Setting_param of id
 and setting_item = Setting_item of id * setting | Setting_splice of id
@@ -92,6 +93,7 @@ and from_onesyn =
       cluster_name : cluster_name option;
     }
   | F_param of { id : id; alias : id; final : bool }
+  | F_ascribe of from_one * typ
 
 and cluster_name = Cluster_name of id | Cluster_name_param of id
 
@@ -120,3 +122,6 @@ val make_query : ?loc:Loc.t -> querysyn -> query
 val make_from : ?loc:Loc.t -> fromsyn -> from
 val make_from_one : ?loc:Loc.t -> from_onesyn -> from_one
 val make_typ : ?loc:Loc.t -> typsyn -> typ
+
+val is_scope_typ : typ -> bool
+(** Returns true if the type is a scope type. *)

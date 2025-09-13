@@ -70,4 +70,6 @@ and sql_fragment buf = parse
       in
       loop ()
     with Error msg -> failwith ("Lexical error: " ^ msg)
+
+  let token () = token
 }

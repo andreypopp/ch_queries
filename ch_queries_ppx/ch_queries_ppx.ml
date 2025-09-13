@@ -14,10 +14,10 @@ let raise_parse_errorf ?msg name lexbuf =
   | None -> Location.raise_errorf ~loc "%%%s: parse error" name
   | Some msg -> Location.raise_errorf ~loc "%%%s: parse error: %s" name msg
 
-let parse_with parser lexer name ~loc s =
+let parse_with parser token name ~loc s =
   let lexbuf = Lexing.from_string s in
   set_position lexbuf loc;
-  try parser lexer lexbuf with
+  try parser (token ()) lexbuf with
   | Parser.Error -> raise_parse_errorf name lexbuf
   | Lexer.Error msg -> raise_parse_errorf ~msg name lexbuf
   | Uparser.Error -> raise_parse_errorf name lexbuf
@@ -38,11 +38,12 @@ let to_location ({ loc = { start_pos; end_pos }; _ } : _ Syntax.node) : location
 
 let id_to_located id = Located.mk ~loc:(to_location id) id.node
 
-let alias from_one =
+let rec alias from_one =
   match from_one.Syntax.node with
   | Syntax.F_table { alias; _ } | F_select { alias; _ } | F_param { alias; _ }
     ->
       alias
+  | F_ascribe (f, _) -> alias f
 
 type from_ctx = From_none | From
 
@@ -102,11 +103,12 @@ let from_scope_expr ~scopes from =
   let scopes = List.filter scopes ~f:(fun scope -> not (List.is_empty scope)) in
   build [] (from :: scopes)
 
-let from_one_scope_pattern from_one =
+let rec from_one_scope_pattern from_one =
   match from_one.Syntax.node with
   | Syntax.F_table { alias; _ } | F_select { alias; _ } | F_param { alias; _ }
     ->
       pvar ~loc:(to_location alias) alias.node
+  | F_ascribe (f, _) -> from_one_scope_pattern f
 
 let rec from_scope_pattern ?kind from =
   let open Syntax in
@@ -483,12 +485,20 @@ let rec stage_expr ~on_evar ~params ~(from : from_ctx) expr =
           let query = stage_query ~on_evar query in
           [%expr Ch_queries.in_ [%e expr] (Ch_queries.In_query [%e query])]
       | Syntax.In_expr { node = E_param param; _ } ->
-          (* special for [E in ?param], we don't treat it as expression *)
+          (* special for [E in $param], we don't treat it as expression *)
           let loc = to_location param in
           on_evar param;
           let param = param.node in
           let param = evar ~loc param in
           [%expr Ch_queries.in_ [%e expr] [%e param]]
+      | Syntax.In_expr
+          { node = E_ascribe ({ node = E_param param; loc; _ }, t); _ }
+        when Syntax.is_scope_typ t ->
+          (* special for [E in $param::T], we treat this according to T (is it a scope or not?) *)
+          let query = Syntax.make_query ~loc (Q_param param) in
+          let loc = to_location param in
+          let query = stage_query ~on_evar query in
+          [%expr Ch_queries.in_ [%e expr] (Ch_queries.In_query [%e query])]
       | Syntax.In_expr expr' ->
           let expr' = stage_expr ~on_evar ~params ~from expr' in
           [%expr Ch_queries.in_ [%e expr] (Ch_queries.In_array [%e expr'])])
@@ -577,6 +587,11 @@ and stage_field ~on_evar ~from idx { Syntax.expr; alias } =
 
 and stage_query ~on_evar ({ node; _ } as q) =
   match node with
+  | Q_ascribe (q, t) ->
+      let loc = to_location q in
+      let q = stage_query ~on_evar q in
+      let t = stage_typ t in
+      [%expr ([%e q] : [%t t] Ch_queries.select)]
   | Q_union (q1, q2) ->
       let loc = to_location q in
       let q1 = stage_query ~on_evar q1 in
@@ -815,6 +830,10 @@ and stage_from_one ~on_evar from_one =
           [%expr
             [%e evar ~loc id.node] ~final:true
               ~alias:[%e estring ~loc alias.node]])
+  | F_ascribe (from_one, t) ->
+      let from_one = stage_from_one ~on_evar from_one in
+      let t = stage_typ t in
+      [%expr ([%e from_one] : [%t t] Ch_queries.from_one)]
 
 let expand_query ~ctxt:_ expr =
   match expr.pexp_desc with
@@ -883,12 +902,13 @@ let rec extract_typed_fields query =
           in
           (name, typ))
   | Q_union (x, _) -> extract_typed_fields x
-  | Syntax.Q_select { select = Select_splice _; _ } ->
+  | Q_select { select = Select_splice _; _ } ->
       Location.raise_errorf ~loc:(to_location query)
         "cannot extract fields from a query with dynamic scope"
   | Q_param _ ->
       Location.raise_errorf ~loc:(to_location query)
         "cannot extract fields from a query parameter"
+  | Q_ascribe (q, _) -> extract_typed_fields q
 
 let expand_select ~ctxt:_ (pat : label loc) expr =
   match expr.pexp_desc with

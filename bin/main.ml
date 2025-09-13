@@ -10,7 +10,9 @@ let parse_cmd =
     try
       let lexbuf = Lexing.from_string query in
       let query =
-        Ch_queries_syntax.Parser.a_query Ch_queries_syntax.Lexer.token lexbuf
+        Ch_queries_syntax.Parser.a_query
+          (Ch_queries_syntax.Lexer.token ())
+          lexbuf
       in
       let pretty_printed =
         Ch_queries_syntax.Printer.print_query ~force_parens query
@@ -47,7 +49,9 @@ let parse_expr_cmd =
     try
       let lexbuf = Lexing.from_string expr_str in
       let expr =
-        Ch_queries_syntax.Parser.a_expr Ch_queries_syntax.Lexer.token lexbuf
+        Ch_queries_syntax.Parser.a_expr
+          (Ch_queries_syntax.Lexer.token ())
+          lexbuf
       in
       let pretty_printed = Ch_queries_syntax.Printer.print_expr expr in
       print_endline pretty_printed

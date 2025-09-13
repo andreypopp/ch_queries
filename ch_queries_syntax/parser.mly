@@ -1,6 +1,13 @@
 %{
   open Syntax
 
+  let ascribe_query q t =
+    match t with
+    | None -> q
+    | Some t ->
+      let loc = { Loc.start_pos = q.loc.Loc.start_pos; end_pos = t.loc.Loc.end_pos } in
+      make_query ~loc (Q_ascribe (q, t))
+
   let make_loc start_pos end_pos =
     { Loc.start_pos; end_pos }
 
@@ -21,7 +28,7 @@
 %token <int> NUMBER
 %token TRUE FALSE
 %token SELECT FROM PREWHERE WHERE AS DOT COLONCOLON
-%token AS_LPAREN LPAREN RPAREN LBRACKET RBRACKET COMMA
+%token LPAREN RPAREN LBRACKET RBRACKET COMMA
 %token PLUS MINUS STAR SLASH EQUALS GT LT GE LE NOT_EQUAL QUESTION
 %token DOT_DOT_DOT
 %token AND OR NOT LIKE
@@ -37,7 +44,8 @@
 %token YEAR MONTH WEEK DAY HOUR MINUTE SECOND
 %token ARROW
 %token WITH
-%token AS_MATERIALIZED
+%token AS_MATERIALIZED AS_LPAREN
+%token <string> AS_PARAM
 %token EOF
 
 %left UNION
@@ -66,11 +74,12 @@ a_typ:
     t=typ EOF { t }
 
 typ:
-    id=id
-    { make_typ $startpos $endpos (T id) }
-  | id=id LPAREN args=flex_list(COMMA, typ) RPAREN
-    { make_typ $startpos $endpos (T_app (id, args)) }
-  | LPAREN columns=scope_columns RPAREN
+    id=id { make_typ $startpos $endpos (T id) }
+  | id=id LPAREN args=flex_list(COMMA, typ) RPAREN { make_typ $startpos $endpos (T_app (id, args)) }
+  | t = scope_typ { t }
+
+%inline scope_typ:
+    LPAREN columns=scope_columns RPAREN
     { let cols, is_open = columns in make_typ $startpos $endpos (T_scope (cols, is_open)) }
   | QUESTION LPAREN columns=scope_columns RPAREN
     { let cols, is_open = columns in make_typ $startpos $endpos (T_nullable_scope (cols, is_open)) }
@@ -80,37 +89,55 @@ scope_columns:
   | x = scope_column { [x], false }
   | DOT_DOT_DOT { [], true }
   | x = scope_column; COMMA; xs = scope_columns { let xs, is_open = xs in x::xs, is_open }
-  | x = scope_column; COMMA; DOT_DOT_DOT { [x], true }
 
 scope_column:
   name=id typ=typ { {name;typ} }
 
 a_query:
-    q=query EOF { q }
+    q=query_ascribed EOF { q }
 
 a_from:
     FROM f=from EOF { f }
 
-query_no_param:
-    with_fields=with_fields? SELECT select=select FROM from=from prewhere=prewhere? where=where? qualify=qualify? group_by=group_by? having=having? order_by=order_by? limit=limit? offset=offset? settings=settings?
-    { make_query $startpos $endpos (Syntax.Q_select { with_fields = Option.value with_fields ~default:[]; select; from; prewhere; where; qualify; group_by; having; order_by; limit; offset; settings = Option.value settings ~default:[] }) }
-  | q1=query UNION q2=query
-    { make_query $startpos $endpos (Syntax.Q_union (q1, q2)) }
+query_select:
+  with_fields=with_fields? SELECT select=select FROM from=from prewhere=prewhere? where=where? qualify=qualify? group_by=group_by? having=having? order_by=order_by? limit=limit? offset=offset? settings=settings?
+  { make_query $startpos $endpos (Syntax.Q_select { with_fields = Option.value with_fields ~default:[]; select; from; prewhere; where; qualify; group_by; having; order_by; limit; offset; settings = Option.value settings ~default:[] }) }
 
 with_fields:
   WITH xs=nonempty_flex_list(COMMA, with_field) { xs }
 
 with_field:
-    id=id AS_LPAREN q=query RPAREN
-    { With_query (id, q, false) }
-  | id=id AS_MATERIALIZED LPAREN q=query RPAREN
-    { With_query (id, q, true) }
+    id=id AS_LPAREN q=query RPAREN t=query_ascription?
+    { With_query (id, ascribe_query q t, false) }
+  | id=id q=as_param t=query_ascription?
+    { let q = make_query $startpos(q) $endpos(q) (Q_param q) in
+      With_query (id, ascribe_query q t, false) }
+  | id=id AS_MATERIALIZED LPAREN q=query RPAREN t=query_ascription?
+    { With_query (id, ascribe_query q t, true) }
+  | id=id AS_MATERIALIZED q=param t=query_ascription?
+    { let q = make_query $startpos(q) $endpos(q) (Q_param q) in
+      With_query (id, ascribe_query q t, true) }
   | expr=expr AS alias=id
     { With_expr { expr = expr; alias = Some alias } }
+
+as_param:
+    id=AS_PARAM { make_id $startpos $endpos id }
+
+%inline query_no_param:
+    q=query_select { q }
+  | x=query UNION y=query { make_query $startpos $endpos (Syntax.Q_union (x, y)) }
 
 query:
     q=query_no_param { q }
   | param=param { make_query $startpos $endpos (Syntax.Q_param param) }
+
+query_ascribed:
+    q=query { q }
+  | LPAREN q=query RPAREN t=query_ascription { ascribe_query q (Some t) }
+  | p=param t=query_ascription { ascribe_query (make_query $startpos $endpos (Syntax.Q_param p)) (Some t) }
+
+%inline query_ascription:
+  COLONCOLON t=typ { t }
 
 a_expr:
     e=expr EOF { e }
@@ -134,18 +161,18 @@ field:
 id:
     id=ID { make_id $startpos $endpos id }
 
-param:
-    id=PARAM { make_id $startpos $endpos id }
-
-param_splice:
-    id=PARAM_SPLICE { make_id $startpos $endpos id }
-
 alias:
     AS id=id { id }
 
 alias_or_q:
     { make_id $startpos $endpos "q" }
-  | AS id=id { id }
+  | id=alias { id }
+
+param:
+    id=PARAM { make_id $startpos $endpos id }
+
+param_splice:
+    id=PARAM_SPLICE { make_id $startpos $endpos id }
 
 prewhere:
     PREWHERE e=expr { e }
@@ -222,14 +249,20 @@ from:
     { make_from $startpos $endpos (F_join { kind; from; join; on }) }
 
 from_one:
-    id=param alias=alias? final=final { make_from_one $startpos $endpos (F_param {id; alias = Option.value alias ~default:id; final;}) }
-  | id=id alias=alias? final=final { make_from_one $startpos $endpos (F_param {id; alias = Option.value alias ~default:id; final;}) }
+    id=from_param t=query_ascription? alias=alias? final=final { 
+    let f = make_from_one $startpos $endpos (F_param {id; alias = Option.value alias ~default:id; final;}) in
+    let f = match t with None -> f | Some t -> make_from_one f.loc.start_pos f.loc.end_pos (F_ascribe (f, t)) in
+    f }
   | db=id DOT table=id alias=alias? final=final
     { make_from_one $startpos $endpos (F_table { db; table; alias = Option.value alias ~default:table; final; }) }
-  | LPAREN q=query RPAREN alias=alias_or_q
-    { make_from_one $startpos $endpos (F_select { select = q; alias; cluster_name = None }) }
-  | CLUSTER LPAREN cluster_name=cluster_name COMMA VIEW LPAREN q=query RPAREN RPAREN alias=alias_or_q
-    { make_from_one $startpos $endpos (F_select { select = q; alias; cluster_name = Some cluster_name }) }
+  | LPAREN q=query RPAREN t=query_ascription? alias=alias_or_q
+    { make_from_one $startpos $endpos (F_select { select = ascribe_query q t; alias; cluster_name = None }) }
+  | CLUSTER LPAREN cluster_name=cluster_name COMMA VIEW LPAREN q=query RPAREN t1=query_ascription? RPAREN t2=typ? alias=alias_or_q
+    { make_from_one $startpos $endpos (F_select { select = ascribe_query (ascribe_query q t1) t2; alias; cluster_name = Some cluster_name }) }
+
+%inline from_param:
+    id=param { id }
+  | id=id { id } (* TODO(andreypopp): probably need to deprecate this syntax *)
 
 cluster_name:
     id=id { Cluster_name id }
@@ -313,8 +346,8 @@ expr:
     { make_expr $startpos $endpos (E_param param) }
   | ocaml_expr=OCAML_EXPR
     { make_expr $startpos $endpos (E_ocaml_expr ocaml_expr) }
-  | param_type=CH_PARAM
-    { make_expr $startpos $endpos (E_unsafe (make_id $startpos $endpos param_type)) }
+  | ch_param=CH_PARAM
+    { make_expr $startpos $endpos (E_unsafe (make_id $startpos $endpos ch_param)) }
   | e=expr IN LPAREN q=query_no_param RPAREN
     { make_expr $startpos $endpos (E_in (e, In_query q)) }
   | e=expr IN e_rhs=expr

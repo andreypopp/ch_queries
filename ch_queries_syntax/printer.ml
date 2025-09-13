@@ -295,6 +295,8 @@ and pp_from_one opts from_one =
   | F_param { id; alias; final } ->
       let final = if final then string " FINAL" else empty in
       group (pp_id id ^^ pp_as alias ^^ final)
+  | F_ascribe (from, typ) ->
+      group (pp_from_one opts from ^^ string "::" ^^ pp_typ typ)
 
 and pp_from opts from =
   match from.node with
@@ -316,6 +318,7 @@ and pp_query opts { node; eq = _; loc = _ } =
   | Q_union (q1, q2) ->
       group (pp_query opts q1 ^/^ string "UNION" ^/^ pp_query opts q2)
   | Q_param id -> string "?" ^^ pp_id id
+  | Q_ascribe (q, t) -> pp_query opts q ^^ string "::" ^^ pp_typ t
   | Q_select
       {
         with_fields;
