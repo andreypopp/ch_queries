@@ -254,14 +254,7 @@ splicing ocaml values into WHERE:
       ~where:(fun __q -> where __q)
   >>> RUNNING
   val users :
-    where:(< users : < id : (Ch_queries.non_null, int Ch_queries.number)
-                            Ch_queries.expr;
-                       is_active : (Ch_queries.non_null, bool) Ch_queries.expr;
-                       x : (Ch_queries.non_null, string) Ch_queries.expr;
-                       xs : (Ch_queries.non_null,
-                             (Ch_queries.non_null, string) Ch_queries.array)
-                            Ch_queries.expr >
-                     Ch_queries.scope;
+    where:(< users : Ch_database.Public.users Ch_queries.scope;
              x : (Ch_queries.non_null, string) Ch_queries.expr > ->
            ('a, bool) Ch_queries.expr) ->
     < x : (Ch_queries.non_null, string) Ch_queries.expr > Ch_queries.scope
@@ -297,14 +290,7 @@ splicing ocaml values into WHERE:
         (where __q : (Ch_queries.non_null, bool) Ch_queries.expr))
   >>> RUNNING
   val users :
-    where:(< users : < id : (Ch_queries.non_null, int Ch_queries.number)
-                            Ch_queries.expr;
-                       is_active : (Ch_queries.non_null, bool) Ch_queries.expr;
-                       x : (Ch_queries.non_null, string) Ch_queries.expr;
-                       xs : (Ch_queries.non_null,
-                             (Ch_queries.non_null, string) Ch_queries.array)
-                            Ch_queries.expr >
-                     Ch_queries.scope;
+    where:(< users : Ch_database.Public.users Ch_queries.scope;
              x : (Ch_queries.non_null, string) Ch_queries.expr > ->
            (Ch_queries.non_null, bool) Ch_queries.expr) ->
     < x : (Ch_queries.non_null, string) Ch_queries.expr > Ch_queries.scope
@@ -338,15 +324,7 @@ splicing ocaml values into SELECT:
         end)
   >>> RUNNING
   val users :
-    what:(< users : < id : (Ch_queries.non_null, int Ch_queries.number)
-                           Ch_queries.expr;
-                      is_active : (Ch_queries.non_null, bool) Ch_queries.expr;
-                      x : (Ch_queries.non_null, string) Ch_queries.expr;
-                      xs : (Ch_queries.non_null,
-                            (Ch_queries.non_null, string) Ch_queries.array)
-                           Ch_queries.expr >
-                    Ch_queries.scope > ->
-          'a) ->
+    what:(< users : Ch_database.Public.users Ch_queries.scope > -> 'a) ->
     < field : 'a > Ch_queries.scope Ch_queries.select
 
 splicing ocaml values into SELECT as scope:
@@ -368,15 +346,7 @@ splicing ocaml values into SELECT as scope:
       ~select:what
   >>> RUNNING
   val users :
-    what:(< users : < id : (Ch_queries.non_null, int Ch_queries.number)
-                           Ch_queries.expr;
-                      is_active : (Ch_queries.non_null, bool) Ch_queries.expr;
-                      x : (Ch_queries.non_null, string) Ch_queries.expr;
-                      xs : (Ch_queries.non_null,
-                            (Ch_queries.non_null, string) Ch_queries.array)
-                           Ch_queries.expr >
-                    Ch_queries.scope > ->
-          'a) ->
+    what:(< users : Ch_database.Public.users Ch_queries.scope > -> 'a) ->
     'a Ch_queries.scope Ch_queries.select
 
 select with PREWHERE clause:

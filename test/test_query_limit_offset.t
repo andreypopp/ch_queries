@@ -52,14 +52,7 @@ LIMIT with parameter:
       ~limit:(fun __q -> n __q)
   >>> RUNNING
   val users :
-    n:(< users : < id : (Ch_queries.non_null, int Ch_queries.number)
-                        Ch_queries.expr;
-                   is_active : (Ch_queries.non_null, bool) Ch_queries.expr;
-                   x : (Ch_queries.non_null, string) Ch_queries.expr;
-                   xs : (Ch_queries.non_null,
-                         (Ch_queries.non_null, string) Ch_queries.array)
-                        Ch_queries.expr >
-                 Ch_queries.scope > ->
+    n:(< users : Ch_database.Public.users Ch_queries.scope > ->
        ('a, int Ch_queries.number) Ch_queries.expr) ->
     < x : (Ch_queries.non_null, string) Ch_queries.expr > Ch_queries.scope
     Ch_queries.select
@@ -118,14 +111,7 @@ OFFSET with parameter:
       ~offset:(fun __q -> n __q)
   >>> RUNNING
   val users :
-    n:(< users : < id : (Ch_queries.non_null, int Ch_queries.number)
-                        Ch_queries.expr;
-                   is_active : (Ch_queries.non_null, bool) Ch_queries.expr;
-                   x : (Ch_queries.non_null, string) Ch_queries.expr;
-                   xs : (Ch_queries.non_null,
-                         (Ch_queries.non_null, string) Ch_queries.array)
-                        Ch_queries.expr >
-                 Ch_queries.scope > ->
+    n:(< users : Ch_database.Public.users Ch_queries.scope > ->
        ('a, int Ch_queries.number) Ch_queries.expr) ->
     < x : (Ch_queries.non_null, string) Ch_queries.expr > Ch_queries.scope
     Ch_queries.select

@@ -116,15 +116,7 @@ GROUP BY with a parameter:
           ])
   >>> RUNNING
   val users :
-    dimension:(< users : < id : (Ch_queries.non_null, int Ch_queries.number)
-                                Ch_queries.expr;
-                           is_active : (Ch_queries.non_null, bool)
-                                       Ch_queries.expr;
-                           x : (Ch_queries.non_null, string) Ch_queries.expr;
-                           xs : (Ch_queries.non_null,
-                                 (Ch_queries.non_null, string) Ch_queries.array)
-                                Ch_queries.expr >
-                         Ch_queries.scope;
+    dimension:(< users : Ch_database.Public.users Ch_queries.scope;
                  x : (Ch_queries.non_null, string) Ch_queries.expr > ->
                Ch_queries.a_expr list) ->
     < x : (Ch_queries.non_null, string) Ch_queries.expr > Ch_queries.scope

@@ -130,14 +130,7 @@ ORDER BY with a parameter:
       ~order_by:(fun __q -> List.concat [ ord __q ])
   >>> RUNNING
   val users :
-    ord:(< users : < id : (Ch_queries.non_null, int Ch_queries.number)
-                          Ch_queries.expr;
-                     is_active : (Ch_queries.non_null, bool) Ch_queries.expr;
-                     x : (Ch_queries.non_null, string) Ch_queries.expr;
-                     xs : (Ch_queries.non_null,
-                           (Ch_queries.non_null, string) Ch_queries.array)
-                          Ch_queries.expr >
-                   Ch_queries.scope > ->
+    ord:(< users : Ch_database.Public.users Ch_queries.scope > ->
          (Ch_queries.a_expr * [ `ASC | `DESC ]) list) ->
     < x : (Ch_queries.non_null, string) Ch_queries.expr > Ch_queries.scope
     Ch_queries.select

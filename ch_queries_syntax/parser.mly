@@ -66,7 +66,7 @@
 %type <Syntax.expr> a_expr
 %type <Syntax.typ> a_typ
 %type <Syntax.from> a_from
-%type <Syntax.scope_column list * bool> a_scope_columns
+%type <Syntax.scope_column list * [`Closed | `Open]> a_scope_columns
 
 %%
 
@@ -79,15 +79,18 @@ typ:
   | t = scope_typ { t }
 
 %inline scope_typ:
-    LPAREN columns=scope_columns RPAREN
-    { let cols, is_open = columns in make_typ $startpos $endpos (T_scope (cols, is_open)) }
-  | QUESTION LPAREN columns=scope_columns RPAREN
-    { let cols, is_open = columns in make_typ $startpos $endpos (T_nullable_scope (cols, is_open)) }
+    LPAREN columns=scope_columns RPAREN nullable=scope_nullable
+    { let cols, is_open = columns in make_typ $startpos $endpos (T_scope (cols, is_open, nullable)) }
+  | db=id DOT table=id nullable=scope_nullable { make_typ $startpos $endpos (T_db_table (db, table, nullable)) }
+
+scope_nullable:
+    QUESTION { `NULL }
+  | { `NON_NULL }
 
 scope_columns:
-    { [], false }
-  | x = scope_column { [x], false }
-  | DOT_DOT_DOT { [], true }
+    { [], `Closed }
+  | x = scope_column { [x], `Closed }
+  | DOT_DOT_DOT { [], `Open }
   | x = scope_column; COMMA; xs = scope_columns { let xs, is_open = xs in x::xs, is_open }
 
 scope_column:

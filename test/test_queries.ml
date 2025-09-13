@@ -2,7 +2,13 @@ module Ch_database = struct
   open Ch_queries
 
   module Public = struct
-    let users =
+    type users =
+      < id : (non_null, int number) expr
+      ; is_active : (non_null, bool) expr
+      ; x : (non_null, string) expr
+      ; xs : (non_null, (non_null, string) Ch_queries.array) expr >
+
+    let users : final:bool -> alias:string -> users scope from_one =
       let scope ~alias =
         object
           method id : (non_null, int number) expr = unsafe (alias ^ ".id")
@@ -17,7 +23,10 @@ module Ch_database = struct
       in
       from_table ~db:"public" ~table:"users" scope
 
-    let profiles =
+    type profiles =
+      < name : (non_null, string) expr ; user_id : (non_null, int number) expr >
+
+    let profiles : final:bool -> alias:string -> profiles scope from_one =
       let scope ~alias =
         object
           method user_id : (non_null, int number) expr =
@@ -45,8 +54,7 @@ let x =
     users ~condition:(fun __q -> {%e|u.is_active OR true|})
     |> Ch_queries.from_select
   in
-  let select
-      (__q : < u : _ Ch_queries.scope ; p : _ Ch_queries.nullable_scope >) =
+  let select {%s|u (...), p public.profiles?, ...|} =
     object
       method name = {%e|u.x|}
       method pname = {%e|p.name|}
@@ -63,11 +71,11 @@ let x =
 let y =
   let users = x |> Ch_queries.from_select in
   Ch_queries.select () ~from:{%f|FROM $users AS users|}
-    ~select:(fun __q ->
+    ~select:(fun {%s|...|} ->
       object
         method select = {%e|users.(coalesce(p.name, u.x))|}
       end)
-    ~where:(fun __q -> {%e|users.name = 'Alive'|})
+    ~where:(fun {%s|...|} -> {%e|users.name = 'Alive'|})
 
 (** we define a type for metrics we can compute, metrics are parametrized by
     ocaml type and by sql type. *)

@@ -143,19 +143,8 @@ The param within the scope receives the scope as argument:
   print_endline sql
   >>> RUNNING
   val q2 :
-    field:(< profiles : < name : (Ch_queries.non_null, string) Ch_queries.expr;
-                          user_id : (Ch_queries.non_null,
-                                     int Ch_queries.number)
-                                    Ch_queries.expr >
-                        Ch_queries.scope;
-             users : < id : (Ch_queries.non_null, int Ch_queries.number)
-                            Ch_queries.expr;
-                       is_active : (Ch_queries.non_null, bool) Ch_queries.expr;
-                       x : (Ch_queries.non_null, string) Ch_queries.expr;
-                       xs : (Ch_queries.non_null,
-                             (Ch_queries.non_null, string) Ch_queries.array)
-                            Ch_queries.expr >
-                     Ch_queries.scope > ->
+    field:(< profiles : Ch_database.Public.profiles Ch_queries.scope;
+             users : Ch_database.Public.users Ch_queries.scope > ->
            ('a, 'b) Ch_queries.expr) ->
     < field : ('a, 'b) Ch_queries.expr > Ch_queries.scope Ch_queries.select
   SELECT q._1

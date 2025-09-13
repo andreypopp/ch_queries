@@ -484,17 +484,21 @@ and pp_typ typ =
         | _ -> separate (string "," ^^ space) (List.map ~f:pp_typ args)
       in
       pp_id id ^^ string "(" ^^ pp_args ^^ string ")"
-  | T_scope (cols, is_open) ->
-      string "(" ^^ pp_scope_columns ~is_open cols ^^ string ")"
-  | T_nullable_scope (cols, is_open) ->
-      string "?(" ^^ pp_scope_columns ~is_open cols ^^ string ")"
+  | T_db_table (db, table, `NON_NULL) ->
+      string (sprintf "%s.%s" db.node table.node)
+  | T_db_table (db, table, `NULL) ->
+      string (sprintf "%s.%s?" db.node table.node)
+  | T_scope (cols, is_open, nullable) -> (
+      string "("
+      ^^ pp_scope_columns ~is_open cols
+      ^^ match nullable with `NON_NULL -> string ")" | `NULL -> string ")?")
 
 and pp_scope_columns ~is_open cols =
   match (cols, is_open) with
-  | [], false -> empty
-  | [], true -> string "..."
-  | cols, false -> pp_scope_columns' cols
-  | cols, true -> pp_scope_columns' cols ^^ string ", ..."
+  | [], `Closed -> empty
+  | [], `Open -> string "..."
+  | cols, `Closed -> pp_scope_columns' cols
+  | cols, `Open -> pp_scope_columns' cols ^^ string ", ..."
 
 and pp_scope_columns' cols =
   separate (string "," ^^ space) (List.map ~f:pp_scope_column cols)

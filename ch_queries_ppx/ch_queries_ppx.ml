@@ -45,6 +45,11 @@ let rec alias from_one =
       alias
   | F_ascribe (f, _) -> alias f
 
+let refer_to_db_table db table =
+  Printf.sprintf "Ch_database.%s.%s"
+    (String.capitalize_ascii db.Syntax.node)
+    table.Syntax.node
+
 type from_ctx = From_none | From
 
 let rec from_scope_expr' from =
@@ -193,14 +198,26 @@ let rec stage_typ' typ =
       Location.raise_errorf ~loc "only 2-element tuples are supported"
   | T_app ({ node = t; _ }, _) ->
       Location.raise_errorf ~loc "Unknown ClickHouse type: %s" t
-  | T_scope (cols, is_open) ->
-      ( `NON_NULL,
-        [%type: [%t stage_scope_columns ~loc ~is_open cols] Ch_queries.scope] )
-  | T_nullable_scope (cols, is_open) ->
-      ( `NULL,
-        [%type:
-          [%t stage_scope_columns ~loc ~is_open cols] Ch_queries.nullable_scope]
-      )
+  | T_scope (cols, is_open, nullable) ->
+      let t =
+        let fields =
+          List.map cols ~f:(fun { Syntax.name; typ } ->
+              let typ = stage_typ typ in
+              let loc = to_location name in
+              let pof_desc = Otag (Located.mk ~loc name.node, typ) in
+              { pof_desc; pof_attributes = []; pof_loc = loc })
+        in
+        let closed_flag =
+          match is_open with `Open -> Open | `Closed -> Closed
+        in
+        ptyp_object ~loc fields closed_flag
+      in
+      (nullable, t)
+  | T_db_table (db, table, nullable) ->
+      let lid = Longident.parse (refer_to_db_table db table) in
+      let lid = Located.mk ~loc lid in
+      let t = ptyp_constr ~loc lid [] in
+      (nullable, t)
 
 and stage_scope_columns ~loc ~is_open cols =
   let fields =
@@ -210,18 +227,17 @@ and stage_scope_columns ~loc ~is_open cols =
         let pof_desc = Otag (Located.mk ~loc name.node, typ) in
         { pof_desc; pof_attributes = []; pof_loc = loc })
   in
-  let closed_flag = if is_open then Open else Closed in
+  let closed_flag = match is_open with `Open -> Open | `Closed -> Closed in
   ptyp_object ~loc fields closed_flag
 
 and stage_typ x =
   let loc = to_location x in
-  match x.node with
-  | Syntax.T_scope _ | T_nullable_scope _ ->
-      let _, t = stage_typ' x in
-      t
-  | _ ->
-      let n, t = stage_typ' x in
-      [%type: ([%t nullable n], [%t t]) Ch_queries.expr]
+  let n, t = stage_typ' x in
+  if Syntax.is_scope_typ x then
+    match n with
+    | `NULL -> [%type: [%t t] Ch_queries.nullable_scope]
+    | `NON_NULL -> [%type: [%t t] Ch_queries.scope]
+  else [%type: ([%t nullable n], [%t t]) Ch_queries.expr]
 
 let rec stage_typ_to_parser typ =
   let open Syntax in
@@ -259,9 +275,9 @@ let rec stage_typ_to_parser typ =
   | T_app ({ node = t; _ }, _) ->
       Location.raise_errorf ~loc "Unknown ClickHouse type: %s" t
   | T_scope _ ->
-      Location.raise_errorf ~loc "parsing scope types is not supported"
-  | T_nullable_scope _ ->
-      Location.raise_errorf ~loc "parsing nullable scope types is not supported"
+      Location.raise_errorf ~loc "scope types could not be used in this context"
+  | T_db_table _ ->
+      Location.raise_errorf ~loc "table types could not be used in this context"
 
 let rec stage_typ_to_ocaml_type typ =
   let open Syntax in
@@ -300,9 +316,9 @@ let rec stage_typ_to_ocaml_type typ =
   | T_scope _ ->
       Location.raise_errorf ~loc
         "OCaml type conversion for scope types is not supported"
-  | T_nullable_scope _ ->
+  | T_db_table _ ->
       Location.raise_errorf ~loc
-        "OCaml type conversion for nullable scope types is not supported"
+        "OCaml type conversion for table types is not supported"
 
 let query_scope ~loc scope expr =
   let e = pexp_send ~loc [%expr __q] (Located.mk ~loc scope.Syntax.node) in
@@ -801,11 +817,7 @@ and stage_from_one ~on_evar from_one =
   let loc = to_location from_one in
   match from_one.node with
   | F_table { db; table; alias; final } ->
-      let qname =
-        Printf.sprintf "Ch_database.%s.%s"
-          (String.capitalize_ascii db.node)
-          table.node
-      in
+      let qname = refer_to_db_table db table in
       [%expr
         [%e evar ~loc qname] ~alias:[%e estring ~loc alias.node]
           ~final:[%e ebool ~loc final]]

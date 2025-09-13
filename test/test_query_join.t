@@ -213,17 +213,8 @@ splicing ocaml values into JOIN-ON:
         end)
   >>> RUNNING
   val q :
-    (< p : < name : (Ch_queries.non_null, string) Ch_queries.expr;
-             user_id : (Ch_queries.non_null, int Ch_queries.number)
-                       Ch_queries.expr >
-           Ch_queries.scope;
-       u : < id : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr;
-             is_active : (Ch_queries.non_null, bool) Ch_queries.expr;
-             x : (Ch_queries.non_null, string) Ch_queries.expr;
-             xs : (Ch_queries.non_null,
-                   (Ch_queries.non_null, string) Ch_queries.array)
-                  Ch_queries.expr >
-           Ch_queries.scope > ->
+    (< p : Ch_database.Public.profiles Ch_queries.scope;
+       u : Ch_database.Public.users Ch_queries.scope > ->
      ('a, bool) Ch_queries.expr) ->
     < one : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr >
     Ch_queries.scope Ch_queries.select

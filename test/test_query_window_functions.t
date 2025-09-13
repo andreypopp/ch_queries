@@ -69,14 +69,7 @@ window functions / param in PARTITION BY:
         end)
   >>> RUNNING
   val users :
-    g:(< users : < id : (Ch_queries.non_null, int Ch_queries.number)
-                        Ch_queries.expr;
-                   is_active : (Ch_queries.non_null, bool) Ch_queries.expr;
-                   x : (Ch_queries.non_null, string) Ch_queries.expr;
-                   xs : (Ch_queries.non_null,
-                         (Ch_queries.non_null, string) Ch_queries.array)
-                        Ch_queries.expr >
-                 Ch_queries.scope > ->
+    g:(< users : Ch_database.Public.users Ch_queries.scope > ->
        Ch_queries.a_expr list) ->
     < _1 : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr >
     Ch_queries.scope Ch_queries.select
@@ -108,14 +101,7 @@ window functions / param in ORDER BY:
         end)
   >>> RUNNING
   val users :
-    o:(< users : < id : (Ch_queries.non_null, int Ch_queries.number)
-                        Ch_queries.expr;
-                   is_active : (Ch_queries.non_null, bool) Ch_queries.expr;
-                   x : (Ch_queries.non_null, string) Ch_queries.expr;
-                   xs : (Ch_queries.non_null,
-                         (Ch_queries.non_null, string) Ch_queries.array)
-                        Ch_queries.expr >
-                 Ch_queries.scope > ->
+    o:(< users : Ch_database.Public.users Ch_queries.scope > ->
        (Ch_queries.a_expr * [ `ASC | `DESC ]) list) ->
     < _1 : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr >
     Ch_queries.scope Ch_queries.select

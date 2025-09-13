@@ -4,13 +4,17 @@ Test scope type syntax expansion
   > type scope = {%t|(column1 String, column2 Int32)|}
   > type with_nullable_col = {%t|(column1 Nullable(String))|}
   > type empty_scope = {%t|()|}
-  > type nullable_scope = {%t|?(column1 String, column2 Int32)|}
-  > type empty_nullable_scope = {%t|?()|}
+  > type nullable_scope = {%t|(column1 String, column2 Int32)?|}
+  > type empty_nullable_scope = {%t|()?|}
   > type nested_scope = {%t|(col String, subquery (scol String))|}
   > type 'a open_scope = {%t|(col String, ...)|} as 'a
   > type 'a empty_open_scope = {%t|(...)|} as 'a
-  > type 'a nullable_open_scope = {%t|?(col String, ...)|} as 'a
-  > type 'a empty_nullable_open_scope = {%t|?(...)|} as 'a
+  > type 'a nullable_open_scope = {%t|(col String, ...)?|} as 'a
+  > type 'a empty_nullable_open_scope = {%t|(...)?|} as 'a
+  > (* Test database.table types *)
+  > module Ch_database = struct module Mydb = struct type users = unit end end
+  > type test_db_table = {%t|mydb.users|}
+  > type test_db_table_nullable = {%t|mydb.users?|}
   > "
   >>> PREPROCESSING
   type scope =
@@ -50,4 +54,13 @@ Test scope type syntax expansion
     'a
   
   type 'a empty_nullable_open_scope = < .. > Ch_queries.nullable_scope as 'a
+  
+  module Ch_database = struct
+    module Mydb = struct
+      type users = unit
+    end
+  end
+  
+  type test_db_table = Ch_database.Mydb.users Ch_queries.scope
+  type test_db_table_nullable = Ch_database.Mydb.users Ch_queries.nullable_scope
   >>> RUNNING
