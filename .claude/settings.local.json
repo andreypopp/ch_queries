@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(dune build:*)",
-      "Bash(dune clean:*)"
+      "Bash(dune clean:*)",
+      "Bash(dune test:*)"
     ],
     "deny": [],
     "ask": []

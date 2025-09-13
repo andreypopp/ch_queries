@@ -22,7 +22,8 @@
 %token TRUE FALSE
 %token SELECT FROM PREWHERE WHERE AS DOT COLONCOLON
 %token AS_LPAREN LPAREN RPAREN LBRACKET RBRACKET COMMA
-%token PLUS MINUS STAR SLASH EQUALS GT LT GE LE NOT_EQUAL
+%token PLUS MINUS STAR SLASH EQUALS GT LT GE LE NOT_EQUAL QUESTION
+%token DOT_DOT_DOT
 %token AND OR NOT LIKE
 %token INNER JOIN LEFT OPTIONAL ON
 %token GROUP BY HAVING ORDER ASC DESC
@@ -52,11 +53,12 @@
 %left LBRACKET
 %left COLONCOLON
 
-%start a_query a_expr a_typ a_from
+%start a_query a_expr a_typ a_from a_scope_columns
 %type <Syntax.query> a_query
 %type <Syntax.expr> a_expr
 %type <Syntax.typ> a_typ
 %type <Syntax.from> a_from
+%type <Syntax.scope_column list * bool> a_scope_columns
 
 %%
 
@@ -68,6 +70,20 @@ typ:
     { make_typ $startpos $endpos (T id) }
   | id=id LPAREN args=flex_list(COMMA, typ) RPAREN
     { make_typ $startpos $endpos (T_app (id, args)) }
+  | LPAREN columns=scope_columns RPAREN
+    { let cols, is_open = columns in make_typ $startpos $endpos (T_scope (cols, is_open)) }
+  | QUESTION LPAREN columns=scope_columns RPAREN
+    { let cols, is_open = columns in make_typ $startpos $endpos (T_nullable_scope (cols, is_open)) }
+
+scope_columns:
+    { [], false }
+  | x = scope_column { [x], false }
+  | DOT_DOT_DOT { [], true }
+  | x = scope_column; COMMA; xs = scope_columns { let xs, is_open = xs in x::xs, is_open }
+  | x = scope_column; COMMA; DOT_DOT_DOT { [x], true }
+
+scope_column:
+  name=id typ=typ { {name;typ} }
 
 a_query:
     q=query EOF { q }
@@ -98,6 +114,9 @@ query:
 
 a_expr:
     e=expr EOF { e }
+
+a_scope_columns:
+    cols=scope_columns EOF { cols }
 
 select:
     id=param_splice

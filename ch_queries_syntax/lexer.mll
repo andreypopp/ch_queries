@@ -136,6 +136,8 @@
     | Parser.ARROW -> "ARROW"
     | Parser.WITH -> "WITH"
     | Parser.AS_MATERIALIZED -> "AS_MATERIALIZED"
+    | Parser.QUESTION -> "QUESTION"
+    | Parser.DOT_DOT_DOT -> "DOT_DOT_DOT"
     | Parser.EOF -> "EOF"
 
 }
@@ -187,7 +189,9 @@ rule token = parse
   | ']'                 { RBRACKET }
   | ','                 { COMMA }
   | '.'                 { DOT }
+  | "..."               { DOT_DOT_DOT }
   | ':' ':'             { COLONCOLON }
+  | '?'                 { QUESTION }
   | '+'                 { PLUS }
   | '-'                 { MINUS }
   | '*'                 { STAR }

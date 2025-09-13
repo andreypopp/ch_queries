@@ -29,6 +29,9 @@ let parse_from ~loc s = parse_with Parser.a_from Lexer.token "f" ~loc s
 let parse_typ ~loc s = parse_with Parser.a_typ Lexer.token "t" ~loc s
 let parse_uexpr ~loc s = parse_with Uparser.a_uexpr Ulexer.token "eu" ~loc s
 
+let parse_scope_columns ~loc s =
+  parse_with Parser.a_scope_columns Lexer.token "scope" ~loc s
+
 let to_location ({ loc = { start_pos; end_pos }; _ } : _ Syntax.node) : location
     =
   { loc_start = start_pos; loc_end = end_pos; loc_ghost = false }
@@ -183,11 +186,35 @@ let rec stage_typ' typ =
       Location.raise_errorf ~loc "only 2-element tuples are supported"
   | T_app ({ node = t; _ }, _) ->
       Location.raise_errorf ~loc "Unknown ClickHouse type: %s" t
+  | T_scope (cols, is_open) ->
+      ( [%type: should_not_happen],
+        [%type: [%t stage_scope_columns ~loc ~is_open cols] Ch_queries.scope] )
+  | T_nullable_scope (cols, is_open) ->
+      ( [%type: should_not_happen],
+        [%type:
+          [%t stage_scope_columns ~loc ~is_open cols] Ch_queries.nullable_scope]
+      )
 
-let stage_typ x =
+and stage_scope_columns ~loc ~is_open cols =
+  let fields =
+    List.map cols ~f:(fun { Syntax.name; typ } ->
+        let typ = stage_typ typ in
+        let loc = to_location name in
+        let pof_desc = Otag (Located.mk ~loc name.node, typ) in
+        { pof_desc; pof_attributes = []; pof_loc = loc })
+  in
+  let closed_flag = if is_open then Open else Closed in
+  ptyp_object ~loc fields closed_flag
+
+and stage_typ x =
   let loc = to_location x in
-  let n, t = stage_typ' x in
-  [%type: ([%t n], [%t t]) Ch_queries.expr]
+  match x.node with
+  | Syntax.T_scope _ | T_nullable_scope _ ->
+      let _, t = stage_typ' x in
+      t
+  | _ ->
+      let n, t = stage_typ' x in
+      [%type: ([%t n], [%t t]) Ch_queries.expr]
 
 let rec stage_typ_to_parser typ =
   let open Syntax in
@@ -224,6 +251,10 @@ let rec stage_typ_to_parser typ =
       Location.raise_errorf ~loc "parsing Tuple(..) is not supported"
   | T_app ({ node = t; _ }, _) ->
       Location.raise_errorf ~loc "Unknown ClickHouse type: %s" t
+  | T_scope _ ->
+      Location.raise_errorf ~loc "parsing scope types is not supported"
+  | T_nullable_scope _ ->
+      Location.raise_errorf ~loc "parsing nullable scope types is not supported"
 
 let rec stage_typ_to_ocaml_type typ =
   let open Syntax in
@@ -259,6 +290,12 @@ let rec stage_typ_to_ocaml_type typ =
       Location.raise_errorf ~loc "parsing Tuple(..) is not supported"
   | T_app ({ node = t; _ }, _) ->
       Location.raise_errorf ~loc "Unknown ClickHouse type: %s" t
+  | T_scope _ ->
+      Location.raise_errorf ~loc
+        "OCaml type conversion for scope types is not supported"
+  | T_nullable_scope _ ->
+      Location.raise_errorf ~loc
+        "OCaml type conversion for nullable scope types is not supported"
 
 let query_scope ~loc scope expr =
   let e = pexp_send ~loc [%expr __q] (Located.mk ~loc scope.Syntax.node) in
@@ -818,6 +855,14 @@ let expand_typ ~ctxt:_ expr =
       stage_typ typ
   | _ -> Location.raise_errorf "expected a string literal for [%%t ...]"
 
+let expand_scope ~ctxt:_ expr =
+  match expr.pexp_desc with
+  | Pexp_constant (Pconst_string (txt, loc, _)) ->
+      let cols, is_open = parse_scope_columns ~loc txt in
+      let object_type = stage_scope_columns ~loc ~is_open cols in
+      [%pat? (__q : [%t object_type])]
+  | _ -> Location.raise_errorf "expected a string literal for [%%scope ...]"
+
 let rec extract_typed_fields query =
   match query.Syntax.node with
   | Syntax.Q_select { select = Select_fields fields; _ } ->
@@ -959,6 +1004,11 @@ let uexpr_extension name =
     Ast_pattern.(single_expr_payload __)
     expand_uexpr
 
+let scope_extension name =
+  Extension.V3.declare name Extension.Context.pattern
+    Ast_pattern.(single_expr_payload __)
+    expand_scope
+
 let rules =
   [
     Context_free.Rule.extension (query_extension "ch.q");
@@ -967,6 +1017,7 @@ let rules =
     Context_free.Rule.extension (typ_extension "ch.t");
     Context_free.Rule.extension (uexpr_extension "ch.eu");
     Context_free.Rule.extension (select_extension "ch.select");
+    Context_free.Rule.extension (scope_extension "ch.scope");
   ]
 
 let () = Driver.register_transformation ~rules "queries_ppx"

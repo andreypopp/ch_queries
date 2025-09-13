@@ -105,7 +105,14 @@ and fromsyn =
     }
 
 and typ = typsyn node
-and typsyn = T of id | T_app of id * typ list
+
+and typsyn =
+  | T of id
+  | T_app of id * typ list
+  | T_scope of scope_column list * bool (* columns, is_open *)
+  | T_nullable_scope of scope_column list * bool (* columns, is_open *)
+
+and scope_column = { name : id; typ : typ }
 
 module Eq_expr = Eq_class.Make (struct
   type t = exprsyn
