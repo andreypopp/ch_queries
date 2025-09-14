@@ -485,6 +485,7 @@ and pp_typ typ =
       in
       pp_id id ^^ string "(" ^^ pp_args ^^ string ")"
   | T_any -> string "Any"
+  | T_custom ocaml_type -> string "Custom(" ^^ pp_id ocaml_type ^^ string ")"
   | T_db_table (db, table, `NON_NULL) ->
       string (sprintf "%s.%s" db.node table.node)
   | T_db_table (db, table, `NULL) ->

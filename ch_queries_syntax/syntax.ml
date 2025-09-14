@@ -114,6 +114,7 @@ and typsyn =
   | T_any
   | T_db_table of id * id * [ `NON_NULL | `NULL ] (* database, table *)
   | T_scope of scope_column list * [ `Open | `Closed ] * [ `NON_NULL | `NULL ]
+  | T_custom of id (* Custom(<ocamltype>) *)
 
 and scope_column = { name : id; typ : typ }
 
@@ -172,4 +173,4 @@ let make_from ?(loc = Loc.dummy) node = { node; loc; eq = Eq_from.v node }
 let is_scope_typ typ =
   match typ.node with
   | T_scope _ | T_db_table _ -> true
-  | T _ | T_app _ | T_any -> false
+  | T _ | T_app _ | T_any | T_custom _ -> false

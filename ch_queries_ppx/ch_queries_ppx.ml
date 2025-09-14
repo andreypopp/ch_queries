@@ -152,6 +152,7 @@ let rec stage_typ' typ =
   let loc = to_location typ in
   match typ.node with
   | T_any -> (`ANY, [%type: _])
+  | T_custom _ -> (`ANY, [%type: _]) (* treat Custom(_) as Any for casts *)
   | T { node = "Date"; _ } ->
       (`NON_NULL, [%type: Ch_queries.date Ch_queries.timestamp])
   | T { node = "DateTime64"; _ } ->
@@ -263,6 +264,9 @@ let rec stage_typ_to_parser typ =
       [%expr Ch_queries.Row.float]
   | T { node = t; _ } ->
       Location.raise_errorf ~loc "unknown ClickHouse type: %s" t
+  | T_custom { node = ocaml_type; _ } ->
+      let of_json = evar ~loc (ocaml_type ^ "_of_json") in
+      [%expr Ch_queries.Row.custom [%e of_json]]
   | T_app ({ node = "Nullable"; _ }, [ t ]) ->
       [%expr Ch_queries.Row.nullable [%e stage_typ_to_parser t]]
   | T_app ({ node = "Nullable"; _ }, _) ->
@@ -304,6 +308,9 @@ let rec stage_typ_to_output_ocaml_type typ =
   | T { node = "Float32" | "Float64" | "Float"; _ } -> [%type: float]
   | T { node = t; _ } ->
       Location.raise_errorf ~loc "unknown ClickHouse type: %s" t
+  | T_custom { node = ocaml_type; _ } ->
+      let lid = Located.mk ~loc (Longident.parse ocaml_type) in
+      ptyp_constr ~loc lid []
   | T_app ({ node = "Nullable"; _ }, [ t ]) ->
       [%type: [%t stage_typ_to_output_ocaml_type t] option]
   | T_app ({ node = "Nullable"; _ }, _) ->

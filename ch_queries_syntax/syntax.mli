@@ -114,6 +114,7 @@ and typsyn =
   | T_any
   | T_db_table of id * id * [ `NON_NULL | `NULL ] (* database, table *)
   | T_scope of scope_column list * [ `Open | `Closed ] * [ `NON_NULL | `NULL ]
+  | T_custom of id (* Custom(<ocamltype>) *)
 
 and scope_column = { name : id; typ : typ }
 

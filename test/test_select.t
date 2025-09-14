@@ -28,54 +28,24 @@ It's possible to use `Any` type to skip parsing a certain field (it'll be return
   >     users.is_active::Any AS is_active 
   >   FROM $users::public.users|};;
   > #show users_row
-  > '
-  >>> PREPROCESSING
-  include struct
-    type nonrec users_row = { id : int; is_active : Ch_queries.json }
-  
-    let users ~users () =
-      Ch_queries.query
-        (Ch_queries.select ()
-           ~from:
-             (Ch_queries.map_from_scope
-                (Ch_queries.from
-                   (users ~alias:"users"
-                     : Ch_database.Public.users Ch_queries.scope
-                       Ch_queries.from_one))
-                (fun (users : _ Ch_queries.scope) ->
-                  let __q =
-                    object
-                      method users = users
-                    end
-                  in
-                  object
-                    method users = users
-  
-                    method id =
-                      (__q#users#query (fun __q -> __q#id)
-                        : ( Ch_queries.non_null,
-                            int Ch_queries.number )
-                          Ch_queries.expr)
-  
-                    method is_active =
-                      (__q#users#query (fun __q -> __q#is_active)
-                        : (_, _) Ch_queries.expr)
-                  end))
-           ~select:(fun __q ->
-             object
-               method id = __q#id
-               method is_active = __q#is_active
-             end))
-        (fun (__q : < q : _ Ch_queries.scope >) ->
-          Ch_queries.Row.( let+ )
-            (Ch_queries.Row.( and+ )
-               (Ch_queries.Row.col
-                  (__q#q#query (fun __q -> __q#id))
-                  Ch_queries.Row.int)
-               (Ch_queries.Row.col
-                  (__q#q#query (fun __q -> __q#is_active))
-                  Ch_queries.Row.any))
-            (fun (id, is_active) -> ({ id; is_active } : users_row)))
-  end
+  > ' --run-only
   >>> RUNNING
   type users_row = { id : int; is_active : Ch_queries.json; }
+
+It's possible to use `Custom(<ocamltype>)` type to specify custom type for a
+certain field, the `<ocamltype>_of_json` function must be defined to parse JSON
+into that type:
+  $ ./compile_and_run '
+  > type x = X of string
+  > let x_of_json = function
+  >   | `String s -> X s
+  >   | _ -> failwith "invalid X, expected string"
+  > let%ch.select users = {|
+  >   SELECT
+  >     users.id::Int32 AS id,
+  >     users.x::Custom(x) AS is_active 
+  >   FROM public.users|};;
+  > #show users_row
+  > ' --run-only
+  >>> RUNNING
+  type users_row = { id : int; is_active : x; }

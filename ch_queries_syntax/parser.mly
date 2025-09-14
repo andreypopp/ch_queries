@@ -75,8 +75,20 @@ a_typ:
     t=typ EOF { t }
 
 typ:
-    id=id { make_typ $startpos $endpos (if String.equal id.node "Any" then T_any else T id) }
-  | id=id LPAREN args=flex_list(COMMA, typ) RPAREN { make_typ $startpos $endpos (T_app (id, args)) }
+    id=id { 
+      let t =
+        match id.node with
+        | "Any" -> T_any
+        | _ -> T id
+      in
+      make_typ $startpos $endpos t }
+  | id=id LPAREN args=flex_list(COMMA, typ) RPAREN { 
+      let t =
+        match id.node, args with
+        | "Custom", [{node=T id;_}] -> T_custom id
+        | _ -> T_app (id, args)
+      in
+      make_typ $startpos $endpos t }
   | t = scope_typ { t }
 
 %inline scope_typ:
