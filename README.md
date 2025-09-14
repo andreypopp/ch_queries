@@ -144,7 +144,7 @@ as-is.
 Finally, the `%t` syntax form is used as a shortcut to define DSL types:
 ```ocaml
 # type ch_uint64 = {%t|UInt64|};;
-type ch_uint64 = (non_null, int64 number) expr
+type ch_uint64 = (non_null, Unsigned.uint64 number) expr
 # type ch_nullable_string = {%t|Nullable(String)|};;
 type ch_nullable_string = (null, string) expr
 # type ch_array_string = {%t|Array(String)|};;
@@ -155,7 +155,9 @@ Can also be used for scope types:
 ```ocaml
 # type user_scope = {%t| (id UInt64, name Nullable(String)) |};;
 type user_scope =
-    < id : (non_null, int64 number) expr; name : (null, string) expr > scope
+    < id : (non_null, Unsigned.uint64 number) expr;
+      name : (null, string) expr >
+    scope
 ```
 
 Scope types can also be acquired by referencing scopes of database tables:

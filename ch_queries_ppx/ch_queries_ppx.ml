@@ -161,8 +161,9 @@ let rec stage_typ' typ =
   | T { node = "Int8" | "UInt8" | "Int16" | "UInt16" | "Int32" | "UInt32"; _ }
     ->
       (`NON_NULL, [%type: int Ch_queries.number])
-  | T { node = "Int64" | "UInt64"; _ } ->
-      (`NON_NULL, [%type: int64 Ch_queries.number])
+  | T { node = "Int64"; _ } -> (`NON_NULL, [%type: int64 Ch_queries.number])
+  | T { node = "UInt64"; _ } ->
+      (`NON_NULL, [%type: Unsigned.uint64 Ch_queries.number])
   | T { node = "Float32" | "Float64" | "Float"; _ } ->
       (`NON_NULL, [%type: float Ch_queries.number])
   | T { node = t; _ } ->
@@ -252,7 +253,8 @@ let rec stage_typ_to_parser typ =
   | T { node = "Int8" | "UInt8" | "Int16" | "UInt16" | "Int32" | "UInt32"; _ }
     ->
       [%expr Ch_queries.Row.int]
-  | T { node = "Int64" | "UInt64"; _ } -> [%expr Ch_queries.Row.int64]
+  | T { node = "Int64"; _ } -> [%expr Ch_queries.Row.int64]
+  | T { node = "UInt64"; _ } -> [%expr Ch_queries.Row.uint64]
   | T { node = "Float32" | "Float64" | "Float"; _ } ->
       [%expr Ch_queries.Row.float]
   | T { node = t; _ } ->
@@ -292,7 +294,8 @@ let rec stage_typ_to_ocaml_type typ =
   | T { node = "Int8" | "UInt8" | "Int16" | "UInt16" | "Int32" | "UInt32"; _ }
     ->
       [%type: int]
-  | T { node = "Int64" | "UInt64"; _ } -> [%type: int64]
+  | T { node = "Int64"; _ } -> [%type: int64]
+  | T { node = "UInt64"; _ } -> [%type: Unsigned.uint64]
   | T { node = "Float32" | "Float64" | "Float"; _ } -> [%type: float]
   | T { node = t; _ } ->
       Location.raise_errorf ~loc "unknown ClickHouse type: %s" t

@@ -38,7 +38,10 @@ Test untyped expressions
   > #show e
   > '
   >>> PREPROCESSING
-  let e (x : (Ch_queries.non_null, int64 Ch_queries.number) Ch_queries.expr) =
+  let e
+      (x :
+        (Ch_queries.non_null, Unsigned.uint64 Ch_queries.number) Ch_queries.expr)
+      =
     (Ch_queries.unsafe_concat
        [
          Ch_queries.A_expr (Ch_queries.unsafe "someUnknownFunction(");
@@ -48,7 +51,7 @@ Test untyped expressions
       : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr)
   >>> RUNNING
   val e :
-    (Ch_queries.non_null, int64 Ch_queries.number) Ch_queries.expr ->
+    (Ch_queries.non_null, Unsigned.uint64 Ch_queries.number) Ch_queries.expr ->
     (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr
 
   $ ./compile_and_run '

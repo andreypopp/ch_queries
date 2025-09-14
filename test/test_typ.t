@@ -31,7 +31,7 @@ Test ClickHouse type syntax expansion
   type test_int64 = (Ch_queries.non_null, int64 Ch_queries.number) Ch_queries.expr
   
   type test_uint64 =
-    (Ch_queries.non_null, int64 Ch_queries.number) Ch_queries.expr
+    (Ch_queries.non_null, Unsigned.uint64 Ch_queries.number) Ch_queries.expr
   
   type test_float32 =
     (Ch_queries.non_null, float Ch_queries.number) Ch_queries.expr

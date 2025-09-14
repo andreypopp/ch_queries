@@ -18,6 +18,7 @@ depends: [
   "cmdliner"
   "containers"
   "extunix"
+  "integers"
   "ocamlformat" {with-test}
   "mdx" {with-test}
   "odoc" {with-doc}

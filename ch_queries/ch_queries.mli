@@ -403,6 +403,7 @@ module Row : sig
   val bool : (non_null, bool, bool) parser
   val int : (non_null, int number, int) parser
   val int64 : (non_null, int64 number, int64) parser
+  val uint64 : (non_null, int64 number, Unsigned.uint64) parser
   val float : (non_null, float number, float) parser
   val date : (non_null, date timestamp, float) parser
   val datetime : (non_null, datetime timestamp, float) parser

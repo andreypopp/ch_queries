@@ -787,8 +787,16 @@ module Row = struct
     | `String s as json -> (
         match Int64.of_string_opt s with
         | Some i -> i
-        | None -> parse_error ~json "expected an integer")
-    | json -> parse_error ~json "expected an integer"
+        | None -> parse_error ~json "cannot parse as Int64")
+    | json -> parse_error ~json "cannot parse as Int64"
+
+  let uint64_of_json = function
+    | `Int i -> Unsigned.UInt64.of_int i
+    | `String s as json -> (
+        match Unsigned.UInt64.of_string_opt s with
+        | Some i -> i
+        | None -> parse_error ~json "cannot parse as UInt64")
+    | json -> parse_error ~json "cannot parse as UInt64"
 
   let float_of_json = function
     | `Float f -> f
@@ -835,6 +843,7 @@ module Row = struct
   let bool = VAL bool_of_json
   let int = NUMBER int_of_json
   let int64 = NUMBER int64_of_json
+  let uint64 = NUMBER uint64_of_json
   let float = NUMBER float_of_json
   let date = VAL date_of_json
   let datetime = VAL datetime_of_json
