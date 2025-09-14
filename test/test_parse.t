@@ -21,7 +21,7 @@ parsing OR:
 
 parsing splicing:
   $ ch_queries parse 'SELECT x.name FROM $x WHERE $condition'
-  SELECT x.name FROM x AS x WHERE condition
+  SELECT x.name FROM x AS x WHERE $condition
 
 parsing string literals:
   $ ch_queries parse "SELECT x.name FROM \$x WHERE x.name = 'hello'"
