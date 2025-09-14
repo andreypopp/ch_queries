@@ -1,8 +1,8 @@
 # TODO
 
-## improve %ch.select to support Custom(<sqltype>, <ocamltype>)
+## improve %ch.select to support Custom(<ocamltype>)
 
-We want to extend `%ch.select` to support `Custom(<sqltype>, <ocamltype>)`.
+We want to extend `%ch.select` to support `Custom(<ocamltype>)`.
 
 First consider the following definition:
 ```ocaml
@@ -15,7 +15,7 @@ let domain_of_json = function
 Now the query:
 ```ocaml
 let%ch.select domains = {|
-  SELECT domain::Custom(String,domain) AS domain FROM domains
+  SELECT domain::Custom(domain) AS domain FROM domains
 |}
 ```
 
@@ -24,6 +24,10 @@ Here the expanded code will be:
 type domains_row = {domain: domain}
 let domains = ...
 ```
+
+Note that when staging the type annotation, it'll stage as `(_, _) Ch_queries.expr`.
+
+For now we support only simple identifiers for `<ocamltype>`.
 
 ## improve %ch.select to support mapping to an existing record type
 

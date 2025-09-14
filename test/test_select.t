@@ -75,7 +75,7 @@ It's possible to use `Any` type to skip parsing a certain field (it'll be return
                (Ch_queries.Row.col
                   (__q#q#query (fun __q -> __q#is_active))
                   Ch_queries.Row.any))
-            (fun (id, is_active) -> { id; is_active }))
+            (fun (id, is_active) -> ({ id; is_active } : users_row)))
   end
   >>> RUNNING
   type users_row = { id : int; is_active : Ch_queries.json; }

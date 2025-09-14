@@ -949,9 +949,7 @@ let expand_select ~ctxt:_ (pat : label loc) expr =
   | Pexp_constant (Pconst_string (query, loc, _)) ->
       let query = parse_query ~loc query in
       let fields = extract_typed_fields query in
-      let mklabel suffix =
-        { pat with txt = Printf.sprintf "%s_%s" pat.txt suffix }
-      in
+      let mklabel suffix = Printf.sprintf "%s_%s" pat.txt suffix in
       let type_row =
         let fields =
           List.map fields ~f:(fun (name, typ) ->
@@ -960,7 +958,8 @@ let expand_select ~ctxt:_ (pat : label loc) expr =
         in
         pstr_type ~loc Nonrecursive
           [
-            type_declaration ~loc ~manifest:None ~name:(mklabel "row")
+            type_declaration ~loc ~manifest:None
+              ~name:{ pat with txt = mklabel "row" }
               ~params:[] ~cstrs:[] ~kind:(Ptype_record fields) ~private_:Public;
           ]
       in
@@ -1001,7 +1000,13 @@ let expand_select ~ctxt:_ (pat : label loc) expr =
                 in
                 (name, pexp_ident ~loc:name.loc name))
           in
-          pexp_record ~loc fields None
+          let make = pexp_record ~loc fields None in
+          let t =
+            ptyp_constr ~loc
+              (Located.mk ~loc:pat.loc (Longident.parse (mklabel "row")))
+              []
+          in
+          [%expr ([%e make] : [%t t])]
         in
         [%expr
           fun (__q : < q : _ Ch_queries.scope >) ->

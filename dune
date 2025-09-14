@@ -1,3 +1,4 @@
 (mdx
+ (files :standard \ TODO.md)
  (deps
   (package ch_queries)))
