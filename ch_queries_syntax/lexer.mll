@@ -3,6 +3,8 @@
 
   exception Error of string
 
+  let errorf fmt = Printf.ksprintf (fun s -> raise (Error s)) fmt
+
   let keywords = [
     ("SELECT", SELECT);
     ("FROM", FROM);
@@ -72,6 +74,7 @@
     | Parser.PARAM_SPLICE s -> Printf.sprintf "PARAM_SPLICE(%s)" s
     | Parser.CH_PARAM s -> Printf.sprintf "CH_PARAM(%s)" s
     | Parser.OCAML_EXPR s -> Printf.sprintf "OCAML_EXPR(%s)" s
+    | Parser.UNSAFE _ -> Printf.sprintf "UNSAFE(...)"
     | Parser.STRING s -> Printf.sprintf "STRING(%s)" s
     | Parser.NUMBER n -> Printf.sprintf "NUMBER(%d)" n
     | Parser.TRUE -> "TRUE"
@@ -169,6 +172,12 @@ rule token = parse
     let s = ocaml_expr (Buffer.create 32) 0 lexbuf in
     lexbuf.Lexing.lex_start_p <- lex_start_p;
     OCAML_EXPR s }
+  | "unsafe" whitespace* '{' {
+    (* remember start position to restore later *)
+    let lex_start_p = Lexing.lexeme_start_p lexbuf in
+    let s = unsafe_expr (Buffer.create 32) 0 lexbuf in
+    lexbuf.Lexing.lex_start_p <- lex_start_p;
+    UNSAFE s }
   | '{'                 {
     (* remember start position to restore later *)
     let lex_start_p = Lexing.lexeme_start_p lexbuf in
@@ -201,7 +210,7 @@ rule token = parse
   | "<>"                { NOT_EQUAL }
   | "->"                { ARROW }
   | eof                 { EOF }
-  | _ as c              { raise (Error ("Unexpected character: " ^ String.make 1 c)) }
+  | _ as c              { errorf "Unexpected character: %c" c }
 
 and string_literal buf = parse
   | '\'' '\''           { Buffer.add_char buf '\''; string_literal buf lexbuf }
@@ -214,7 +223,7 @@ and string_literal buf = parse
   | '\''                { Buffer.contents buf }
   | newline             { Lexing.new_line lexbuf; Buffer.add_char buf '\n'; string_literal buf lexbuf }
   | _ as c              { Buffer.add_char buf c; string_literal buf lexbuf }
-  | eof                 { raise (Error "Unterminated string literal") }
+  | eof                 { errorf "Unterminated string literal" }
 
 and ocaml_expr buf brace_count = parse
   | '{'                 { Buffer.add_char buf '{'; ocaml_expr buf (brace_count + 1) lexbuf }
@@ -227,7 +236,7 @@ and ocaml_expr buf brace_count = parse
     ) }
   | newline             { Lexing.new_line lexbuf; Buffer.add_char buf '\n'; ocaml_expr buf brace_count lexbuf }
   | _ as c              { Buffer.add_char buf c; ocaml_expr buf brace_count lexbuf }
-  | eof                 { raise (Error "Unterminated OCaml expression: missing closing '}'") }
+  | eof                 { errorf "Unterminated OCaml expression: missing closing '}'" }
 
 and ch_param buf brace_count = parse
   | '{'                 { Buffer.add_char buf '{'; ch_param buf (brace_count + 1) lexbuf }
@@ -240,7 +249,33 @@ and ch_param buf brace_count = parse
     }
   | newline             { Lexing.new_line lexbuf; Buffer.add_char buf '\n'; ch_param buf brace_count lexbuf }
   | _ as c              { Buffer.add_char buf c; ch_param buf brace_count lexbuf }
-  | eof                 { raise (Error "Unterminated param type expression: missing closing '}'") }
+  | eof                 { errorf "Unterminated param type expression: missing closing '}'" }
+
+and unsafe_expr buf brace_count = parse
+  | '{'                 { Buffer.add_char buf '{'; unsafe_expr buf (brace_count + 1) lexbuf }
+  | '}'                 {
+    if brace_count = 0 then (
+      let content = Buffer.contents buf in
+      let ulexbuf = Lexing.from_string content in
+      (* Adjust the location to account for the 'unsafe {' prefix *)
+      let start_pos = lexbuf.Lexing.lex_start_p in
+      let adjusted_start = { start_pos with
+        pos_cnum = start_pos.pos_cnum + String.length "unsafe {"
+      } in
+      ulexbuf.Lexing.lex_start_p <- adjusted_start;
+      ulexbuf.Lexing.lex_curr_p <- adjusted_start;
+      try
+         Uparser.a_uexpr (Ulexer.token ()) ulexbuf
+       with
+       | Uparser.Error -> errorf "error parsing unsafe { %s }" content
+       | Ulexer.Error msg -> errorf "error parsing unsafe { %s }: %s" content msg
+    ) else (
+      Buffer.add_char buf '}';
+      unsafe_expr buf (brace_count - 1) lexbuf
+    ) }
+  | newline             { Lexing.new_line lexbuf; Buffer.add_char buf '\n'; unsafe_expr buf brace_count lexbuf }
+  | _ as c              { Buffer.add_char buf c; unsafe_expr buf brace_count lexbuf }
+  | eof                 { errorf "Unterminated unsafe expression: missing closing '}'" }
 
 {
   type lexstate = {

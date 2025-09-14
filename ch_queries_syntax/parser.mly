@@ -24,6 +24,7 @@
 %token <string> PARAM_SPLICE
 %token <string> CH_PARAM
 %token <string> OCAML_EXPR
+%token <Syntax.expr> UNSAFE
 %token <string> STRING
 %token <int> NUMBER
 %token TRUE FALSE
@@ -352,6 +353,8 @@ expr:
     { make_expr $startpos $endpos (E_ocaml_expr ocaml_expr) }
   | ch_param=CH_PARAM
     { make_expr $startpos $endpos (E_unsafe (make_id $startpos $endpos ch_param)) }
+  | expr=UNSAFE
+    { expr }
   | e=expr IN LPAREN q=query_no_param RPAREN
     { make_expr $startpos $endpos (E_in (e, In_query q)) }
   | e=expr IN e_rhs=expr

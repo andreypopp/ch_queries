@@ -355,7 +355,7 @@ let adjust_location_for_ocaml_expr loc =
   let open Location in
   let start_pos = loc.loc_start in
   let adjusted_start =
-    { start_pos with pos_cnum = start_pos.pos_cnum + 2 (* length of '?{' *) }
+    { start_pos with pos_cnum = start_pos.pos_cnum + String.length "?{" }
   in
   { loc with loc_start = adjusted_start }
 
