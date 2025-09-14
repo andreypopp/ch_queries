@@ -60,10 +60,10 @@ arrays:
   >>> PREPROCESSING
   let x = Ch_queries.array [ Ch_queries.int 1; Ch_queries.bool true ]
   >>> RUNNING
-  Error: This expression has type (Ch_queries.non_null, bool) Ch_queries.expr
+  Error: This expression has type "(Ch_queries.non_null, bool) Ch_queries.expr"
          but an expression was expected of type
-           (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr
-         Type bool is not compatible with type int Ch_queries.number
+           "(Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr"
+         Type "bool" is not compatible with type "int Ch_queries.number"
 string literal:
   $ echo "let x = [%e \"'hello world'\"]"
   let x = [%e "'hello world'"]

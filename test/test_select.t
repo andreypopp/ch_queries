@@ -49,3 +49,22 @@ into that type:
   > ' --run-only
   >>> RUNNING
   type users_row = { id : int; is_active : x; }
+
+It's possible to use an existing record type with @ch.row attribute:
+  $ ./compile_and_run '
+  > type user = {
+  >   id: int;
+  >   is_active: bool;
+  > }
+  > let%ch.select[@ch.row user] users = {|
+  >   SELECT
+  >     users.id::Int32 AS id,
+  >     users.is_active::Bool AS is_active
+  >   FROM $users::public.users|};;
+  > #show users
+  > ' --run-only
+  >>> RUNNING
+  val users :
+    users:(alias:string ->
+           Ch_database.Public.users Ch_queries.scope Ch_queries.from_one) ->
+    unit -> string * (Ch_queries.json list -> user)

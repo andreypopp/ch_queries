@@ -951,24 +951,50 @@ let rec extract_typed_fields query =
         "cannot extract fields from a query parameter"
   | Q_ascribe (q, _) -> extract_typed_fields q
 
-let expand_select ~ctxt:_ (pat : label loc) expr =
-  match expr.pexp_desc with
+let ch_row_attr =
+  Attribute.declare "ch.row" Attribute.Context.value_binding
+    Ast_pattern.(single_expr_payload (pexp_ident __))
+    (fun lid ->
+      ptyp_constr ~loc:Location.none (Located.mk ~loc:Location.none lid) [])
+
+let expand_select ~ctxt:_ vb =
+  match vb.pvb_expr.pexp_desc with
   | Pexp_constant (Pconst_string (query, loc, _)) ->
+      let pat =
+        match vb.pvb_pat.ppat_desc with
+        | Ppat_var name -> name
+        | _ ->
+            Location.raise_errorf ~loc:vb.pvb_pat.ppat_loc
+              "expected a variable pattern for [%%ch.select]"
+      in
       let query = parse_query ~loc query in
       let fields = extract_typed_fields query in
       let mklabel suffix = Printf.sprintf "%s_%s" pat.txt suffix in
-      let type_row =
-        let fields =
-          List.map fields ~f:(fun (name, typ) ->
-              label_declaration ~loc:name.loc ~mutable_:Immutable ~name
-                ~type_:(stage_typ_to_output_ocaml_type typ))
-        in
-        pstr_type ~loc Nonrecursive
-          [
-            type_declaration ~loc ~manifest:None
-              ~name:{ pat with txt = mklabel "row" }
-              ~params:[] ~cstrs:[] ~kind:(Ptype_record fields) ~private_:Public;
-          ]
+      let row_type = Attribute.get ch_row_attr vb in
+      let type_row, row_type =
+        match row_type with
+        | Some row_type -> (None, row_type)
+        | None ->
+            let fields_decl =
+              List.map fields ~f:(fun (name, typ) ->
+                  label_declaration ~loc:name.loc ~mutable_:Immutable ~name
+                    ~type_:(stage_typ_to_output_ocaml_type typ))
+            in
+            let type_decl =
+              pstr_type ~loc Nonrecursive
+                [
+                  type_declaration ~loc ~manifest:None
+                    ~name:{ pat with txt = mklabel "row" }
+                    ~params:[] ~cstrs:[] ~kind:(Ptype_record fields_decl)
+                    ~private_:Public;
+                ]
+            in
+            let row_type =
+              ptyp_constr ~loc
+                (Located.mk ~loc:pat.loc (Longident.parse (mklabel "row")))
+                []
+            in
+            (Some type_decl, row_type)
       in
       let query, rev_vars =
         let vars = ref [] in
@@ -1008,12 +1034,7 @@ let expand_select ~ctxt:_ (pat : label loc) expr =
                 (name, pexp_ident ~loc:name.loc name))
           in
           let make = pexp_record ~loc fields None in
-          let t =
-            ptyp_constr ~loc
-              (Located.mk ~loc:pat.loc (Longident.parse (mklabel "row")))
-              []
-          in
-          [%expr ([%e make] : [%t t])]
+          [%expr ([%e make] : [%t row_type])]
         in
         [%expr
           fun (__q : < q : _ Ch_queries.scope >) ->
@@ -1030,19 +1051,20 @@ let expand_select ~ctxt:_ (pat : label loc) expr =
         in
         [%stri let [%p ppat_var ~loc pat] = [%e query]]
       in
+      let structure_items =
+        match type_row with
+        | Some type_decl -> [ type_decl; let_query ]
+        | None -> [ let_query ]
+      in
       pstr_include ~loc
-        (include_infos ~loc (pmod_structure ~loc [ type_row; let_query ]))
+        (include_infos ~loc (pmod_structure ~loc structure_items))
   | _ ->
-      Location.raise_errorf ~loc:expr.pexp_loc
+      Location.raise_errorf ~loc:vb.pvb_expr.pexp_loc
         "expected a string literal for [%%ch.select]"
 
 let select_extension name =
   Extension.V3.declare name Extension.Context.structure_item
-    Ast_pattern.(
-      pstr
-        (pstr_value nonrecursive
-           (value_binding ~pat:(ppat_var __') ~expr:__ ^:: nil)
-        ^:: nil))
+    Ast_pattern.(pstr (pstr_value nonrecursive (__ ^:: nil) ^:: nil))
     expand_select
 
 let query_extension name =
