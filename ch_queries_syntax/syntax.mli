@@ -111,6 +111,7 @@ and typ = typsyn node
 and typsyn =
   | T of id
   | T_app of id * typ list
+  | T_any
   | T_db_table of id * id * [ `NON_NULL | `NULL ] (* database, table *)
   | T_scope of scope_column list * [ `Open | `Closed ] * [ `NON_NULL | `NULL ]
 

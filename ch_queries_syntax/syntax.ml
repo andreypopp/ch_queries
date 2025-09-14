@@ -111,6 +111,7 @@ and typ = typsyn node
 and typsyn =
   | T of id
   | T_app of id * typ list
+  | T_any
   | T_db_table of id * id * [ `NON_NULL | `NULL ] (* database, table *)
   | T_scope of scope_column list * [ `Open | `Closed ] * [ `NON_NULL | `NULL ]
 
@@ -171,4 +172,4 @@ let make_from ?(loc = Loc.dummy) node = { node; loc; eq = Eq_from.v node }
 let is_scope_typ typ =
   match typ.node with
   | T_scope _ | T_db_table _ -> true
-  | T _ | T_app (_, _) -> false
+  | T _ | T_app _ | T_any -> false

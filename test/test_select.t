@@ -3,7 +3,7 @@ there's a form `%ch.select` which generates SQL + row parser out of a query:
   > let%ch.select users = {|
   >   SELECT
   >     users.id::Int32 AS id,
-  >     users.is_active::Bool AS name 
+  >     users.is_active::Bool AS is_active 
   >   FROM $users::public.users|};;
   > #show users_row
   > #show users
@@ -11,7 +11,7 @@ there's a form `%ch.select` which generates SQL + row parser out of a query:
   > print_endline sql;;
   > ' --run-only
   >>> RUNNING
-  type users_row = { id : int; name : bool; }
+  type users_row = { id : int; is_active : bool; }
   val users :
     users:(alias:string ->
            Ch_database.Public.users Ch_queries.scope Ch_queries.from_one) ->
@@ -19,3 +19,13 @@ there's a form `%ch.select` which generates SQL + row parser out of a query:
   SELECT q._2, q._1
   FROM (
     SELECT users.is_active AS _1, users.id AS _2 FROM public.users AS users) AS q
+
+It's possible to use `Any` type to skip parsing a certain field (it'll be returned as JSON instead):
+  $ ./compile_and_run '
+  > let%ch.select users = {|
+  >   SELECT
+  >     users.id::Int32 AS id,
+  >     users.is_active::Any AS is_active 
+  >   FROM $users::public.users|};;
+  > #show users_row
+  > '

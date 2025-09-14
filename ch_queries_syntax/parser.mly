@@ -75,7 +75,7 @@ a_typ:
     t=typ EOF { t }
 
 typ:
-    id=id { make_typ $startpos $endpos (T id) }
+    id=id { make_typ $startpos $endpos (if String.equal id.node "Any" then T_any else T id) }
   | id=id LPAREN args=flex_list(COMMA, typ) RPAREN { make_typ $startpos $endpos (T_app (id, args)) }
   | t = scope_typ { t }
 

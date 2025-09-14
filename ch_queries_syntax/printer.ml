@@ -484,6 +484,7 @@ and pp_typ typ =
         | _ -> separate (string "," ^^ space) (List.map ~f:pp_typ args)
       in
       pp_id id ^^ string "(" ^^ pp_args ^^ string ")"
+  | T_any -> string "Any"
   | T_db_table (db, table, `NON_NULL) ->
       string (sprintf "%s.%s" db.node table.node)
   | T_db_table (db, table, `NULL) ->

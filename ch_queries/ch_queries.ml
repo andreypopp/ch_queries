@@ -820,6 +820,7 @@ module Row = struct
 
   type (_, _, _) parser =
     | ANY : (_, _, json) parser
+    | CUSTOM : (json -> 'ocaml_type) -> (_, _, 'ocaml_type) parser
     | NULLABLE : (_, 's, 'o) parser -> (null, 's, 'o option) parser
     | VAL : (json -> 'ocaml_type) -> (non_null, _, 'ocaml_type) parser
     | NUMBER : (json -> 'ocaml_type) -> (non_null, _ number, 'ocaml_type) parser
@@ -850,6 +851,7 @@ module Row = struct
   let array p = ARRAY p
   let map k v = MAP (k, v)
   let any = ANY
+  let custom f = CUSTOM f
 
   let ignore expr =
     let+ _ = Row_col (expr, any) in
@@ -859,6 +861,7 @@ module Row = struct
    fun parser json ->
     match parser with
     | ANY -> json
+    | CUSTOM f -> f json
     | VAL parse -> parse json
     | NUMBER parse -> parse json
     | NULLABLE parser -> (

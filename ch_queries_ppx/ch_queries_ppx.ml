@@ -145,11 +145,13 @@ let nullable =
   function
   | `NULL -> [%type: Ch_queries.null]
   | `NON_NULL -> [%type: Ch_queries.non_null]
+  | `ANY -> [%type: _]
 
 let rec stage_typ' typ =
   let open Syntax in
   let loc = to_location typ in
   match typ.node with
+  | T_any -> (`ANY, [%type: _])
   | T { node = "Date"; _ } ->
       (`NON_NULL, [%type: Ch_queries.date Ch_queries.timestamp])
   | T { node = "DateTime64"; _ } ->
@@ -213,12 +215,12 @@ let rec stage_typ' typ =
         in
         ptyp_object ~loc fields closed_flag
       in
-      (nullable, t)
+      ((nullable :> [ `NON_NULL | `NULL | `ANY ]), t)
   | T_db_table (db, table, nullable) ->
       let lid = Longident.parse (refer_to_db_table db table) in
       let lid = Located.mk ~loc lid in
       let t = ptyp_constr ~loc lid [] in
-      (nullable, t)
+      ((nullable :> [ `NON_NULL | `NULL | `ANY ]), t)
 
 and stage_scope_columns ~loc ~is_open cols =
   let fields =
@@ -238,12 +240,14 @@ and stage_typ x =
     match n with
     | `NULL -> [%type: [%t t] Ch_queries.nullable_scope]
     | `NON_NULL -> [%type: [%t t] Ch_queries.scope]
+    | `ANY -> [%type: impossible_this_is_a_bug]
   else [%type: ([%t nullable n], [%t t]) Ch_queries.expr]
 
 let rec stage_typ_to_parser typ =
   let open Syntax in
   let loc = to_location typ in
   match typ.node with
+  | T_any -> [%expr Ch_queries.Row.any]
   | T { node = "Date"; _ } -> [%expr Ch_queries.Row.date]
   | T { node = "DateTime64"; _ } ->
       Location.raise_errorf ~loc "parsing DateTime64 is not supported"
@@ -281,10 +285,11 @@ let rec stage_typ_to_parser typ =
   | T_db_table _ ->
       Location.raise_errorf ~loc "table types could not be used in this context"
 
-let rec stage_typ_to_ocaml_type typ =
+let rec stage_typ_to_output_ocaml_type typ =
   let open Syntax in
   let loc = to_location typ in
   match typ.node with
+  | T_any -> [%type: Ch_queries.json]
   | T { node = "Date"; _ } -> [%type: float]
   | T { node = "DateTime64"; _ } ->
       Location.raise_errorf ~loc "parsing DateTime64 is not supported"
@@ -300,16 +305,18 @@ let rec stage_typ_to_ocaml_type typ =
   | T { node = t; _ } ->
       Location.raise_errorf ~loc "unknown ClickHouse type: %s" t
   | T_app ({ node = "Nullable"; _ }, [ t ]) ->
-      [%type: [%t stage_typ_to_ocaml_type t] option]
+      [%type: [%t stage_typ_to_output_ocaml_type t] option]
   | T_app ({ node = "Nullable"; _ }, _) ->
       Location.raise_errorf ~loc "Nullable(..) requires exactly one argument"
   | T_app ({ node = "Array"; _ }, [ t ]) ->
-      [%type: [%t stage_typ_to_ocaml_type t] list]
+      [%type: [%t stage_typ_to_output_ocaml_type t] list]
   | T_app ({ node = "Array"; _ }, _) ->
       Location.raise_errorf ~loc "Array(..) requires exactly one argument"
   | T_app ({ node = "Map"; _ }, [ k; v ]) ->
       [%type:
-        ([%t stage_typ_to_ocaml_type k] * [%t stage_typ_to_ocaml_type v]) list]
+        ([%t stage_typ_to_output_ocaml_type k]
+        * [%t stage_typ_to_output_ocaml_type v])
+        list]
   | T_app ({ node = "Map"; _ }, _) ->
       Location.raise_errorf ~loc "Map(..) requires exactly two argument"
   | T_app ({ node = "Tuple"; _ }, _) ->
@@ -949,7 +956,7 @@ let expand_select ~ctxt:_ (pat : label loc) expr =
         let fields =
           List.map fields ~f:(fun (name, typ) ->
               label_declaration ~loc:name.loc ~mutable_:Immutable ~name
-                ~type_:(stage_typ_to_ocaml_type typ))
+                ~type_:(stage_typ_to_output_ocaml_type typ))
         in
         pstr_type ~loc Nonrecursive
           [

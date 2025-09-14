@@ -408,6 +408,7 @@ module Row : sig
   val date : (non_null, date timestamp, float) parser
   val datetime : (non_null, datetime timestamp, float) parser
   val any : (_, _, json) parser
+  val custom : (json -> 'a) -> (_, _, 'a) parser
   val nullable : ('n, 's, 'o) parser -> (null, 's, 'o option) parser
   val array : ('n, 's, 'o) parser -> (non_null, ('n, 's) array, 'o list) parser
 
