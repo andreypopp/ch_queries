@@ -1,6 +1,6 @@
 # TODO
 
-## add type inference
+## Add type inference
 
 We can add a simple bidirectional type inference to infer types as ppx-time.
 This will make queries more ergonomic as we can more flexibly type check them.
@@ -15,14 +15,23 @@ let%ch.select users = {|
 |}
 ```
 
-## support table functions, they should accept OCaml expressions as arguments
+## Support table functions, they should accept OCaml expressions as arguments
 
-An example:
+We want to be able to enrich database schemas with parametrized views which can
+predefine fields along with WHERE/QUALIFY/HAVING/GROUP BY/ORDER BY clauses.
+
+Depending on a structure of such views and their usafe we can produce either a
+flat query or a subquery out of them.
+
+This requires to extend the grammar to support table functions. The table
+functions will allow to pass OCaml values (not SQL values) as arguments.
+Therefore these table functions work like macro functions.
+
+We expect the definition of such table functions will be done in OCaml code.
+
+The usage will look like:
 ```ocaml
 let%ch.select users = {|
-    SELECT * FROM users_with_permission(permission: `Read_write) AS users
+  SELECT *
+  FROM public.users_with_permission(permission: `Read_write) AS users
 |}
-
-## Allow to attach WHERE/HAVING/GROUP BY/ORDER BY to FROM clauses
-
-That way we can define "query templates" and then query them without introducing a subquery.
