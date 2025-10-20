@@ -793,9 +793,9 @@ module Row = struct
   let uint64_of_json = function
     | `Int i -> Unsigned.UInt64.of_int i
     | `String s as json -> (
-        match Unsigned.UInt64.of_string_opt s with
-        | Some i -> i
-        | None -> parse_error ~json "cannot parse as UInt64")
+        match Unsigned.UInt64.of_string s with
+        | i -> i
+        | exception Failure _ -> parse_error ~json "cannot parse as UInt64")
     | json -> parse_error ~json "cannot parse as UInt64"
 
   let float_of_json = function
