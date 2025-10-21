@@ -4,6 +4,7 @@ set -e
 rm -f test_query.ml
 echo '
 #use "topfind"
+#require "yojson"
 #require "ch_queries"
 #require "ch_queries.ppx"
 #use "test_queries.ml"

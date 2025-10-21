@@ -438,6 +438,13 @@ module Row : sig
   val col : ('n, 's) expr -> ('n, 's, 'o) Parse.t -> 'o t
   (** Query a single column. *)
 
+  val row : a_expr list -> (json list -> 'a) -> 'a t
+  (** Query multiple columns.
+
+      [Row.row exprs parse] queries columns represented by [exprs] and parses
+      them with [parse] function. The [parse] function receives a JSON list
+      representing the row. *)
+
   val ignore : ('n, 'a) expr -> unit t
   (** Query a single column but ignore its value. *)
 

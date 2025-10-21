@@ -876,11 +876,13 @@ module Row = struct
     | Row_both : 'a t * 'b t -> ('a * 'b) t
     | Row_map : ('a -> 'b) * 'a t -> 'b t
     | Row_val : 'a -> 'a t
+    | Row_row : a_expr list * (json list -> 'a) -> 'a t
 
   let ( let+ ) x f = Row_map (f, x)
   let ( and+ ) x y = Row_both (x, y)
   let return x = Row_val x
   let col e p = Row_col (e, p)
+  let row es p = Row_row (es, p)
 
   let ignore expr =
     let+ _ = Row_col (expr, Parse.any) in
@@ -900,6 +902,16 @@ module Row = struct
       | Row_map (f, x), row ->
           let x, row = aux x row in
           (f x, row)
+      | Row_row (exprs, parse), row ->
+          let rec take exprs acc row =
+            match (exprs, row) with
+            | [], _ -> (List.rev acc, row)
+            | _ :: exprs, col :: row -> take exprs (col :: acc) row
+            | _ :: _, [] -> Parse.parse_error "missing a column"
+          in
+          let row', row = take exprs [] row in
+          let x = parse row' in
+          (x, row)
     in
     fun rowspec row ->
       match aux rowspec row with
@@ -914,6 +926,7 @@ module Row = struct
       | Row_col (expr, _) -> A_expr expr :: acc
       | Row_both (x, y) -> aux y (aux x acc)
       | Row_map (_, x) -> aux x acc
+      | Row_row (exprs, _) -> List.rev_append exprs acc
     in
     fun row -> List.rev (aux row [])
 end
