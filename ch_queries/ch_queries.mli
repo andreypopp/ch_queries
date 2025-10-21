@@ -384,7 +384,7 @@ module Parse : sig
   val bool : (non_null, bool, bool) t
   val int : (non_null, int number, int) t
   val int64 : (non_null, int64 number, int64) t
-  val uint64 : (non_null, int64 number, uint64) t
+  val uint64 : (non_null, uint64 number, uint64) t
   val float : (non_null, float number, float) t
   val date : (non_null, date timestamp, float) t
   val datetime : (non_null, datetime timestamp, float) t
