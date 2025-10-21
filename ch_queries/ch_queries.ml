@@ -769,7 +769,7 @@ type json =
   | `String of string ]
 (** JSON value (compatible with Yojson.Basic.t) *)
 
-module Row = struct
+module Parse = struct
   exception Parse_error of json option * string
 
   let parse_error ?json msg = raise (Parse_error (json, msg))
@@ -818,46 +818,18 @@ module Row = struct
     | `String t -> strptime "%Y-%m-%d %H:%M:%S" t
     | json -> parse_error ~json "expected a DateTime"
 
-  type (_, _, _) parser =
-    | ANY : (_, _, json) parser
-    | CUSTOM : (json -> 'ocaml_type) -> (_, _, 'ocaml_type) parser
-    | NULLABLE : (_, 's, 'o) parser -> (null, 's, 'o option) parser
-    | VAL : (json -> 'ocaml_type) -> (non_null, _, 'ocaml_type) parser
-    | NUMBER : (json -> 'ocaml_type) -> (non_null, _ number, 'ocaml_type) parser
-    | ARRAY : ('n, 's, 'o) parser -> (non_null, ('n, 's) array, 'o list) parser
+  type (_, _, _) t =
+    | ANY : (_, _, json) t
+    | CUSTOM : (json -> 'ocaml_type) -> (_, _, 'ocaml_type) t
+    | NULLABLE : (_, 's, 'o) t -> (null, 's, 'o option) t
+    | VAL : (json -> 'ocaml_type) -> (non_null, _, 'ocaml_type) t
+    | NUMBER : (json -> 'ocaml_type) -> (non_null, _ number, 'ocaml_type) t
+    | ARRAY : ('n, 's, 'o) t -> (non_null, ('n, 's) array, 'o list) t
     | MAP :
-        ('nk, 'sk, 'ok) parser * ('nv, 'sv, 'ov) parser
-        -> (non_null, ('nk, 'sk, 'nv, 'sv) map, ('ok * 'ov) list) parser
+        ('nk, 'sk, 'ok) t * ('nv, 'sv, 'ov) t
+        -> (non_null, ('nk, 'sk, 'nv, 'sv) map, ('ok * 'ov) list) t
 
-  type _ t =
-    | Row_col : ('null, 'sql_type) expr * ('null, 'sql_type, 'a) parser -> 'a t
-    | Row_both : 'a t * 'b t -> ('a * 'b) t
-    | Row_map : ('a -> 'b) * 'a t -> 'b t
-    | Row_val : 'a -> 'a t
-
-  let ( let+ ) x f = Row_map (f, x)
-  let ( and+ ) x y = Row_both (x, y)
-  let nullable p = NULLABLE p
-  let return x = Row_val x
-  let col e p = Row_col (e, p)
-  let string = VAL string_of_json
-  let bool = VAL bool_of_json
-  let int = NUMBER int_of_json
-  let int64 = NUMBER int64_of_json
-  let uint64 = NUMBER uint64_of_json
-  let float = NUMBER float_of_json
-  let date = VAL date_of_json
-  let datetime = VAL datetime_of_json
-  let array p = ARRAY p
-  let map k v = MAP (k, v)
-  let any = ANY
-  let custom f = CUSTOM f
-
-  let ignore expr =
-    let+ _ = Row_col (expr, any) in
-    ()
-
-  let rec parse : type n s o. (n, s, o) parser -> json -> o =
+  let rec parse : type n s o. (n, s, o) t -> json -> o =
    fun parser json ->
     match parser with
     | ANY -> json
@@ -883,13 +855,44 @@ module Row = struct
         | `List jsons -> List.map jsons ~f:(parse parser)
         | json -> parse_error ~json "expected an Array(T)")
 
+  let nullable p = NULLABLE p
+  let string = VAL string_of_json
+  let bool = VAL bool_of_json
+  let int = NUMBER int_of_json
+  let int64 = NUMBER int64_of_json
+  let uint64 = NUMBER uint64_of_json
+  let float = NUMBER float_of_json
+  let date = VAL date_of_json
+  let datetime = VAL datetime_of_json
+  let array p = ARRAY p
+  let map k v = MAP (k, v)
+  let any = ANY
+  let custom f = CUSTOM f
+end
+
+module Row = struct
+  type _ t =
+    | Row_col : ('null, 'sql_type) expr * ('null, 'sql_type, 'a) Parse.t -> 'a t
+    | Row_both : 'a t * 'b t -> ('a * 'b) t
+    | Row_map : ('a -> 'b) * 'a t -> 'b t
+    | Row_val : 'a -> 'a t
+
+  let ( let+ ) x f = Row_map (f, x)
+  let ( and+ ) x y = Row_both (x, y)
+  let return x = Row_val x
+  let col e p = Row_col (e, p)
+
+  let ignore expr =
+    let+ _ = Row_col (expr, Parse.any) in
+    ()
+
   let parse : type a. a t -> json list -> a =
     let rec aux : type a. a t -> json list -> a * json list =
      fun rowspec row ->
       match (rowspec, row) with
       | Row_val x, row -> (x, row)
-      | Row_col (_, _parser), [] -> parse_error "missing a column"
-      | Row_col (_, parser), col :: row -> (parse parser col, row)
+      | Row_col (_, _parser), [] -> Parse.parse_error "missing a column"
+      | Row_col (_, parser), col :: row -> (Parse.parse parser col, row)
       | Row_both (x, y), row ->
           let x, row = aux x row in
           let y, row = aux y row in
@@ -901,9 +904,9 @@ module Row = struct
     fun rowspec row ->
       match aux rowspec row with
       | x, [] -> x
-      | _, json -> parse_error ~json:(`List json) "extra columns in row"
+      | _, json -> Parse.parse_error ~json:(`List json) "extra columns in row"
 
-  let fields : type a. a t -> a_expr list =
+  let exprs : type a. a t -> a_expr list =
     let rec aux : type a. a t -> a_expr list -> a_expr list =
      fun rowspec acc ->
       match rowspec with
@@ -924,9 +927,9 @@ let query q f =
          method q = scope
       end)
   in
-  let fields = Row.fields row in
   let fields =
-    List.map fields ~f:(fun (A_expr expr) -> { Syntax.expr; alias = None })
+    Row.exprs row
+    |> List.map ~f:(fun (A_expr expr) -> { Syntax.expr; alias = None })
   in
   let select = To_syntax.to_syntax q in
   let select =

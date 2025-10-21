@@ -113,12 +113,12 @@ let merge_metric : type a sqlt.
 let query_metric : type t sqlt.
     < q : _ stats Ch_queries.scope > -> (t, sqlt) metric -> t Ch_queries.Row.t =
  fun {%s|...|} m ->
-  let open Ch_queries.Row in
+  let open Ch_queries in
   let metric m = {%e|q.metric(${m})|} in
   match m with
-  | Metric_count -> col (metric m) int
-  | Metric_sum_id -> col (metric m) int
-  | Metric_true -> col (metric m) bool
+  | Metric_count -> Row.col (metric m) Parse.int
+  | Metric_sum_id -> Row.col (metric m) Parse.int
+  | Metric_true -> Row.col (metric m) Parse.bool
 
 let users_stats =
   let stats =
@@ -148,12 +148,13 @@ let users_stats =
 
 let sql, parse_row =
   Ch_queries.query users_stats (fun __q ->
-      let open Ch_queries.Row in
+      let open Ch_queries in
+      let open Row in
       let+ x = query_metric __q Metric_count
       and+ y = query_metric __q Metric_true
       and+ z = query_metric __q Metric_sum_id
-      and+ z' = col {%e|q.metric(${Metric_true})|} bool
-      and+ s = col {%e|q.oops|} (nullable string) in
+      and+ z' = Row.col {%e|q.metric(${Metric_true})|} Parse.bool
+      and+ s = Row.col {%e|q.oops|} Parse.(nullable string) in
       (x, y, z, s))
 
 let%ch.select stats =

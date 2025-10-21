@@ -373,6 +373,49 @@ type json =
   | `String of string ]
 (** JSON value (compatible with Yojson.Basic.t) *)
 
+module Parse : sig
+  type ('null, 'sql_type, 'ocaml_type) t
+
+  val string : (non_null, string, string) t
+  val bool : (non_null, bool, bool) t
+  val int : (non_null, int number, int) t
+  val int64 : (non_null, int64 number, int64) t
+  val uint64 : (non_null, int64 number, Unsigned.uint64) t
+  val float : (non_null, float number, float) t
+  val date : (non_null, date timestamp, float) t
+  val datetime : (non_null, datetime timestamp, float) t
+
+  val any : (_, _, json) t
+  (** [any] parses any JSON value as-is. Returns JSON. *)
+
+  val custom : (json -> 'a) -> (_, _, 'a) t
+  (** [custom f] parses a JSON value with [f] function. *)
+
+  val nullable : ('n, 's, 'o) t -> (null, 's, 'o option) t
+  (** [nullable p] parses a nullable value with parser [p]. If the JSON value is
+      [Null], returns [None], otherwise parses with [p] and returns [Some v]. *)
+
+  val array : ('n, 's, 'o) t -> (non_null, ('n, 's) array, 'o list) t
+  (** [array p] parses an array of values with parser [p]. *)
+
+  val map :
+    ('nk, 'sk, 'ok) t ->
+    ('nv, 'sv, 'ov) t ->
+    (non_null, ('nk, 'sk, 'nv, 'sv) map, ('ok * 'ov) list) t
+  (** [map pk pv] parses a map with key parser [pk] and value parser [pv]. The
+      result is a list of key-value pairs. *)
+
+  exception Parse_error of json option * string
+
+  val parse : (_, _, 'a) t -> json -> 'a
+  (** Parse a value from JSON.
+
+      Raises [Parse_error] if the value is not compatible with the parser. *)
+
+  val parse_error : ?json:json -> string -> 'a
+  (** A convenience function to raise [Parse_error]. *)
+end
+
 module Row : sig
   type 'a t
   (** Represents a row to query (both expressions and parser). *)
@@ -392,37 +435,20 @@ module Row : sig
   val return : 'a -> 'a t
   (** Return a constant value. *)
 
-  type ('null, 'sql_type, 'ocaml_type) parser
+  val col : ('n, 's) expr -> ('n, 's, 'o) Parse.t -> 'o t
+  (** Query a single column. *)
 
-  val col : ('n, 's) expr -> ('n, 's, 'o) parser -> 'o t
   val ignore : ('n, 'a) expr -> unit t
-
-  (* Parsers *)
-
-  val string : (non_null, string, string) parser
-  val bool : (non_null, bool, bool) parser
-  val int : (non_null, int number, int) parser
-  val int64 : (non_null, int64 number, int64) parser
-  val uint64 : (non_null, int64 number, Unsigned.uint64) parser
-  val float : (non_null, float number, float) parser
-  val date : (non_null, date timestamp, float) parser
-  val datetime : (non_null, datetime timestamp, float) parser
-  val any : (_, _, json) parser
-  val custom : (json -> 'a) -> (_, _, 'a) parser
-  val nullable : ('n, 's, 'o) parser -> (null, 's, 'o option) parser
-  val array : ('n, 's, 'o) parser -> (non_null, ('n, 's) array, 'o list) parser
-
-  val map :
-    ('nk, 'sk, 'ok) parser ->
-    ('nv, 'sv, 'ov) parser ->
-    (non_null, ('nk, 'sk, 'nv, 'sv) map, ('ok * 'ov) list) parser
-
-  exception Parse_error of json option * string
+  (** Query a single column but ignore its value. *)
 
   val parse : 'a t -> json list -> 'a
   (** Parse a row from a JSON list.
 
-      Raises [Parse_error] if the row is not compatible with the parser. *)
+      Raises [Parse.Parse_error] if the row is not compatible with the parser.
+  *)
+
+  val exprs : _ t -> a_expr list
+  (** Get the list of expressions representing the row. *)
 end
 
 val query :

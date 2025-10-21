@@ -248,36 +248,37 @@ let rec stage_typ_to_parser typ =
   let open Syntax in
   let loc = to_location typ in
   match typ.node with
-  | T_any -> [%expr Ch_queries.Row.any]
-  | T { node = "Date"; _ } -> [%expr Ch_queries.Row.date]
+  | T_any -> [%expr Ch_queries.Parse.any]
+  | T { node = "Date"; _ } -> [%expr Ch_queries.Parse.date]
   | T { node = "DateTime64"; _ } ->
       Location.raise_errorf ~loc "parsing DateTime64 is not supported"
-  | T { node = "DateTime"; _ } -> [%expr Ch_queries.Row.datetime]
-  | T { node = "String"; _ } -> [%expr Ch_queries.Row.string]
-  | T { node = "Bool"; _ } -> [%expr Ch_queries.Row.bool]
+  | T { node = "DateTime"; _ } -> [%expr Ch_queries.Parse.datetime]
+  | T { node = "String"; _ } -> [%expr Ch_queries.Parse.string]
+  | T { node = "Bool"; _ } -> [%expr Ch_queries.Parse.bool]
   | T { node = "Int8" | "UInt8" | "Int16" | "UInt16" | "Int32" | "UInt32"; _ }
     ->
-      [%expr Ch_queries.Row.int]
-  | T { node = "Int64"; _ } -> [%expr Ch_queries.Row.int64]
-  | T { node = "UInt64"; _ } -> [%expr Ch_queries.Row.uint64]
+      [%expr Ch_queries.Parse.int]
+  | T { node = "Int64"; _ } -> [%expr Ch_queries.Parse.int64]
+  | T { node = "UInt64"; _ } -> [%expr Ch_queries.Parse.uint64]
   | T { node = "Float32" | "Float64" | "Float"; _ } ->
-      [%expr Ch_queries.Row.float]
+      [%expr Ch_queries.Parse.float]
   | T { node = t; _ } ->
       Location.raise_errorf ~loc "unknown ClickHouse type: %s" t
   | T_custom { node = ocaml_type; _ } ->
       let of_json = evar ~loc (ocaml_type ^ "_of_json") in
-      [%expr Ch_queries.Row.custom [%e of_json]]
+      [%expr Ch_queries.Parse.custom [%e of_json]]
   | T_app ({ node = "Nullable"; _ }, [ t ]) ->
-      [%expr Ch_queries.Row.nullable [%e stage_typ_to_parser t]]
+      [%expr Ch_queries.Parse.nullable [%e stage_typ_to_parser t]]
   | T_app ({ node = "Nullable"; _ }, _) ->
       Location.raise_errorf ~loc "Nullable(..) requires exactly one argument"
   | T_app ({ node = "Array"; _ }, [ t ]) ->
-      [%expr Ch_queries.Row.array [%e stage_typ_to_parser t]]
+      [%expr Ch_queries.Parse.array [%e stage_typ_to_parser t]]
   | T_app ({ node = "Array"; _ }, _) ->
       Location.raise_errorf ~loc "Array(..) requires exactly one argument"
   | T_app ({ node = "Map"; _ }, [ k; v ]) ->
       [%expr
-        Ch_queries.Row.map [%e stage_typ_to_parser k] [%e stage_typ_to_parser v]]
+        Ch_queries.Parse.map [%e stage_typ_to_parser k]
+          [%e stage_typ_to_parser v]]
   | T_app ({ node = "Map"; _ }, _) ->
       Location.raise_errorf ~loc "Map(..) requires exactly two argument"
   | T_app ({ node = "Tuple"; _ }, _) ->
