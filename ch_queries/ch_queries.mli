@@ -291,7 +291,7 @@ module Expr : sig
   val toStartOfDay : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
   val toStartOfHour : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
   val toStartOfMinute : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
-  val fromUnixTimestamp : ('n, int number) expr -> ('n, datetime timestamp) expr
+  val fromUnixTimestamp : ('n, _ number) expr -> ('n, datetime timestamp) expr
 
   (** {2 Logical} *)
 
