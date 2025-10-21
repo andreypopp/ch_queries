@@ -20,6 +20,7 @@ depends: [
   "extunix"
   "integers"
   "ocamlformat" {with-test}
+  "yojson" {with-test}
   "mdx" {with-test}
   "odoc" {with-doc}
 ]

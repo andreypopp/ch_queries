@@ -33,6 +33,7 @@
   extunix
   integers
   (ocamlformat :with-test)
+  (yojson :with-test)
   (mdx :with-test))
  (tags
   (database sql dsl clickhouse)))
