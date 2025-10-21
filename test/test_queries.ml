@@ -80,7 +80,7 @@ let y =
 (** we define a type for metrics we can compute, metrics are parametrized by
     ocaml type and by sql type. *)
 type ('t, 'sqlt) metric =
-  | Metric_count : (int, int Ch_queries.number) metric
+  | Metric_count : (int64, int64 Ch_queries.number) metric
   | Metric_sum_id : (int, int Ch_queries.number) metric
   | Metric_true : (bool, bool) metric
 
@@ -116,7 +116,7 @@ let query_metric : type t sqlt.
   let open Ch_queries in
   let metric m = {%e|q.metric(${m})|} in
   match m with
-  | Metric_count -> Row.col (metric m) Parse.int
+  | Metric_count -> Row.col (metric m) Parse.int64
   | Metric_sum_id -> Row.col (metric m) Parse.int
   | Metric_true -> Row.col (metric m) Parse.bool
 

@@ -1,5 +1,6 @@
 module Syntax = Ch_queries_syntax.Syntax
 
+type uint64 = Unsigned.uint64
 type null = [ `null | `not_null ]
 type non_null = [ `not_null ]
 type 'a nullable = [< null ] as 'a

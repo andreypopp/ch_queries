@@ -33,7 +33,7 @@ basic window functions:
         end)
   >>> RUNNING
   val users :
-    < _1 : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr >
+    < _1 : (Ch_queries.non_null, int64 Ch_queries.number) Ch_queries.expr >
     Ch_queries.scope Ch_queries.select
 
 window functions / param in PARTITION BY:
@@ -71,7 +71,7 @@ window functions / param in PARTITION BY:
   val users :
     g:(< users : Ch_database.Public.users Ch_queries.scope > ->
        Ch_queries.a_expr list) ->
-    < _1 : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr >
+    < _1 : (Ch_queries.non_null, int64 Ch_queries.number) Ch_queries.expr >
     Ch_queries.scope Ch_queries.select
 
 window functions / param in ORDER BY:
@@ -103,5 +103,5 @@ window functions / param in ORDER BY:
   val users :
     o:(< users : Ch_database.Public.users Ch_queries.scope > ->
        (Ch_queries.a_expr * [ `ASC | `DESC ]) list) ->
-    < _1 : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr >
+    < _1 : (Ch_queries.non_null, int64 Ch_queries.number) Ch_queries.expr >
     Ch_queries.scope Ch_queries.select

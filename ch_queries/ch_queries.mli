@@ -1,5 +1,9 @@
 (** DSL for SQL queries generation. *)
 
+type uint64 = Unsigned.uint64
+
+(** Nullability markers. *)
+
 type null = [ `not_null | `null ]
 type non_null = [ `not_null ]
 type 'a nullable = 'a constraint 'a = [< null ]
@@ -333,8 +337,8 @@ module Expr : sig
 
   (** {2 Type conversions} *)
 
-  val toInt64 : ('n, string) expr -> ('n, int number) expr
-  val toUInt64 : ('n, string) expr -> ('n, int number) expr
+  val toInt64 : ('n, _) expr -> ('n, int64 number) expr
+  val toUInt64 : ('n, _) expr -> ('n, uint64 number) expr
 
   (** {1 Aggregate functions} *)
 
@@ -348,7 +352,7 @@ module Expr : sig
     ?partition_by:a_expr list ->
     ?order_by:(a_expr * [ `ASC | `DESC ]) list ->
     ('n, _) expr ->
-    (non_null, int number) expr
+    (non_null, int64 number) expr
 
   val sum :
     ?partition_by:a_expr list ->
@@ -360,7 +364,7 @@ module Expr : sig
     ?partition_by:a_expr list ->
     ?order_by:(a_expr * [ `ASC | `DESC ]) list ->
     ('n, _) expr ->
-    (non_null, int number) expr
+    (non_null, int64 number) expr
 end
 
 type json =
@@ -380,7 +384,7 @@ module Parse : sig
   val bool : (non_null, bool, bool) t
   val int : (non_null, int number, int) t
   val int64 : (non_null, int64 number, int64) t
-  val uint64 : (non_null, int64 number, Unsigned.uint64) t
+  val uint64 : (non_null, int64 number, uint64) t
   val float : (non_null, float number, float) t
   val date : (non_null, date timestamp, float) t
   val datetime : (non_null, datetime timestamp, float) t
