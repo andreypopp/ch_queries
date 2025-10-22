@@ -392,7 +392,7 @@ module Parse : sig
   val any : (_, _, json) t
   (** [any] parses any JSON value as-is. Returns JSON. *)
 
-  val custom : (json -> 'a) -> (_, _, 'a) t
+  val custom : (json -> 'a) * ('a -> ('n, 's) expr) -> ('n, 's, 'a) t
   (** [custom f] parses a JSON value with [f] function. *)
 
   val nullable : ('n, 's, 'o) t -> (null, 's, 'o option) t
@@ -411,13 +411,16 @@ module Parse : sig
 
   exception Parse_error of json option * string
 
+  val parse_error : ?json:json -> string -> 'a
+  (** A convenience function to raise [Parse_error]. *)
+
   val parse : (_, _, 'a) t -> json -> 'a
   (** Parse a value from JSON.
 
       Raises [Parse_error] if the value is not compatible with the parser. *)
 
-  val parse_error : ?json:json -> string -> 'a
-  (** A convenience function to raise [Parse_error]. *)
+  val unparse : ('n, 's, 'a) t -> 'a -> ('n, 's) expr
+  (** Unparse an OCaml value into SQL expression. *)
 end
 
 module Row : sig

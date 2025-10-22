@@ -378,6 +378,26 @@ let string x = lit (L_string x)
 let bool x = lit (L_bool x)
 let float x = lit (L_float x)
 let null = lit L_null
+let int64 x = unsafe (Printf.sprintf "toInt64(%s)" (Int64.to_string x))
+
+let uint64 x =
+  unsafe (Printf.sprintf "toUInt64(%s)" (Unsigned.UInt64.to_string x))
+
+let date_s x = unsafe (Printf.sprintf "toDate('%s')" x)
+let datetime_s x = unsafe (Printf.sprintf "toDateTime('%s')" x)
+
+let date x =
+  date_s
+    (let t = Unix.gmtime x in
+     Printf.sprintf "%04u-%02u-%02u" (1900 + t.Unix.tm_year) (t.Unix.tm_mon + 1)
+       t.Unix.tm_mday)
+
+let datetime x =
+  datetime_s
+    (let t = Unix.gmtime x in
+     Printf.sprintf "%04u-%02u-%02uT%02u:%02u:%02u" (1900 + t.Unix.tm_year)
+       (t.Unix.tm_mon + 1) t.Unix.tm_mday t.Unix.tm_hour t.Unix.tm_min
+       t.Unix.tm_sec)
 
 let interval n unit =
   let unit' =
@@ -488,6 +508,11 @@ module Expr = struct
 
   let ( || ) x y = def "OR" [ x; y ]
   let not_ x = def "NOT" [ x ]
+
+  (** {2 Array} *)
+
+  let array xs =
+    Syntax.make_expr (E_call (Syntax.Func (Syntax.make_id "array"), xs))
 
   (** {2 Map} *)
 
@@ -822,10 +847,17 @@ module Parse = struct
 
   type (_, _, _) t =
     | ANY : (_, _, json) t
-    | CUSTOM : (json -> 'ocaml_type) -> (_, _, 'ocaml_type) t
+    | CUSTOM :
+        (json -> 'ocaml_type) * ('ocaml_type -> ('n, 's) expr)
+        -> ('n, 's, 'ocaml_type) t
     | NULLABLE : (_, 's, 'o) t -> (null, 's, 'o option) t
-    | VAL : (json -> 'ocaml_type) -> (non_null, _, 'ocaml_type) t
-    | NUMBER : (json -> 'ocaml_type) -> (non_null, _ number, 'ocaml_type) t
+    | VAL :
+        (json -> 'ocaml_type) * ('ocaml_type -> (non_null, 'sql_type) expr)
+        -> (non_null, 'sql_type, 'ocaml_type) t
+    | NUMBER :
+        (json -> 'ocaml_type)
+        * ('ocaml_type -> (non_null, 'sql_type number) expr)
+        -> (non_null, 'sql_type number, 'ocaml_type) t
     | ARRAY : ('n, 's, 'o) t -> (non_null, ('n, 's) array, 'o list) t
     | MAP :
         ('nk, 'sk, 'ok) t * ('nv, 'sv, 'ov) t
@@ -835,9 +867,9 @@ module Parse = struct
    fun parser json ->
     match parser with
     | ANY -> json
-    | CUSTOM f -> f json
-    | VAL parse -> parse json
-    | NUMBER parse -> parse json
+    | CUSTOM (parse, _unparse) -> parse json
+    | VAL (parse, _unparse) -> parse json
+    | NUMBER (parse, _unparse) -> parse json
     | NULLABLE parser -> (
         match json with `Null -> None | json -> Some (parse parser json))
     | MAP (kparser, vparser) -> (
@@ -860,19 +892,39 @@ module Parse = struct
         | `List jsons -> List.map jsons ~f:(parse parser)
         | json -> parse_error ~json "expected an Array(T)")
 
+  let rec unparse : type n s o. (n, s, o) t -> o -> (n, s) expr =
+   fun parser v ->
+    match parser with
+    | ANY -> failwith "cannot unparse ANY"
+    | CUSTOM (_parse, unparse) -> unparse v
+    | VAL (_parse, unparse) -> unparse v
+    | NUMBER (_parse, unparse) -> unparse v
+    | NULLABLE parser -> (
+        match v with
+        | None -> null
+        | Some v -> Expr.toNullable (unparse parser v))
+    | MAP (kparser, vparser) ->
+        let items =
+          List.map v ~f:(fun (k, v) -> (unparse kparser k, unparse vparser v))
+        in
+        Expr.map items
+    | ARRAY parser ->
+        let items = List.map v ~f:(unparse parser) in
+        Expr.array items
+
   let nullable p = NULLABLE p
-  let string = VAL string_of_json
-  let bool = VAL bool_of_json
-  let int = NUMBER int_of_json
-  let int64 = NUMBER int64_of_json
-  let uint64 = NUMBER uint64_of_json
-  let float = NUMBER float_of_json
-  let date = VAL date_of_json
-  let datetime = VAL datetime_of_json
+  let string = VAL (string_of_json, string)
+  let bool = VAL (bool_of_json, bool)
+  let int = NUMBER (int_of_json, int)
+  let int64 = NUMBER (int64_of_json, int64)
+  let uint64 = NUMBER (uint64_of_json, uint64)
+  let float = NUMBER (float_of_json, float)
+  let date = VAL (date_of_json, date)
+  let datetime = VAL (datetime_of_json, datetime)
   let array p = ARRAY p
   let map k v = MAP (k, v)
   let any = ANY
-  let custom f = CUSTOM f
+  let custom (parse, unparse) = CUSTOM (parse, unparse)
 end
 
 module Row = struct
