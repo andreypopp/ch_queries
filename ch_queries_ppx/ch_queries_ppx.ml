@@ -266,7 +266,10 @@ let rec stage_typ_to_parser typ =
       Location.raise_errorf ~loc "unknown ClickHouse type: %s" t
   | T_custom { node = ocaml_type; _ } ->
       let of_json = evar ~loc (ocaml_type ^ "_of_json") in
-      [%expr Ch_queries.Parse.custom [%e of_json]]
+      let to_sql =
+        [%expr fun _ -> failwith "Custom(T): unparsing is not supported"]
+      in
+      [%expr Ch_queries.Parse.custom ([%e of_json], [%e to_sql])]
   | T_app ({ node = "Nullable"; _ }, [ t ]) ->
       [%expr Ch_queries.Parse.nullable [%e stage_typ_to_parser t]]
   | T_app ({ node = "Nullable"; _ }, _) ->
