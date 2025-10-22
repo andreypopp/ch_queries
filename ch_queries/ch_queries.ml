@@ -801,6 +801,7 @@ module Parse = struct
 
   let float_of_json = function
     | `Float f -> f
+    | `Int i -> Float.of_int i
     | json -> parse_error ~json "expected a float"
 
   let bool_of_json = function
@@ -850,7 +851,10 @@ module Parse = struct
         in
         match json with
         | `List items -> List.map items ~f:parse_item
-        | json -> parse_error ~json "expected an Map(K,V)")
+        | json ->
+            parse_error ~json
+              "expected an Map(K,V), make sure \
+               output_format_json_map_as_array_of_tuples=1 is set")
     | ARRAY parser -> (
         match json with
         | `List jsons -> List.map jsons ~f:(parse parser)
