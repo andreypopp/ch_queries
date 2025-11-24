@@ -56,6 +56,8 @@ type 'a from
     subqueries. *)
 
 val int : int -> (non_null, int number) expr
+val int64 : int64 -> (non_null, int64 number) expr
+val uint64 : uint64 -> (non_null, uint64 number) expr
 val string : string -> (non_null, string) expr
 val bool : bool -> (non_null, bool) expr
 val float : float -> (non_null, float number) expr
