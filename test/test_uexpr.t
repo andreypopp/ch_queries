@@ -73,3 +73,31 @@ Test untyped expressions
                 .. >;
       .. > ->
     (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr
+
+  $ ./compile_and_run "
+  > let e __q = [%eu{|joinGet('db.dict', 'field', users.x)|}];;
+  > #show e
+  > "
+  >>> PREPROCESSING
+  let e __q =
+    Ch_queries.unsafe_concat
+      [
+        Ch_queries.A_expr (Ch_queries.unsafe "joinGet('db.dict', 'field', ");
+        Ch_queries.A_expr (__q#users#query (fun __q -> __q#x));
+        Ch_queries.A_expr (Ch_queries.unsafe ")");
+      ]
+  >>> RUNNING
+  val e :
+    < users : < query : (< x : 'a; .. > -> 'a) -> ('b, 'c) Ch_queries.expr;
+                .. >;
+      .. > ->
+    ('d, 'e) Ch_queries.expr
+
+  $ ./compile_and_run "
+  > let e = [%eu{|'db.dict'|}];;
+  > #show e
+  > "
+  >>> PREPROCESSING
+  let e = Ch_queries.unsafe "'db.dict'"
+  >>> RUNNING
+  val e : ('a, 'b) Ch_queries.expr

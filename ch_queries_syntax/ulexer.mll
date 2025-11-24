@@ -26,6 +26,14 @@ rule token = parse
   | newline                  { Lexing.new_line lexbuf; token lexbuf }
   | param (id as param)      { PARAM param }
   | (id as x) "." (id as y)  { COLUMN (x, y) }
+  | '\''                     {
+    let lex_start_p = Lexing.lexeme_start_p lexbuf in
+    let buf = Buffer.create 32 in
+    Buffer.add_char buf '\'';
+    string_literal buf lexbuf;
+    Buffer.add_char buf '\'';
+    lexbuf.Lexing.lex_start_p <- lex_start_p;
+    SQL (Buffer.contents buf) }
   | eof                      { EOF }
   | _ as c                   {
     let lex_start_p = Lexing.lexeme_start_p lexbuf in
@@ -38,9 +46,27 @@ rule token = parse
 and sql_fragment buf = parse
   | param id as matched        { rollback_match lexbuf ~matched; Buffer.contents buf }
   | id "." id as matched       { rollback_match lexbuf ~matched; Buffer.contents buf }
+  | '\''                       {
+    Buffer.add_char buf '\'';
+    string_literal buf lexbuf;
+    Buffer.add_char buf '\'';
+    sql_fragment buf lexbuf }
   | eof                        { Buffer.contents buf }
   | newline                    { Lexing.new_line lexbuf; Buffer.add_char buf '\n'; sql_fragment buf lexbuf }
   | _ as c                     { Buffer.add_char buf c; sql_fragment buf lexbuf }
+
+and string_literal buf = parse
+  | '\'' '\''           { Buffer.add_char buf '\''; Buffer.add_char buf '\''; string_literal buf lexbuf }
+  | '\\' '\\'           { Buffer.add_char buf '\\'; Buffer.add_char buf '\\'; string_literal buf lexbuf }
+  | '\\' '\''           { Buffer.add_char buf '\\'; Buffer.add_char buf '\''; string_literal buf lexbuf }
+  | '\\' 'n'            { Buffer.add_char buf '\\'; Buffer.add_char buf 'n'; string_literal buf lexbuf }
+  | '\\' 't'            { Buffer.add_char buf '\\'; Buffer.add_char buf 't'; string_literal buf lexbuf }
+  | '\\' 'r'            { Buffer.add_char buf '\\'; Buffer.add_char buf 'r'; string_literal buf lexbuf }
+  | '\\' (_ as c)       { Buffer.add_char buf '\\'; Buffer.add_char buf c; string_literal buf lexbuf }
+  | '\''                { () }
+  | newline             { Lexing.new_line lexbuf; Buffer.add_char buf '\n'; string_literal buf lexbuf }
+  | _ as c              { Buffer.add_char buf c; string_literal buf lexbuf }
+  | eof                 { raise (Error "Unterminated string literal") }
 
 {
   let tokenize_debug q =
