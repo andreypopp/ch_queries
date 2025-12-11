@@ -49,7 +49,9 @@ if FINAL keyword is applied to param, then it expects the table:
     Ch_queries.select ()
       ~from:
         (Ch_queries.map_from_scope
-           (Ch_queries.from (table ~final:true ~alias:"users"))
+           (Ch_queries.from
+              ((table : final:bool -> alias:string -> _ Ch_queries.from_one)
+                 ~final:true ~alias:"users"))
            (fun (users : _ Ch_queries.scope) ->
              let __q =
                object

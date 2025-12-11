@@ -90,9 +90,9 @@ let from_scope_expr ~scopes from =
   let from =
     from_scope_expr' from
     |> List.rev_map ~f:(fun (id, expr) ->
-           ( id,
-             pcf_method ~loc
-               (located_of_id id, Public, Cfk_concrete (Fresh, expr)) ))
+        ( id,
+          pcf_method ~loc (located_of_id id, Public, Cfk_concrete (Fresh, expr))
+        ))
   in
   let rec build curr_scope = function
     | [] -> failwith "impossible: should have at least FROM scope"
@@ -863,11 +863,14 @@ and stage_from_one ~on_evar from_one =
       let loc = to_location id in
       match final with
       | false ->
-          [%expr [%e evar ~loc id.node] ~alias:[%e estring ~loc alias.node]]
+          [%expr
+            ([%e evar ~loc id.node] : alias:string -> _ Ch_queries.from_one)
+              ~alias:[%e estring ~loc alias.node]]
       | true ->
           [%expr
-            [%e evar ~loc id.node] ~final:true
-              ~alias:[%e estring ~loc alias.node]])
+            ([%e evar ~loc id.node]
+              : final:bool -> alias:string -> _ Ch_queries.from_one)
+              ~final:true ~alias:[%e estring ~loc alias.node]])
   | F_ascribe (from_one, t) ->
       let from_one = stage_from_one ~on_evar from_one in
       let t = stage_typ t in

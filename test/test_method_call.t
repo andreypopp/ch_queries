@@ -17,7 +17,8 @@ Method call in query:
     Ch_queries.select ()
       ~from:
         (Ch_queries.map_from_scope
-           (Ch_queries.from (users ~alias:"users"))
+           (Ch_queries.from
+              ((users : alias:string -> _ Ch_queries.from_one) ~alias:"users"))
            (fun (users : _ Ch_queries.scope) ->
              object
                method users = users

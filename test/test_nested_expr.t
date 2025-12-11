@@ -112,7 +112,8 @@ The param within the scope receives the scope as argument:
     Ch_queries.select ()
       ~from:
         (Ch_queries.map_from_scope
-           (Ch_queries.from (q1 ~alias:"q"))
+           (Ch_queries.from
+              ((q1 : alias:string -> _ Ch_queries.from_one) ~alias:"q"))
            (fun (q : _ Ch_queries.scope) ->
              let __q =
                object

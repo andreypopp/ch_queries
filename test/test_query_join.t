@@ -104,7 +104,7 @@ select from an OCaml value with JOIN:
         (Ch_queries.map_from_scope
            (Ch_queries.left_join
               (Ch_queries.from (Ch_database.Public.users ~alias:"u" ~final:false))
-              (profiles ~alias:"p")
+              ((profiles : alias:string -> _ Ch_queries.from_one) ~alias:"p")
               ~on:(fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.scope)) ->
                 let __q =
                   object

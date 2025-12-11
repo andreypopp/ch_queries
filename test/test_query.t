@@ -179,7 +179,8 @@ select from an OCaml value (parameter syntax):
     Ch_queries.select ()
       ~from:
         (Ch_queries.map_from_scope
-           (Ch_queries.from (t ~alias:"q"))
+           (Ch_queries.from
+              ((t : alias:string -> _ Ch_queries.from_one) ~alias:"q"))
            (fun (q : _ Ch_queries.scope) ->
              object
                method q = q
@@ -207,7 +208,8 @@ select from an OCaml value (id syntax):
     Ch_queries.select ()
       ~from:
         (Ch_queries.map_from_scope
-           (Ch_queries.from (t ~alias:"t"))
+           (Ch_queries.from
+              ((t : alias:string -> _ Ch_queries.from_one) ~alias:"t"))
            (fun (t : _ Ch_queries.scope) ->
              object
                method t = t

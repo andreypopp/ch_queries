@@ -34,8 +34,9 @@ CTE is supported:
           ~from:
             (Ch_queries.map_from_scope
                (Ch_queries.join
-                  (Ch_queries.from (users ~alias:"x"))
-                  (users ~alias:"y")
+                  (Ch_queries.from
+                     ((users : alias:string -> _ Ch_queries.from_one) ~alias:"x"))
+                  ((users : alias:string -> _ Ch_queries.from_one) ~alias:"y")
                   ~on:(fun ((x : _ Ch_queries.scope), (y : _ Ch_queries.scope)) ->
                     let __q =
                       object
