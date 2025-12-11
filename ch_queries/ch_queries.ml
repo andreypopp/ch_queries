@@ -529,6 +529,7 @@ module Expr = struct
   let assumeNotNull x = def "assumeNotNull" [ x ]
   let toNullable x = def "toNullable" [ x ]
   let coalesce x y = def "coalesce" [ x; y ]
+  let nullIf x y = def "nullIf" [ x; y ]
 
   (** {2 String} *)
 
@@ -543,6 +544,19 @@ module Expr = struct
   (** {2 String search} *)
 
   let like hay needle = def "like" [ hay; needle ]
+  let endsWith hay needle = def "endsWith" [ hay; needle ]
+  let startsWith hay needle = def "startsWith" [ hay; needle ]
+  let position hay needle = def "position" [ hay; needle ]
+
+  let positionCaseInsensitive hay needle =
+    def "positionCaseInsensitive" [ hay; needle ]
+
+  let positionUTF8 hay needle = def "positionUTF8" [ hay; needle ]
+
+  let positionCaseInsensitiveUTF8 hay needle =
+    def "positionCaseInsensitiveUTF8" [ hay; needle ]
+
+  let locate hay needle = def "locate" [ hay; needle ]
 
   (** {2 Type conversions} *)
 

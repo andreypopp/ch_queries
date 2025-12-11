@@ -320,6 +320,9 @@ module Expr : sig
   val coalesce : ('b, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
   val toNullable : (_, 'a) expr -> (null nullable, 'a) expr
 
+  val nullIf : ('n, 'a) expr -> ('n, 'a) expr -> (null, 'a) expr
+  (** [nullIf x y] returns NULL if [x] equals [y], otherwise returns [x]. *)
+
   (** {2 String} *)
 
   val empty : ('n, string) expr -> ('n, bool) expr
@@ -336,6 +339,32 @@ module Expr : sig
   (** {2 String search} *)
 
   val like : ('n, string) expr -> (non_null, string) expr -> ('n, bool) expr
+  val endsWith : ('n, string) expr -> (non_null, string) expr -> ('n, bool) expr
+
+  val startsWith :
+    ('n, string) expr -> (non_null, string) expr -> ('n, bool) expr
+
+  val position :
+    ('n, string) expr -> (non_null, string) expr -> ('n, int number) expr
+  (** Returns 1-indexed position of first occurrence of needle in haystack, 0 if
+      not found. *)
+
+  val positionCaseInsensitive :
+    ('n, string) expr -> (non_null, string) expr -> ('n, int number) expr
+  (** Case-insensitive version of [position]. *)
+
+  val positionUTF8 :
+    ('n, string) expr -> (non_null, string) expr -> ('n, int number) expr
+  (** UTF-8 aware version of [position]. Returns position in Unicode code
+      points. *)
+
+  val positionCaseInsensitiveUTF8 :
+    ('n, string) expr -> (non_null, string) expr -> ('n, int number) expr
+  (** Case-insensitive UTF-8 aware version of [position]. *)
+
+  val locate :
+    ('n, string) expr -> (non_null, string) expr -> ('n, int number) expr
+  (** Alias for [position]. *)
 
   (** {2 Type conversions} *)
 
