@@ -3,7 +3,8 @@
     "allow": [
       "Bash(dune build:*)",
       "Bash(dune clean:*)",
-      "Bash(dune test:*)"
+      "Bash(dune test:*)",
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": []

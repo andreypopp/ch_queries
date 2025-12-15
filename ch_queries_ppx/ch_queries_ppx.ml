@@ -90,9 +90,9 @@ let from_scope_expr ~scopes from =
   let from =
     from_scope_expr' from
     |> List.rev_map ~f:(fun (id, expr) ->
-        ( id,
-          pcf_method ~loc (located_of_id id, Public, Cfk_concrete (Fresh, expr))
-        ))
+           ( id,
+             pcf_method ~loc
+               (located_of_id id, Public, Cfk_concrete (Fresh, expr)) ))
   in
   let rec build curr_scope = function
     | [] -> failwith "impossible: should have at least FROM scope"
@@ -915,6 +915,13 @@ let expand_typ ~ctxt:_ expr =
       stage_typ typ
   | _ -> Location.raise_errorf "expected a string literal for [%%t ...]"
 
+let expand_parser ~ctxt:_ expr =
+  match expr.pexp_desc with
+  | Pexp_constant (Pconst_string (txt, loc, _)) ->
+      let typ = parse_typ ~loc txt in
+      stage_typ_to_parser typ
+  | _ -> Location.raise_errorf "expected a string literal for [%%ch.parser ...]"
+
 let expand_scope ~ctxt:_ expr =
   match expr.pexp_desc with
   | Pexp_constant (Pconst_string (txt, loc, _)) ->
@@ -1094,6 +1101,11 @@ let typ_extension name =
     Ast_pattern.(single_expr_payload __)
     expand_typ
 
+let parser_extension name =
+  Extension.V3.declare name Extension.Context.expression
+    Ast_pattern.(single_expr_payload __)
+    expand_parser
+
 let uexpr_extension name =
   Extension.V3.declare name Extension.Context.expression
     Ast_pattern.(single_expr_payload __)
@@ -1119,6 +1131,7 @@ let rules =
     Context_free.Rule.extension (expr_extension "ch.expr");
     Context_free.Rule.extension (typ_extension "ch.t");
     Context_free.Rule.extension (typ_extension "ch.type");
+    Context_free.Rule.extension (parser_extension "ch.parser");
     Context_free.Rule.extension (uexpr_extension "ch.eu");
     Context_free.Rule.extension (uexpr_extension "ch.expr_unsafe");
     Context_free.Rule.extension (select_extension "ch.select");
