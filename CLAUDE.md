@@ -31,10 +31,14 @@ The user typically runs dune build in watch mode outside Claude session):
 
 - **ch_queries/** - core libary which implements typesafe DSL combinators for query generation
 - **ch_queries_syntax/** - surface syntax + lexer/parser for the DSL
-    - **ch_queries_syntax/syntax.ml** - AST types and data structures for the DSL
-    - **ch_queries_syntax/lexer.mll** - lexer for the DSL (tokens are defined in the parser)
-    - **ch_queries_syntax/parser.mly** - parser for the DSL
-    - **ch_queries_syntax/printer.ml** - printer for the syntax, uses pprint library
+    - **syntax.ml** - AST types and data structures for the DSL
+    - **lexer.mll** - lexer for the DSL (tokens are defined in the parser)
+    - **parser.mly** - parser for the DSL
+    - **printer.ml** - printer for the syntax, uses pprint library
+    - **ulexer.mll** - lexer for unsafe expressions (`%eu`), only recognizes `$param` and `x.y` refs
+    - **uparser.mly** - parser for unsafe expressions
+    - **loc.ml** - source location types
+    - **eq_class.ml** - equivalence classes for the type system
 - **ch_queries_ppx/** - a ppx rewriter which translates surface syntax to the typesafe DSL combinators
 - **bin/** - some debug UI
 - **test/** - tests in cram format (`*.t`)
@@ -57,15 +61,16 @@ When adding new syntax to the query language, follow this pattern:
 
 1. **Add to syntax.ml**: Define the AST types for the new feature
 2. **Add to lexer.mll**: Add new keywords to the keywords table and handle in string_of_token
-3. **Add to parser.mly**: 
+3. **Add to parser.mly**:
    - Add token declarations
    - Add parsing rules
    - Include new fields in existing rules (e.g., SELECT queries)
+8. **If adding new column/param-like constructs**: Consider updating ulexer.mll/uparser.mly for `%eu` support
 4. **Update printer.ml**: Add pretty-printing support for the new syntax
 5. **Update ch_queries.ml**: Add the feature to the core DSL types and translation
 6. **Update ch_queries.mli**: Add interface signatures for new functions
 7. **Update ch_queries_ppx.ml**: Add PPX transformation support
-8. **Run `dune build`** and fix any build errors systematically
+9. **Run `dune build`** and fix any build errors systematically
 
 Always check that interface files (.mli) match implementation files (.ml) when adding new optional parameters to functions.
 
