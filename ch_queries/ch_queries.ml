@@ -845,6 +845,8 @@ module Parse = struct
 
   let bool_of_json = function
     | `Bool b -> b
+    | `Int 0 -> false
+    | `Int 1 -> true
     | json -> parse_error ~json "expected a boolean"
 
   let strptime fmt x = ExtUnix.Specific.(timegm (strptime fmt x))
