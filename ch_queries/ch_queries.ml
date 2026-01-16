@@ -820,6 +820,10 @@ module Parse = struct
 
   let int_of_json = function
     | `Int i -> i
+    | `String s as json -> (
+        match Int.of_string s with
+        | Some i -> i
+        | None -> parse_error ~json "cannot parse as integer")
     | json -> parse_error ~json "expected an integer"
 
   let int64_of_json = function

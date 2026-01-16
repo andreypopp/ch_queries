@@ -21,3 +21,15 @@ Test Parse.bool handles integer 0 and 1 as booleans:
   > ' --run-only
   >>> RUNNING
   int 0/1 as bool parsing works
+
+Test Parse.int handles stringified integers:
+
+  $ ./compile_and_run '
+  > let () =
+  >   let parse = Ch_queries.Parse.(parse int) in
+  >   assert (parse (`String "42") = 42);
+  >   assert (parse (`Int 32) = 32);
+  >   print_endline "stringified int parsing works"
+  > ' --run-only
+  >>> RUNNING
+  int 0/1 as bool parsing works
