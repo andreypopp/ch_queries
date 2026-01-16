@@ -32,4 +32,4 @@ Test Parse.int handles stringified integers:
   >   print_endline "stringified int parsing works"
   > ' --run-only
   >>> RUNNING
-  int 0/1 as bool parsing works
+  stringified int parsing works
