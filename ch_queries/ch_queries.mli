@@ -143,6 +143,24 @@ val with_cte :
   ((alias:string -> 'a scope from_one) -> 'b select) ->
   'b select
 
+type a_field = A_field : _ expr * string -> a_field
+
+val select_syntax :
+  from:'from from ->
+  ?prewhere:('from -> (_, bool) expr) ->
+  ?where:('from -> (_, bool) expr) ->
+  ?qualify:('from -> (_, bool) expr) ->
+  ?group_by:('from -> a_expr list) ->
+  ?having:('from -> (_, bool) expr) ->
+  ?order_by:('from -> (a_expr * [ `ASC | `DESC ]) list) ->
+  ?limit:('from -> (_, int number) expr) ->
+  ?offset:('from -> (_, int number) expr) ->
+  ?settings:(string * [ `Int of int | `String of string | `Bool of bool ]) list ->
+  select:('from -> a_field list) ->
+  unit ->
+  Ch_queries_syntax.Syntax.query
+(** Same as [select] but generates syntax AST which select all the fields. *)
+
 module Expr : sig
   (** {1 Regular functions} *)
 

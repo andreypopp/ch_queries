@@ -365,6 +365,43 @@ module To_syntax = struct
     Syntax.make_query (select_to_syntax q)
 end
 
+let select_syntax ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by
+    ?limit ?offset ?(settings = []) ~select () : Ch_queries_syntax.Syntax.query
+    =
+  let from = from () in
+  let inner_scope = scope_from from in
+  let prewhere =
+    Option.map (fun prewhere -> A_expr (prewhere inner_scope)) prewhere
+  in
+  let where = Option.map (fun where -> A_expr (where inner_scope)) where in
+  let qualify =
+    Option.map (fun qualify -> A_expr (qualify inner_scope)) qualify
+  in
+  let group_by = Option.map (fun group_by -> group_by inner_scope) group_by in
+  let having = Option.map (fun having -> A_expr (having inner_scope)) having in
+  let order_by = Option.map (fun order_by -> order_by inner_scope) order_by in
+  let limit = Option.map (fun limit -> A_expr (limit inner_scope)) limit in
+  let offset = Option.map (fun offset -> A_expr (offset inner_scope)) offset in
+  let select =
+    Select
+      {
+        ctes = [];
+        from = A_from from;
+        scope = ();
+        prewhere;
+        where;
+        qualify;
+        group_by;
+        having;
+        order_by;
+        limit;
+        offset;
+        settings;
+        fields = List.rev (select inner_scope);
+      }
+  in
+  To_syntax.to_syntax select
+
 let unsafe x = Syntax.make_expr (E_unsafe (Syntax.make_id x))
 let col q x = Syntax.make_expr (E_col (Syntax.make_id q, Syntax.make_id x))
 

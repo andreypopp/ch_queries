@@ -648,15 +648,15 @@ and stage_query ~on_evar ({ node; _ } as q) =
         with_fields;
         select;
         from;
-        prewhere;
-        where;
-        qualify;
-        group_by;
-        having;
-        order_by;
-        limit;
-        offset;
-        settings;
+        prewhere = _;
+        where = _;
+        qualify = _;
+        group_by = _;
+        having = _;
+        order_by = _;
+        limit = _;
+        offset = _;
+        settings = _;
       } ->
       let loc = to_location q in
       let scope_of_with, ctes =
@@ -709,6 +709,39 @@ and stage_query ~on_evar ({ node; _ } as q) =
         in
         [ (Labelled "select", select); (Labelled "from", from) ]
       in
+      let args = stage_query_args ~on_evar args q in
+      let query =
+        pexp_apply ~loc [%expr Ch_queries.select]
+          ((Nolabel, [%expr ()]) :: List.rev args)
+      in
+      let query =
+        List.fold_left (List.rev ctes) ~init:query
+          ~f:(fun query (loc, alias, query', materialized) ->
+            [%expr
+              Ch_queries.with_cte ~materialized:[%e materialized]
+                ~alias:[%e estring ~loc alias.Syntax.node] [%e query']
+                (fun [%p pvar ~loc alias.Syntax.node] -> [%e query])])
+      in
+      query
+
+and stage_query_args ~on_evar args ({ Ch_queries_syntax.Syntax.node; _ } as q) =
+  match node with
+  | Ch_queries_syntax.Syntax.Q_select
+      {
+        with_fields = _;
+        select = _;
+        from = _;
+        prewhere;
+        where;
+        qualify;
+        group_by;
+        having;
+        order_by;
+        limit;
+        offset;
+        settings;
+      } ->
+      let loc = to_location q in
       let args =
         match prewhere with
         | None -> args
@@ -796,19 +829,84 @@ and stage_query ~on_evar ({ node; _ } as q) =
             let settings_expr = stage_settings ~on_evar ~loc settings in
             (Labelled "settings", settings_expr) :: args
       in
-      let query =
-        pexp_apply ~loc [%expr Ch_queries.select]
-          ((Nolabel, [%expr ()]) :: List.rev args)
+      args
+  | Q_union _ | Q_ascribe _ | Q_param _ -> failwith "invariant violation"
+
+and stage_field_syntax ~on_evar ~from:from_ctx { Syntax.expr; alias } =
+  let loc = to_location expr in
+  let alias =
+    match alias with
+    | Some name -> name.node
+    | None -> (
+        match expr.node with
+        | E_id id -> id.node
+        | E_col (_, id) -> id.node
+        | _ ->
+            Location.raise_errorf ~loc
+              "%%ch.query_syntax: field requires an explicit alias")
+  in
+  let expr = stage_expr ~on_evar ~params:[] ~from:from_ctx expr in
+  (alias, [%expr Ch_queries.A_field ([%e expr], [%e estring ~loc alias])])
+
+and stage_query_syntax ~on_evar ({ Syntax.node; _ } as q) =
+  match node with
+  | Syntax.Q_select
+      {
+        with_fields;
+        select;
+        from;
+        prewhere = _;
+        where = _;
+        qualify = _;
+        group_by = _;
+        having = _;
+        order_by = _;
+        limit = _;
+        offset = _;
+        settings = _;
+      } ->
+      let loc = to_location q in
+      (match with_fields with
+      | [] -> ()
+      | _ ->
+          Location.raise_errorf ~loc
+            "WITH is not supported in %%ch.query_syntax");
+      let select =
+        match select with
+        | Syntax.Select_fields fields ->
+            let seen = Hashtbl.create 16 in
+            let fields =
+              List.map fields ~f:(fun field ->
+                  let alias, expr =
+                    stage_field_syntax ~on_evar ~from:From field
+                  in
+                  if Hashtbl.mem seen alias then
+                    Location.raise_errorf ~loc
+                      "%%ch.query_syntax: duplicate field alias '%s'" alias
+                  else Hashtbl.add seen alias ();
+                  expr)
+            in
+            make_hole ~loc (elist ~loc fields)
+        | Syntax.Select_splice _ ->
+            Location.raise_errorf ~loc
+              "%%ch.query_syntax: splice is not supported"
       in
-      let query =
-        List.fold_left (List.rev ctes) ~init:query
-          ~f:(fun query (loc, alias, query', materialized) ->
-            [%expr
-              Ch_queries.with_cte ~materialized:[%e materialized]
-                ~alias:[%e estring ~loc alias.Syntax.node] [%e query']
-                (fun [%p pvar ~loc alias.Syntax.node] -> [%e query])])
+      let args =
+        let from =
+          [%expr
+            Ch_queries.map_from_scope [%e stage_from ~on_evar from]
+              (fun [%p from_scope_pattern from] ->
+                [%e from_scope_expr ~scopes:[] from])]
+        in
+        [ (Labelled "select", select); (Labelled "from", from) ]
       in
-      query
+      let args = stage_query_args ~on_evar args q in
+      pexp_apply ~loc [%expr Ch_queries.select_syntax]
+        ((Nolabel, [%expr ()]) :: List.rev args)
+  | _ ->
+      let loc = to_location q in
+      Location.raise_errorf ~loc
+        "only SELECT query is supported in %%ch.query_syntax"
 
 and stage_from ~on_evar from =
   let open Syntax in
@@ -882,6 +980,13 @@ let expand_query ~ctxt:_ expr =
       let query = parse_query ~loc txt in
       stage_query ~on_evar:(Fun.const ()) query
   | _ -> Location.raise_errorf "expected a string literal for the '%%q"
+
+let expand_query_syntax ~ctxt:_ expr =
+  match expr.pexp_desc with
+  | Pexp_constant (Pconst_string (txt, loc, _)) ->
+      let query = parse_query ~loc txt in
+      stage_query_syntax ~on_evar:(Fun.const ()) query
+  | _ -> Location.raise_errorf "expected a string literal for %%ch.query_syntax"
 
 let expand_from ~ctxt:_ expr =
   match expr.pexp_desc with
@@ -1086,6 +1191,11 @@ let query_extension name =
     Ast_pattern.(single_expr_payload __)
     expand_query
 
+let query_syntax_extension name =
+  Extension.V3.declare name Extension.Context.expression
+    Ast_pattern.(single_expr_payload __)
+    expand_query_syntax
+
 let from_extension name =
   Extension.V3.declare name Extension.Context.expression
     Ast_pattern.(single_expr_payload __)
@@ -1125,6 +1235,7 @@ let rules =
   [
     Context_free.Rule.extension (query_extension "ch.q");
     Context_free.Rule.extension (query_extension "ch.query");
+    Context_free.Rule.extension (query_syntax_extension "ch.query_syntax");
     Context_free.Rule.extension (from_extension "ch.f");
     Context_free.Rule.extension (from_extension "ch.from");
     Context_free.Rule.extension (expr_extension "ch.e");
