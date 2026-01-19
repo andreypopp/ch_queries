@@ -47,8 +47,8 @@
          ignore
            (__q#q#query (fun __q ->
                 Ch_queries.Expr.coalesce
-                  (__q#profiles#query (fun __q -> __q#name))
-                  (__q#users#query (fun __q -> __q#x)))))
+                  [ __q#profiles#query (fun __q -> __q#name) ]
+                  ~else_:(__q#users#query (fun __q -> __q#x)))))
   in
   print_endline sql
   >>> RUNNING
@@ -131,8 +131,8 @@ The param within the scope receives the scope as argument:
   let q =
     q2 ~field:(fun __q ->
         Ch_queries.Expr.coalesce
-          (__q#profiles#query (fun __q -> __q#name))
-          (__q#users#query (fun __q -> __q#x)))
+          [ __q#profiles#query (fun __q -> __q#name) ]
+          ~else_:(__q#users#query (fun __q -> __q#x)))
   in
   let sql, _parse_row =
     Ch_queries.query q

@@ -357,7 +357,7 @@ module Expr : sig
   (** {2 Nullable} *)
 
   val assumeNotNull : ([< null ] nullable, 'b) expr -> (non_null, 'a) expr
-  val coalesce : ('b, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
+  val coalesce : (_, 'a) expr list -> else_:('n, 'a) expr -> ('n, 'a) expr
   val toNullable : (_, 'a) expr -> (null nullable, 'a) expr
 
   val nullIf : ('n, 'a) expr -> ('n, 'a) expr -> (null, 'a) expr

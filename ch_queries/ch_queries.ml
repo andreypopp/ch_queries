@@ -593,7 +593,7 @@ module Expr = struct
 
   let assumeNotNull x = def "assumeNotNull" [ x ]
   let toNullable x = def "toNullable" [ x ]
-  let coalesce x y = def "coalesce" [ x; y ]
+  let coalesce xs ~else_ = def "coalesce" (xs @ [ else_ ])
   let nullIf x y = def "nullIf" [ x; y ]
 
   (** {2 String} *)

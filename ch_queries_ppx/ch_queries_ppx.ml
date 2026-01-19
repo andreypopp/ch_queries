@@ -536,6 +536,29 @@ let rec stage_expr ~on_evar ~params ~(from : from_ctx) expr =
               (Nolabel, elist ~loc args);
               (Labelled "else_", stage_expr ~on_evar ~params ~from else_);
             ]
+      | Func ({ node = "coalesce"; _ } as name) ->
+          let args, else_ =
+            let rec loop args =
+              match args with
+              | [] ->
+                  Location.raise_errorf ~loc "coalesce(..): empty argument list"
+              | [ else_ ] -> ([], else_)
+              | x :: args ->
+                  let xs, else_ = loop args in
+                  (x :: xs, else_)
+            in
+            loop args
+          in
+          let f =
+            let loc = to_location name in
+            map_operator_to_expr ~loc name.node (List.length args)
+          in
+          let args = List.map args ~f:(stage_expr ~on_evar ~params ~from) in
+          pexp_apply ~loc f
+            [
+              (Nolabel, elist ~loc args);
+              (Labelled "else_", stage_expr ~on_evar ~params ~from else_);
+            ]
       | Func name ->
           let f =
             let loc = to_location name in

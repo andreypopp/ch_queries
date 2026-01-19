@@ -14,8 +14,8 @@ function calls of the form `FUNCTION_NAME(..)` resolve to `Ch_queries.Expr.FUNCT
   >>> PREPROCESSING
   let x __q =
     Ch_queries.Expr.coalesce
-      (__q#users#query (fun __q -> __q#x))
-      (Ch_queries.int 1)
+      [ __q#users#query (fun __q -> __q#x) ]
+      ~else_:(Ch_queries.int 1)
   >>> RUNNING
 
 AND/OR operators:
