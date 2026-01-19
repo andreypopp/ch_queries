@@ -17,7 +17,7 @@ type ('nullk, 'k, 'nullv, 'v) map = private A_map
 type ('null, 'a) typ = private A_typ
 type ('x, 'y) tuple2 = private A_tuple2
 type interval = private Interval
-type 'a agg_state = private Agg_state
+type ('n, 'a) agg_state = private Agg_state
 
 type (+'null, +'typ) expr = Syntax.expr
 
@@ -678,10 +678,8 @@ module Expr = struct
 
   let any x = def "any" [ x ]
   let anyLast x = def "anyLast" [ x ]
-
   let argMin arg val_ = def "argMin" [ arg; val_ ]
   let argMax arg val_ = def "argMax" [ arg; val_ ]
-
   let groupArray x = def "groupArray" [ x ]
   let groupUniqArray x = def "groupUniqArray" [ x ]
 

@@ -20,7 +20,7 @@ type date = private Date
 type datetime = private DateTime
 type datetime64 = private DateTime64
 type interval = private Interval
-type 'a agg_state = private Agg_state
+type ('n, 'a) agg_state = private Agg_state
 
 type (+'null, +'typ) expr
 (** An SQL expression. *)
@@ -489,9 +489,14 @@ module Expr : sig
 
   (** {2 Aggregate functions with -If suffix} *)
 
-  val avgIf : ('n, 't number) expr -> (_, bool) expr -> (non_null, 't number) expr
+  val avgIf :
+    ('n, 't number) expr -> (_, bool) expr -> (non_null, 't number) expr
+
   val countIf : ('n, _) expr -> (_, bool) expr -> (non_null, int64 number) expr
-  val sumIf : ('n, 't number) expr -> (_, bool) expr -> (non_null, 't number) expr
+
+  val sumIf :
+    ('n, 't number) expr -> (_, bool) expr -> (non_null, 't number) expr
+
   val uniqIf : ('n, _) expr -> (_, bool) expr -> (non_null, int64 number) expr
   val minIf : ('n, 'a) expr -> (_, bool) expr -> ('n, 'a) expr
   val maxIf : ('n, 'a) expr -> (_, bool) expr -> ('n, 'a) expr
@@ -499,53 +504,130 @@ module Expr : sig
   val anyLastIf : ('n, 'a) expr -> (_, bool) expr -> ('n, 'a) expr
   val argMinIf : ('n, 'a) expr -> (_, _) expr -> (_, bool) expr -> ('n, 'a) expr
   val argMaxIf : ('n, 'a) expr -> (_, _) expr -> (_, bool) expr -> ('n, 'a) expr
-  val groupArrayIf : ('n, 'a) expr -> (_, bool) expr -> (non_null, ('n, 'a) array) expr
-  val groupUniqArrayIf : ('n, 'a) expr -> (_, bool) expr -> (non_null, ('n, 'a) array) expr
+
+  val groupArrayIf :
+    ('n, 'a) expr -> (_, bool) expr -> (non_null, ('n, 'a) array) expr
+
+  val groupUniqArrayIf :
+    ('n, 'a) expr -> (_, bool) expr -> (non_null, ('n, 'a) array) expr
 
   (** {2 Aggregate functions with -State suffix} *)
 
-  val avgState : ('n, 't number) expr -> (non_null, 't number agg_state) expr
-  val countState : ('n, _) expr -> (non_null, int64 number agg_state) expr
-  val sumState : ('n, 't number) expr -> (non_null, 't number agg_state) expr
-  val uniqState : ('n, _) expr -> (non_null, int64 number agg_state) expr
-  val minState : ('n, 'a) expr -> (non_null, 'a agg_state) expr
-  val maxState : ('n, 'a) expr -> (non_null, 'a agg_state) expr
-  val anyState : ('n, 'a) expr -> (non_null, 'a agg_state) expr
-  val anyLastState : ('n, 'a) expr -> (non_null, 'a agg_state) expr
-  val argMinState : ('n, 'a) expr -> (_, _) expr -> (non_null, 'a agg_state) expr
-  val argMaxState : ('n, 'a) expr -> (_, _) expr -> (non_null, 'a agg_state) expr
-  val groupArrayState : ('n, 'a) expr -> (non_null, ('n, 'a) array agg_state) expr
-  val groupUniqArrayState : ('n, 'a) expr -> (non_null, ('n, 'a) array agg_state) expr
+  val avgState :
+    ('n, 't number) expr -> (non_null, (non_null, 't number) agg_state) expr
+
+  val countState :
+    ('n, _) expr -> (non_null, (non_null, int64 number) agg_state) expr
+
+  val sumState :
+    ('n, 't number) expr -> (non_null, (non_null, 't number) agg_state) expr
+
+  val uniqState :
+    ('n, _) expr -> (non_null, (non_null, int64 number) agg_state) expr
+
+  val minState : ('n, 'a) expr -> (non_null, ('n, 'a) agg_state) expr
+  val maxState : ('n, 'a) expr -> (non_null, ('n, 'a) agg_state) expr
+  val anyState : ('n, 'a) expr -> (non_null, ('n, 'a) agg_state) expr
+  val anyLastState : ('n, 'a) expr -> (non_null, ('n, 'a) agg_state) expr
+
+  val argMinState :
+    ('n, 'a) expr -> (_, _) expr -> (non_null, ('n, 'a) agg_state) expr
+
+  val argMaxState :
+    ('n, 'a) expr -> (_, _) expr -> (non_null, ('n, 'a) agg_state) expr
+
+  val groupArrayState :
+    ('n, 'a) expr -> (non_null, (non_null, ('n, 'a) array) agg_state) expr
+
+  val groupUniqArrayState :
+    ('n, 'a) expr -> (non_null, (non_null, ('n, 'a) array) agg_state) expr
 
   (** {2 Aggregate functions with -StateIf suffix} *)
 
-  val avgStateIf : ('n, 't number) expr -> (_, bool) expr -> (non_null, 't number agg_state) expr
-  val countStateIf : ('n, _) expr -> (_, bool) expr -> (non_null, int64 number agg_state) expr
-  val sumStateIf : ('n, 't number) expr -> (_, bool) expr -> (non_null, 't number agg_state) expr
-  val uniqStateIf : ('n, _) expr -> (_, bool) expr -> (non_null, int64 number agg_state) expr
-  val minStateIf : ('n, 'a) expr -> (_, bool) expr -> (non_null, 'a agg_state) expr
-  val maxStateIf : ('n, 'a) expr -> (_, bool) expr -> (non_null, 'a agg_state) expr
-  val anyStateIf : ('n, 'a) expr -> (_, bool) expr -> (non_null, 'a agg_state) expr
-  val anyLastStateIf : ('n, 'a) expr -> (_, bool) expr -> (non_null, 'a agg_state) expr
-  val argMinStateIf : ('n, 'a) expr -> (_, _) expr -> (_, bool) expr -> (non_null, 'a agg_state) expr
-  val argMaxStateIf : ('n, 'a) expr -> (_, _) expr -> (_, bool) expr -> (non_null, 'a agg_state) expr
-  val groupArrayStateIf : ('n, 'a) expr -> (_, bool) expr -> (non_null, ('n, 'a) array agg_state) expr
-  val groupUniqArrayStateIf : ('n, 'a) expr -> (_, bool) expr -> (non_null, ('n, 'a) array agg_state) expr
+  val avgStateIf :
+    ('n, 't number) expr ->
+    (_, bool) expr ->
+    (non_null, (non_null, 't number) agg_state) expr
+
+  val countStateIf :
+    ('n, _) expr ->
+    (_, bool) expr ->
+    (non_null, (non_null, int64 number) agg_state) expr
+
+  val sumStateIf :
+    ('n, 't number) expr ->
+    (_, bool) expr ->
+    (non_null, (non_null, 't number) agg_state) expr
+
+  val uniqStateIf :
+    ('n, _) expr ->
+    (_, bool) expr ->
+    (non_null, (non_null, int64 number) agg_state) expr
+
+  val minStateIf :
+    ('n, 'a) expr -> (_, bool) expr -> (non_null, ('n, 'a) agg_state) expr
+
+  val maxStateIf :
+    ('n, 'a) expr -> (_, bool) expr -> (non_null, ('n, 'a) agg_state) expr
+
+  val anyStateIf :
+    ('n, 'a) expr -> (_, bool) expr -> (non_null, ('n, 'a) agg_state) expr
+
+  val anyLastStateIf :
+    ('n, 'a) expr -> (_, bool) expr -> (non_null, ('n, 'a) agg_state) expr
+
+  val argMinStateIf :
+    ('n, 'a) expr ->
+    (_, _) expr ->
+    (_, bool) expr ->
+    (non_null, ('n, 'a) agg_state) expr
+
+  val argMaxStateIf :
+    ('n, 'a) expr ->
+    (_, _) expr ->
+    (_, bool) expr ->
+    (non_null, ('n, 'a) agg_state) expr
+
+  val groupArrayStateIf :
+    ('n, 'a) expr ->
+    (_, bool) expr ->
+    (non_null, (non_null, ('n, 'a) array) agg_state) expr
+
+  val groupUniqArrayStateIf :
+    ('n, 'a) expr ->
+    (_, bool) expr ->
+    (non_null, (non_null, ('n, 'a) array) agg_state) expr
 
   (** {2 Aggregate functions with -Merge suffix} *)
 
-  val avgMerge : (_, 't number agg_state) expr -> (non_null, 't number) expr
-  val countMerge : (_, int64 number agg_state) expr -> (non_null, int64 number) expr
-  val sumMerge : (_, 't number agg_state) expr -> (non_null, 't number) expr
-  val uniqMerge : (_, int64 number agg_state) expr -> (non_null, int64 number) expr
-  val minMerge : (_, 'a agg_state) expr -> (non_null, 'a) expr
-  val maxMerge : (_, 'a agg_state) expr -> (non_null, 'a) expr
-  val anyMerge : (_, 'a agg_state) expr -> (non_null, 'a) expr
-  val anyLastMerge : (_, 'a agg_state) expr -> (non_null, 'a) expr
-  val argMinMerge : (_, 'a agg_state) expr -> (non_null, 'a) expr
-  val argMaxMerge : (_, 'a agg_state) expr -> (non_null, 'a) expr
-  val groupArrayMerge : (_, ('n, 'a) array agg_state) expr -> (non_null, ('n, 'a) array) expr
-  val groupUniqArrayMerge : (_, ('n, 'a) array agg_state) expr -> (non_null, ('n, 'a) array) expr
+  val avgMerge :
+    (_, (non_null, 't number) agg_state) expr -> (non_null, 't number) expr
+
+  val countMerge :
+    (_, (non_null, int64 number) agg_state) expr ->
+    (non_null, int64 number) expr
+
+  val sumMerge :
+    (_, (non_null, 't number) agg_state) expr -> (non_null, 't number) expr
+
+  val uniqMerge :
+    (_, (non_null, int64 number) agg_state) expr ->
+    (non_null, int64 number) expr
+
+  val minMerge : (_, ('n, 'a) agg_state) expr -> ('n, 'a) expr
+  val maxMerge : (_, ('n, 'a) agg_state) expr -> ('n, 'a) expr
+  val anyMerge : (_, ('n, 'a) agg_state) expr -> ('n, 'a) expr
+  val anyLastMerge : (_, ('n, 'a) agg_state) expr -> ('n, 'a) expr
+  val argMinMerge : (_, ('n, 'a) agg_state) expr -> ('n, 'a) expr
+  val argMaxMerge : (_, ('n, 'a) agg_state) expr -> ('n, 'a) expr
+
+  val groupArrayMerge :
+    (_, (non_null, ('n, 'a) array) agg_state) expr ->
+    (non_null, ('n, 'a) array) expr
+
+  val groupUniqArrayMerge :
+    (_, (non_null, ('n, 'a) array) agg_state) expr ->
+    (non_null, ('n, 'a) array) expr
 end
 
 type json =
