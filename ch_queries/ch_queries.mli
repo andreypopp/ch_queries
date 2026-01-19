@@ -314,7 +314,18 @@ module Expr : sig
   val toStartOfDay : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
   val toStartOfHour : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
   val toStartOfMinute : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
+
+  val toStartOfInterval :
+    ('n, 'a timestamp) expr ->
+    (non_null, interval) expr ->
+    ('n, 'a timestamp) expr
+
   val fromUnixTimestamp : ('n, _ number) expr -> ('n, datetime timestamp) expr
+  val toIntervalHour : ('n, int number) expr -> ('n, interval) expr
+  val toIntervalDay : ('n, int number) expr -> ('n, interval) expr
+  val toIntervalWeek : ('n, int number) expr -> ('n, interval) expr
+  val toIntervalMonth : ('n, int number) expr -> ('n, interval) expr
+  val toIntervalYear : ('n, int number) expr -> ('n, interval) expr
 
   (** {2 Logical} *)
 
@@ -386,6 +397,13 @@ module Expr : sig
   val locate :
     ('n, string) expr -> (non_null, string) expr -> ('n, int number) expr
   (** Alias for [position]. *)
+
+  val multiSearchFirstPosition :
+    ('n, string) expr ->
+    (non_null, (non_null, string) array) expr ->
+    ('n, int number) expr
+  (** Returns the leftmost offset in a haystack string which matches any of
+      multiple needle strings, otherwise 0, if there was no match *)
 
   (** {2 Type conversions} *)
 

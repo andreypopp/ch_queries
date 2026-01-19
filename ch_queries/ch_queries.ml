@@ -553,6 +553,12 @@ module Expr = struct
   let toStartOfHour datetime = def "toStartOfHour" [ datetime ]
   let toStartOfMinute datetime = def "toStartOfMinute" [ datetime ]
   let fromUnixTimestamp x = def "fromUnixTimestamp" [ x ]
+  let toIntervalHour x = def "toIntervalHour" [ x ]
+  let toIntervalDay x = def "toIntervalDay" [ x ]
+  let toIntervalWeek x = def "toIntervalWeek" [ x ]
+  let toIntervalMonth x = def "toIntervalMonth" [ x ]
+  let toIntervalYear x = def "toIntervalYear" [ x ]
+  let toStartOfInterval x interval = def "toStartOfInterval" [ x; interval ]
 
   (** {2 Logical} *)
   let ( && ) x y = def "AND" [ x; y ]
@@ -608,6 +614,9 @@ module Expr = struct
     def "positionCaseInsensitiveUTF8" [ hay; needle ]
 
   let locate hay needle = def "locate" [ hay; needle ]
+
+  let multiSearchFirstPosition hay needle =
+    def "multiSearchFirstPosition" [ hay; needle ]
 
   (** {2 Type conversions} *)
 
