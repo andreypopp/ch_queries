@@ -5,7 +5,10 @@
       "Bash(dune clean:*)",
       "Bash(dune test:*)",
       "Bash(test:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Skill(clickhouse-know-how)",
+      "WebFetch(domain:clickhouse.com)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []

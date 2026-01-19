@@ -17,6 +17,7 @@ type ('nullk, 'k, 'nullv, 'v) map = private A_map
 type ('null, 'a) typ = private A_typ
 type ('x, 'y) tuple2 = private A_tuple2
 type interval = private Interval
+type 'a agg_state = private Agg_state
 
 type (+'null, +'typ) expr = Syntax.expr
 
@@ -626,10 +627,16 @@ module Expr = struct
   let multiSearchFirstPosition hay needle =
     def "multiSearchFirstPosition" [ hay; needle ]
 
+  (** {2 URL functions} *)
+
+  let extractURLParameter url name = def "extractURLParameter" [ url; name ]
+
   (** {2 Type conversions} *)
 
   let toInt64 x = def "toInt64" [ x ]
   let toUInt64 x = def "toUInt64" [ x ]
+  let toString x = def "toString" [ x ]
+  let isFinite x = def "isFinite" [ x ]
 
   (** {1 Aggregate functions} *)
 
@@ -662,6 +669,81 @@ module Expr = struct
 
   let uniq ?partition_by ?order_by x =
     make_window ?partition_by ?order_by "uniq" [ x ]
+
+  let min ?partition_by ?order_by x =
+    make_window ?partition_by ?order_by "min" [ x ]
+
+  let max ?partition_by ?order_by x =
+    make_window ?partition_by ?order_by "max" [ x ]
+
+  let any x = def "any" [ x ]
+  let anyLast x = def "anyLast" [ x ]
+
+  let argMin arg val_ = def "argMin" [ arg; val_ ]
+  let argMax arg val_ = def "argMax" [ arg; val_ ]
+
+  let groupArray x = def "groupArray" [ x ]
+  let groupUniqArray x = def "groupUniqArray" [ x ]
+
+  (** {2 Aggregate functions with -If suffix} *)
+
+  let avgIf x cond = def "avgIf" [ x; cond ]
+  let countIf x cond = def "countIf" [ x; cond ]
+  let sumIf x cond = def "sumIf" [ x; cond ]
+  let uniqIf x cond = def "uniqIf" [ x; cond ]
+  let minIf x cond = def "minIf" [ x; cond ]
+  let maxIf x cond = def "maxIf" [ x; cond ]
+  let anyIf x cond = def "anyIf" [ x; cond ]
+  let anyLastIf x cond = def "anyLastIf" [ x; cond ]
+  let argMinIf arg val_ cond = def "argMinIf" [ arg; val_; cond ]
+  let argMaxIf arg val_ cond = def "argMaxIf" [ arg; val_; cond ]
+  let groupArrayIf x cond = def "groupArrayIf" [ x; cond ]
+  let groupUniqArrayIf x cond = def "groupUniqArrayIf" [ x; cond ]
+
+  (** {2 Aggregate functions with -State suffix} *)
+
+  let avgState x = def "avgState" [ x ]
+  let countState x = def "countState" [ x ]
+  let sumState x = def "sumState" [ x ]
+  let uniqState x = def "uniqState" [ x ]
+  let minState x = def "minState" [ x ]
+  let maxState x = def "maxState" [ x ]
+  let anyState x = def "anyState" [ x ]
+  let anyLastState x = def "anyLastState" [ x ]
+  let argMinState arg val_ = def "argMinState" [ arg; val_ ]
+  let argMaxState arg val_ = def "argMaxState" [ arg; val_ ]
+  let groupArrayState x = def "groupArrayState" [ x ]
+  let groupUniqArrayState x = def "groupUniqArrayState" [ x ]
+
+  (** {2 Aggregate functions with -StateIf suffix} *)
+
+  let avgStateIf x cond = def "avgStateIf" [ x; cond ]
+  let countStateIf x cond = def "countStateIf" [ x; cond ]
+  let sumStateIf x cond = def "sumStateIf" [ x; cond ]
+  let uniqStateIf x cond = def "uniqStateIf" [ x; cond ]
+  let minStateIf x cond = def "minStateIf" [ x; cond ]
+  let maxStateIf x cond = def "maxStateIf" [ x; cond ]
+  let anyStateIf x cond = def "anyStateIf" [ x; cond ]
+  let anyLastStateIf x cond = def "anyLastStateIf" [ x; cond ]
+  let argMinStateIf arg val_ cond = def "argMinStateIf" [ arg; val_; cond ]
+  let argMaxStateIf arg val_ cond = def "argMaxStateIf" [ arg; val_; cond ]
+  let groupArrayStateIf x cond = def "groupArrayStateIf" [ x; cond ]
+  let groupUniqArrayStateIf x cond = def "groupUniqArrayStateIf" [ x; cond ]
+
+  (** {2 Aggregate functions with -Merge suffix} *)
+
+  let avgMerge x = def "avgMerge" [ x ]
+  let countMerge x = def "countMerge" [ x ]
+  let sumMerge x = def "sumMerge" [ x ]
+  let uniqMerge x = def "uniqMerge" [ x ]
+  let minMerge x = def "minMerge" [ x ]
+  let maxMerge x = def "maxMerge" [ x ]
+  let anyMerge x = def "anyMerge" [ x ]
+  let anyLastMerge x = def "anyLastMerge" [ x ]
+  let argMinMerge x = def "argMinMerge" [ x ]
+  let argMaxMerge x = def "argMaxMerge" [ x ]
+  let groupArrayMerge x = def "groupArrayMerge" [ x ]
+  let groupUniqArrayMerge x = def "groupUniqArrayMerge" [ x ]
 end
 
 let in_ x xs =
