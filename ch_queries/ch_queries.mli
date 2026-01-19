@@ -164,6 +164,9 @@ val select_syntax :
   Ch_queries_syntax.Syntax.query
 (** Same as [select] but generates syntax AST which select all the fields. *)
 
+val expr_to_syntax : _ expr -> Ch_queries_syntax.Syntax.expr
+(** Convert an expression to syntax AST. *)
+
 module Expr : sig
   (** {1 Regular functions} *)
 
@@ -224,6 +227,11 @@ module Expr : sig
   (** {2 Conditional} *)
 
   val if_ : ('n, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
+
+  val multiIf :
+    ((non_null, bool) expr * ('n, 'a) expr) list ->
+    else_:('n, 'a) expr ->
+    ('n, 'a) expr
 
   (** {2 Comparisons} *)
 

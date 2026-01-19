@@ -414,6 +414,7 @@ let select_syntax ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by
   in
   To_syntax.to_syntax select
 
+let expr_to_syntax x = x
 let unsafe x = Syntax.make_expr (E_unsafe (Syntax.make_id x))
 
 let unsafe_col q x =
@@ -503,6 +504,13 @@ module Expr = struct
 
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]
+
+  let multiIf cases ~else_ =
+    let args =
+      List.concat_map cases ~f:(fun (cond, result) -> [ cond; result ])
+      @ [ else_ ]
+    in
+    def "multiIf" args
 
   (** {2 Comparisons} *)
   let equals x y = def "=" [ x; y ]

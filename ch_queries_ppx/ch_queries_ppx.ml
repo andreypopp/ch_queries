@@ -370,6 +370,7 @@ let map_operator_to_expr ~loc op arity =
   | ">=", 2 -> [%expr Ch_queries.Expr.( >= )]
   | "<=", 2 -> [%expr Ch_queries.Expr.( <= )]
   | "!=", 2 -> [%expr Ch_queries.Expr.( != )]
+  | "if", 3 -> [%expr Ch_queries.Expr.(if_)]
   | name, _ -> evar ~loc ("Ch_queries.Expr." ^ name)
 
 let adjust_location_for_ocaml_expr loc =
@@ -498,6 +499,43 @@ let rec stage_expr ~on_evar ~params ~(from : from_ctx) expr =
                       ])
           in
           eapply ~loc f [ elist ~loc args ]
+      | Func ({ node = "multiIf"; _ } as name) ->
+          let args, else_ =
+            let rec loop args =
+              match args with
+              | [] ->
+                  Location.raise_errorf ~loc
+                    "multiIf(k, v, ...): even number of arguments, missing \
+                     else branch"
+              | k :: v :: args ->
+                  let cases, else_ = loop args in
+                  ((k, v) :: cases, else_)
+              | [ else_ ] -> ([], else_)
+            in
+            loop args
+          in
+          let f =
+            let loc = to_location name in
+            map_operator_to_expr ~loc name.node (List.length args)
+          in
+          let args =
+            match args with
+            | [] ->
+                Location.raise_errorf ~loc
+                  "multiIf(...) requires at least one case"
+            | args ->
+                List.map args ~f:(fun (k, v) ->
+                    pexp_tuple ~loc
+                      [
+                        stage_expr ~on_evar ~params ~from k;
+                        stage_expr ~on_evar ~params ~from v;
+                      ])
+          in
+          pexp_apply ~loc f
+            [
+              (Nolabel, elist ~loc args);
+              (Labelled "else_", stage_expr ~on_evar ~params ~from else_);
+            ]
       | Func name ->
           let f =
             let loc = to_location name in
