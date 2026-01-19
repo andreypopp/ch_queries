@@ -330,6 +330,7 @@ module Expr : sig
     ('n, 'a timestamp) expr
 
   val fromUnixTimestamp : ('n, _ number) expr -> ('n, datetime timestamp) expr
+  val toIntervalMinute : ('n, int number) expr -> ('n, interval) expr
   val toIntervalHour : ('n, int number) expr -> ('n, interval) expr
   val toIntervalDay : ('n, int number) expr -> ('n, interval) expr
   val toIntervalWeek : ('n, int number) expr -> ('n, interval) expr
@@ -368,6 +369,8 @@ module Expr : sig
 
   val empty : ('n, string) expr -> ('n, bool) expr
   val notEmpty : ('n, string) expr -> ('n, bool) expr
+  val lowerUTF8 : ('n, string) expr -> ('n, string) expr
+  val match_ : ('n, string) expr -> (non_null, string) expr -> ('n, bool) expr
 
   (** {2 String replacement} *)
 
@@ -421,15 +424,27 @@ module Expr : sig
   (** Returns the value of the 'name' parameter in the URL, if present,
       otherwise an empty string. *)
 
+  val decodeURLComponent : ('n, string) expr -> ('n, string) expr
+  (** Decodes a URL-encoded string. *)
+
   (** {2 Type conversions} *)
 
   val toInt64 : ('n, _) expr -> ('n, int64 number) expr
   val toUInt64 : ('n, _) expr -> ('n, uint64 number) expr
+  val toUInt32 : ('n, _) expr -> ('n, int number) expr
+
+  val toUInt32OrDefault :
+    ('n, _) expr -> (non_null, int number) expr -> (non_null, int number) expr
+
+  val toFloat64 : ('n, _) expr -> ('n, float number) expr
   val toString : ('n, _) expr -> ('n, string) expr
 
   val isFinite : ('n, float number) expr -> ('n, bool) expr
   (** Returns 1 if the Float32/Float64 argument is not infinite and not NaN,
       otherwise returns 0. *)
+
+  val isNotNull : ('n, _) expr -> (non_null, bool) expr
+  (** Returns 1 if the argument is not NULL, 0 otherwise. *)
 
   (** {1 Aggregate functions} *)
 
@@ -452,6 +467,12 @@ module Expr : sig
     (non_null, 't number) expr
 
   val uniq :
+    ?partition_by:a_expr list ->
+    ?order_by:(a_expr * [ `ASC | `DESC ]) list ->
+    ('n, _) expr ->
+    (non_null, int64 number) expr
+
+  val uniqExact :
     ?partition_by:a_expr list ->
     ?order_by:(a_expr * [ `ASC | `DESC ]) list ->
     ('n, _) expr ->
@@ -523,6 +544,9 @@ module Expr : sig
     ('n, 't number) expr -> (non_null, (non_null, 't number) agg_state) expr
 
   val uniqState :
+    ('n, _) expr -> (non_null, (non_null, int64 number) agg_state) expr
+
+  val uniqExactState :
     ('n, _) expr -> (non_null, (non_null, int64 number) agg_state) expr
 
   val minState : ('n, 'a) expr -> (non_null, ('n, 'a) agg_state) expr
@@ -614,6 +638,10 @@ module Expr : sig
     (_, (non_null, int64 number) agg_state) expr ->
     (non_null, int64 number) expr
 
+  val uniqExactMerge :
+    (_, (non_null, int64 number) agg_state) expr ->
+    (non_null, int64 number) expr
+
   val minMerge : (_, ('n, 'a) agg_state) expr -> ('n, 'a) expr
   val maxMerge : (_, ('n, 'a) agg_state) expr -> ('n, 'a) expr
   val anyMerge : (_, ('n, 'a) agg_state) expr -> ('n, 'a) expr
@@ -628,6 +656,45 @@ module Expr : sig
   val groupUniqArrayMerge :
     (_, (non_null, ('n, 'a) array) agg_state) expr ->
     (non_null, ('n, 'a) array) expr
+
+  (** {2 Aggregate combinators} *)
+
+  val finalizeAggregation : (_, ('n, 'a) agg_state) expr -> ('n, 'a) expr
+  (** Converts an aggregate function state to its final result. *)
+
+  val sumForEach :
+    ('n, (non_null, 't number) array) expr ->
+    (non_null, (non_null, 't number) array) expr
+  (** Applies sum to each element across arrays. *)
+
+  val sumMap :
+    ('n, 'k) expr ->
+    ('n, 'v number) expr ->
+    (non_null, ('n, 'k, non_null, 'v number) map) expr
+  (** Sums values for each key across rows. *)
+
+  val sumMapState :
+    ('n, 'k) expr ->
+    ('n, 'v number) expr ->
+    (non_null, (non_null, ('n, 'k, non_null, 'v number) map) agg_state) expr
+  (** sumMap with State combinator. *)
+
+  val sumMapMerge :
+    (_, (non_null, ('nk, 'k, 'nv, 'v number) map) agg_state) expr ->
+    (non_null, ('nk, 'k, 'nv, 'v number) map) expr
+  (** sumMap with Merge combinator. *)
+
+  val sumMapMergeState :
+    ('n, 'k) expr ->
+    ('n, 'v number) expr ->
+    (non_null, (non_null, ('n, 'k, non_null, 'v number) map) agg_state) expr
+  (** sumMap with Merge and State combinators. *)
+
+  val avgMergeStateIf :
+    (_, (non_null, 't number) agg_state) expr ->
+    (_, bool) expr ->
+    (non_null, (non_null, 't number) agg_state) expr
+  (** avgMerge with State and If combinators. *)
 end
 
 type json =

@@ -562,6 +562,7 @@ module Expr = struct
   let toStartOfHour datetime = def "toStartOfHour" [ datetime ]
   let toStartOfMinute datetime = def "toStartOfMinute" [ datetime ]
   let fromUnixTimestamp x = def "fromUnixTimestamp" [ x ]
+  let toIntervalMinute x = def "toIntervalMinute" [ x ]
   let toIntervalHour x = def "toIntervalHour" [ x ]
   let toIntervalDay x = def "toIntervalDay" [ x ]
   let toIntervalWeek x = def "toIntervalWeek" [ x ]
@@ -601,6 +602,8 @@ module Expr = struct
 
   let empty str = def "empty" [ str ]
   let notEmpty str = def "notEmpty" [ str ]
+  let lowerUTF8 str = def "lowerUTF8" [ str ]
+  let match_ hay pattern = def "match" [ hay; pattern ]
 
   (** {2 String replacement} *)
 
@@ -630,13 +633,18 @@ module Expr = struct
   (** {2 URL functions} *)
 
   let extractURLParameter url name = def "extractURLParameter" [ url; name ]
+  let decodeURLComponent url = def "decodeURLComponent" [ url ]
 
   (** {2 Type conversions} *)
 
   let toInt64 x = def "toInt64" [ x ]
   let toUInt64 x = def "toUInt64" [ x ]
+  let toUInt32 x = def "toUInt32" [ x ]
+  let toUInt32OrDefault x default = def "toUInt32OrDefault" [ x; default ]
+  let toFloat64 x = def "toFloat64" [ x ]
   let toString x = def "toString" [ x ]
   let isFinite x = def "isFinite" [ x ]
+  let isNotNull x = def "isNotNull" [ x ]
 
   (** {1 Aggregate functions} *)
 
@@ -669,6 +677,9 @@ module Expr = struct
 
   let uniq ?partition_by ?order_by x =
     make_window ?partition_by ?order_by "uniq" [ x ]
+
+  let uniqExact ?partition_by ?order_by x =
+    make_window ?partition_by ?order_by "uniqExact" [ x ]
 
   let min ?partition_by ?order_by x =
     make_window ?partition_by ?order_by "min" [ x ]
@@ -704,6 +715,7 @@ module Expr = struct
   let countState x = def "countState" [ x ]
   let sumState x = def "sumState" [ x ]
   let uniqState x = def "uniqState" [ x ]
+  let uniqExactState x = def "uniqExactState" [ x ]
   let minState x = def "minState" [ x ]
   let maxState x = def "maxState" [ x ]
   let anyState x = def "anyState" [ x ]
@@ -734,6 +746,7 @@ module Expr = struct
   let countMerge x = def "countMerge" [ x ]
   let sumMerge x = def "sumMerge" [ x ]
   let uniqMerge x = def "uniqMerge" [ x ]
+  let uniqExactMerge x = def "uniqExactMerge" [ x ]
   let minMerge x = def "minMerge" [ x ]
   let maxMerge x = def "maxMerge" [ x ]
   let anyMerge x = def "anyMerge" [ x ]
@@ -742,6 +755,16 @@ module Expr = struct
   let argMaxMerge x = def "argMaxMerge" [ x ]
   let groupArrayMerge x = def "groupArrayMerge" [ x ]
   let groupUniqArrayMerge x = def "groupUniqArrayMerge" [ x ]
+
+  (** {2 Aggregate combinators} *)
+
+  let finalizeAggregation x = def "finalizeAggregation" [ x ]
+  let sumForEach x = def "sumForEach" [ x ]
+  let sumMap keys values = def "sumMap" [ keys; values ]
+  let sumMapState keys values = def "sumMapState" [ keys; values ]
+  let sumMapMerge x = def "sumMapMerge" [ x ]
+  let sumMapMergeState keys values = def "sumMapMergeState" [ keys; values ]
+  let avgMergeStateIf x cond = def "avgMergeStateIf" [ x; cond ]
 end
 
 let in_ x xs =
