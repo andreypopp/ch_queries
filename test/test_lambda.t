@@ -39,8 +39,6 @@ test IN expression with subquery:
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q._1
-  FROM (
-    SELECT length(arrayFilter((x -> (x = 1)), users.xs)) AS _1
-    FROM public.users AS users) AS q
+  SELECT length(arrayFilter((x -> (x = 1)), users.xs)) AS _1
+  FROM public.users AS users
 

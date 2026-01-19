@@ -29,8 +29,7 @@ ORDER BY single column (default ASC):
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q.x
-  FROM (SELECT users.x AS x FROM public.users AS users ORDER BY users.x ASC) AS q
+  SELECT users.x AS x FROM public.users AS users ORDER BY users.x ASC
 
 ORDER BY with DESC:
   $ ./compile_and_run '
@@ -63,8 +62,7 @@ ORDER BY with DESC:
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q.x
-  FROM (SELECT users.x AS x FROM public.users AS users ORDER BY users.x DESC) AS q
+  SELECT users.x AS x FROM public.users AS users ORDER BY users.x DESC
 
 ORDER BY multiple columns:
   $ ./compile_and_run '
@@ -100,11 +98,9 @@ ORDER BY multiple columns:
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q.x
-  FROM (
-    SELECT users.x AS x
-    FROM public.users AS users
-    ORDER BY users.x ASC, users.id DESC) AS q
+  SELECT users.x AS x
+  FROM public.users AS users
+  ORDER BY users.x ASC, users.id DESC
 
 ORDER BY with a parameter:
   $ ./compile_and_run '

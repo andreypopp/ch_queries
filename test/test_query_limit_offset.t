@@ -27,7 +27,7 @@ LIMIT with literal value:
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q.x FROM (SELECT users.x AS x FROM public.users AS users LIMIT 1) AS q
+  SELECT users.x AS x FROM public.users AS users LIMIT 1
 
 LIMIT with parameter:
   $ ./compile_and_run '
@@ -86,7 +86,7 @@ OFFSET with literal value:
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q.x FROM (SELECT users.x AS x FROM public.users AS users OFFSET 1) AS q
+  SELECT users.x AS x FROM public.users AS users OFFSET 1
 
 OFFSET with parameter:
   $ ./compile_and_run '

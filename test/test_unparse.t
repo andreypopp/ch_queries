@@ -12,9 +12,7 @@ this showcases different parse/unparse combinators:
   > let () = print_endline sql;;
   > ' --run-only
   >>> RUNNING
-  SELECT q._1
-  FROM (
-    SELECT
-      tuple(toInt64(42), toUInt64(42), toDate('1970-01-01'), toDateTime('1970-01-01T00:00:00'), toNullable(1), NULL)
-        AS _1
-    FROM public.users AS users) AS q
+  SELECT
+    tuple(toInt64(42), toUInt64(42), toDate('1970-01-01'), toDateTime('1970-01-01T00:00:00'), toNullable(1), NULL)
+      AS _1
+  FROM public.users AS users

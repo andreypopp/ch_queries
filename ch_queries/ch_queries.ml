@@ -1,6 +1,8 @@
 module Syntax = Ch_queries_syntax.Syntax
 module SS = Set.Make (String)
 
+let fail fmt = Printf.ksprintf failwith fmt
+
 type uint64 = Unsigned.uint64
 type null = [ `null | `not_null ]
 type non_null = [ `not_null ]
@@ -54,7 +56,8 @@ and 'scope select_payload = {
   offset : a_expr option;
   settings :
     (string * [ `Int of int | `String of string | `Bool of bool ]) list;
-  mutable fields : a_field list;  (** list of fields build within the SELECT *)
+  mutable rev_fields : a_field list;
+      (** list of fields build within the SELECT *)
   mutable fields_aliases : SS.t;
 }
 
@@ -251,7 +254,7 @@ module To_syntax = struct
             limit;
             offset;
             settings;
-            fields;
+            rev_fields;
             fields_aliases = _;
             scope = _;
           } ->
@@ -259,7 +262,7 @@ module To_syntax = struct
             List.rev_map
               ~f:(fun (A_field (expr, alias)) ->
                 { Syntax.expr; alias = Some (Syntax.make_id alias) })
-              fields
+              rev_fields
           in
           let prewhere = Option.map (fun (A_expr expr) -> expr) prewhere in
           let where = Option.map (fun (A_expr expr) -> expr) where in
@@ -358,7 +361,7 @@ module To_syntax = struct
                 | From_cte_ref { cte; _ } -> should_eliminate cte
                 | From_select { select; _ } -> (
                     match select with
-                    | Select { fields; _ } -> List.is_empty fields
+                    | Select { rev_fields; _ } -> List.is_empty rev_fields
                     | Union { exprs; _ } -> List.is_empty exprs)
               in
               if not (should_eliminate join) then translate ()
@@ -385,10 +388,10 @@ let select_syntax ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by
   let order_by = Option.map (fun order_by -> order_by inner_scope) order_by in
   let limit = Option.map (fun limit -> A_expr (limit inner_scope)) limit in
   let offset = Option.map (fun offset -> A_expr (offset inner_scope)) offset in
-  let fields_aliases, fields =
+  let fields_aliases, rev_fields =
     List.fold_left (select inner_scope) ~init:(SS.empty, [])
-      ~f:(fun (fields_aliases, fields) (A_field (expr, alias)) ->
-        (SS.add alias fields_aliases, A_field (expr, alias) :: fields))
+      ~f:(fun (fields_aliases, rev_fields) (A_field (expr, alias)) ->
+        (SS.add alias fields_aliases, A_field (expr, alias) :: rev_fields))
   in
   let select =
     Select
@@ -405,7 +408,7 @@ let select_syntax ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by
         limit;
         offset;
         settings;
-        fields;
+        rev_fields;
         fields_aliases;
       }
   in
@@ -659,7 +662,7 @@ let in_ x xs =
       Syntax.make_expr (Syntax.E_in (x, In_query select))
 
 let mem_field expr select =
-  List.find_map select.fields ~f:(function
+  List.find_map select.rev_fields ~f:(function
     | A_field (expr', alias) when Syntax.equal_expr expr expr' -> Some alias
     | _ -> None)
 
@@ -675,7 +678,7 @@ let add_field ?(force = false) ~expr select =
     in
     let alias =
       match alias expr with
-      | None -> Printf.sprintf "_%d" (List.length select.fields + 1)
+      | None -> Printf.sprintf "_%d" (List.length select.rev_fields + 1)
       | Some alias ->
           let rec find_unique alias n =
             let alias' =
@@ -687,7 +690,7 @@ let add_field ?(force = false) ~expr select =
           find_unique alias 0
     in
     let field = A_field (expr, alias) in
-    select.fields <- field :: select.fields;
+    select.rev_fields <- field :: select.rev_fields;
     select.fields_aliases <- SS.add alias select.fields_aliases;
     alias
   in
@@ -797,7 +800,7 @@ let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit
         limit;
         offset;
         settings;
-        fields = [];
+        rev_fields = [];
         fields_aliases = SS.empty;
       }
   in
@@ -1078,6 +1081,12 @@ module Row = struct
     fun row -> List.rev (aux row [])
 end
 
+module IM = Map.Make (struct
+  type t = Syntax.id
+
+  let compare = Syntax.compare_id
+end)
+
 let query q f =
   let q = q ~alias:"q" in
   let scope = scope_from_select q in
@@ -1087,33 +1096,82 @@ let query q f =
          method q = scope
       end)
   in
-  let fields =
-    Row.exprs row
-    |> List.map ~f:(fun (A_expr expr) -> { Syntax.expr; alias = None })
+  let row_exprs = Row.exprs row in
+  let plain_columns_in_order =
+    (* if all expressions are just columns, return their aliases in order required *)
+    let exception Cannot_unwrap in
+    try
+      Some
+        (List.map row_exprs ~f:(fun (A_expr expr) ->
+             match expr.Syntax.node with
+             | E_col (_, alias) -> alias
+             | _ -> raise_notrace Cannot_unwrap))
+    with Cannot_unwrap -> None
   in
   let select = To_syntax.to_syntax q in
-  let select =
-    Syntax.Q_select
-      {
-        with_fields = [];
-        from =
-          Syntax.make_from
-            (F
-               (Syntax.make_from_one
-                  (F_select
-                     { select; alias = Syntax.make_id "q"; cluster_name = None })));
-        select = Select_fields fields;
-        prewhere = None;
-        where = None;
-        qualify = None;
-        group_by = None;
-        having = None;
-        order_by = None;
-        limit = None;
-        offset = None;
-        settings = [];
-      }
+  let select_fields =
+    (* if the underyling query is just a SELECT with all fields with aliases, we can re-order them easily *)
+    match select.Syntax.node with
+    | Syntax.Q_select { select = Select_fields fields; _ } ->
+        let exception Cannot_unwrap in
+        Some
+          (List.fold_left fields ~init:IM.empty
+             ~f:(fun map (field : Syntax.field) ->
+               let alias =
+                 match field.alias with
+                 | Some alias -> alias
+                 | None -> raise_notrace Cannot_unwrap
+               in
+               IM.add alias field map))
+    | _ -> None
   in
-  let sql = Ch_queries_syntax.Printer.print_query (Syntax.make_query select) in
+  let select =
+    match (plain_columns_in_order, select_fields) with
+    | Some columns, Some fields -> (
+        let fields =
+          List.map columns ~f:(fun alias ->
+              match IM.find_opt alias fields with
+              | Some field -> field
+              | None ->
+                  fail "invariant violation: missing field for alias %s"
+                    alias.node)
+        in
+        match select.node with
+        | Syntax.Q_select select ->
+            Syntax.make_query
+              (Q_select { select with select = Select_fields fields })
+        | _ -> fail "invariant violation: expected select query")
+    | Some _, _ | None, _ ->
+        let fields =
+          List.map row_exprs ~f:(fun (A_expr expr) ->
+              { Syntax.expr; alias = None })
+        in
+        Syntax.make_query
+          (Syntax.Q_select
+             {
+               with_fields = [];
+               from =
+                 Syntax.make_from
+                   (F
+                      (Syntax.make_from_one
+                         (F_select
+                            {
+                              select;
+                              alias = Syntax.make_id "q";
+                              cluster_name = None;
+                            })));
+               select = Select_fields fields;
+               prewhere = None;
+               where = None;
+               qualify = None;
+               group_by = None;
+               having = None;
+               order_by = None;
+               limit = None;
+               offset = None;
+               settings = [];
+             })
+  in
+  let sql = Ch_queries_syntax.Printer.print_query select in
   let parse_row = Row.parse row in
   (sql, parse_row)

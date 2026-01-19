@@ -34,8 +34,7 @@ GROUP BY single column:
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q.x
-  FROM (SELECT users.x AS x FROM public.users AS users GROUP BY users.x) AS q
+  SELECT users.x AS x FROM public.users AS users GROUP BY users.x
 
 GROUP BY multiple columns:
   $ ./compile_and_run '
@@ -77,10 +76,7 @@ GROUP BY multiple columns:
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q.x
-  FROM (
-    SELECT users.x AS x FROM public.users AS users GROUP BY users.x, users.id)
-    AS q
+  SELECT users.x AS x FROM public.users AS users GROUP BY users.x, users.id
 
 GROUP BY with a parameter:
   $ ./compile_and_run '
@@ -160,8 +156,7 @@ GROUP BY GROUPING SETS:
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q._1
-  FROM (SELECT 1 AS _1 FROM public.users AS users GROUP BY GROUPING SETS ()) AS q
+  SELECT 1 AS _1 FROM public.users AS users GROUP BY GROUPING SETS ()
 
   $ ./compile_and_run '
   > let group_by (__q : < u : _ Ch_queries.scope; .. >) = Ch_queries.grouping_sets [[A_expr {%e|u.x|}; A_expr {%e|u.id|}]; [A_expr {%e|u.id|}]];;
@@ -207,11 +202,9 @@ GROUP BY GROUPING SETS:
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q._1
-  FROM (
-    SELECT 1 AS _1
-    FROM public.users AS u
-    GROUP BY GROUPING SETS ((u.x, u.id), (u.id))) AS q
+  SELECT 1 AS _1
+  FROM public.users AS u
+  GROUP BY GROUPING SETS ((u.x, u.id), (u.id))
 
 GROUP BY can refer to SELECTed columns:
   $ ./compile_and_run '
@@ -248,5 +241,4 @@ GROUP BY can refer to SELECTed columns:
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q.x
-  FROM (SELECT users.x AS x FROM public.users AS users GROUP BY users.x) AS q
+  SELECT users.x AS x FROM public.users AS users GROUP BY users.x

@@ -57,13 +57,11 @@ test cluster syntax parsing:
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q.x
-  FROM (
-    SELECT users.x AS x
-    FROM cluster(my_cluster, view(
-      SELECT users.is_active AS is_active, users.x AS x FROM public.users AS users))
-      AS users
-    WHERE users.is_active) AS q
+  SELECT users.x AS x
+  FROM cluster(my_cluster, view(
+    SELECT users.is_active AS is_active, users.x AS x FROM public.users AS users))
+    AS users
+  WHERE users.is_active
 
 test parameterized cluster syntax:
   $ ./compile_and_run '
@@ -124,10 +122,8 @@ test parameterized cluster syntax:
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q.x
-  FROM (
-    SELECT users.x AS x
-    FROM cluster(test_cluster, view(
-      SELECT users.is_active AS is_active, users.x AS x FROM public.users AS users))
-      AS users
-    WHERE users.is_active) AS q
+  SELECT users.x AS x
+  FROM cluster(test_cluster, view(
+    SELECT users.is_active AS is_active, users.x AS x FROM public.users AS users))
+    AS users
+  WHERE users.is_active

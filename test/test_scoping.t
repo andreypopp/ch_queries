@@ -32,4 +32,4 @@
   
   print_endline sql
   >>> RUNNING
-  SELECT q.x FROM (SELECT x.x AS x FROM public.users AS x) AS q
+  SELECT x.x AS x FROM public.users AS x

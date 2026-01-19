@@ -41,7 +41,7 @@ can define expression for reuse with `WITH` clause:
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q._1 FROM (SELECT 1 + u.id AS _1 FROM public.users AS u) AS q
+  SELECT 1 + u.id AS _1 FROM public.users AS u
 
 select shadows `WITH` clause:
   $ ./compile_and_run '
@@ -84,7 +84,7 @@ select shadows `WITH` clause:
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q._1 FROM (SELECT 1 + u.id AS _1 FROM public.users AS u) AS q
+  SELECT 1 + u.id AS _1 FROM public.users AS u
 
 WITH has access to table columns:
   $ ./compile_and_run '
@@ -128,4 +128,4 @@ WITH has access to table columns:
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q._1 FROM (SELECT u.id + u.id AS _1 FROM public.users AS u) AS q
+  SELECT u.id + u.id AS _1 FROM public.users AS u

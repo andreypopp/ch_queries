@@ -36,10 +36,7 @@ test IN expression with subquery:
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q.x
-  FROM (
-    SELECT users.x AS x FROM public.users AS users WHERE like(users.x, '123%'))
-    AS q
+  SELECT users.x AS x FROM public.users AS users WHERE like(users.x, '123%')
 
 
 

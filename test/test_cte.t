@@ -120,11 +120,9 @@ a query within CTE can be a param:
   > print_endline sql;;
   > ' --run-only
   >>> RUNNING
-  SELECT q.x
-  FROM (
-    WITH u AS (SELECT users.x AS x FROM public.users AS users)
-    SELECT u.x AS x
-    FROM u AS u) AS q
+  WITH u AS (SELECT users.x AS x FROM public.users AS users)
+  SELECT u.x AS x
+  FROM u AS u
 
 a CTE used in IN:
   $ ./compile_and_run '
@@ -137,16 +135,13 @@ a CTE used in IN:
   > print_endline sql;;
   > ' --run-only
   >>> RUNNING
-  SELECT q._1
-  FROM (
-    WITH
-      u AS (
-        SELECT users.is_active AS is_active, users.x AS x
-        FROM public.users AS users
-      )
-    SELECT 1 AS _1
-    FROM u AS u
-    WHERE u.x IN (SELECT u.x AS x FROM u AS u) AND u.is_active) AS q
+  WITH
+    u AS (
+      SELECT users.is_active AS is_active, users.x AS x FROM public.users AS users
+    )
+  SELECT 1 AS _1
+  FROM u AS u
+  WHERE u.x IN (SELECT u.x AS x FROM u AS u) AND u.is_active
 
 a CTE used in IN (only IN references CTE):
   $ ./compile_and_run '
@@ -159,9 +154,7 @@ a CTE used in IN (only IN references CTE):
   > print_endline sql;;
   > ' --run-only
   >>> RUNNING
-  SELECT q._1
-  FROM (
-    WITH u AS (SELECT users.x AS x FROM public.users AS users)
-    SELECT 1 AS _1
-    FROM u AS u
-    WHERE u.x IN (SELECT u.x AS x FROM u AS u)) AS q
+  WITH u AS (SELECT users.x AS x FROM public.users AS users)
+  SELECT 1 AS _1
+  FROM u AS u
+  WHERE u.x IN (SELECT u.x AS x FROM u AS u)

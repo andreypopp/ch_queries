@@ -55,11 +55,9 @@ test IN expression with subquery:
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q.x
-  FROM (
-    SELECT users.x AS x
-    FROM public.users AS users
-    WHERE users.id IN (SELECT users.id AS id FROM public.users AS users)) AS q
+  SELECT users.x AS x
+  FROM public.users AS users
+  WHERE users.id IN (SELECT users.id AS id FROM public.users AS users)
 
 test IN expression with expression::
   $ ./compile_and_run '
@@ -100,9 +98,7 @@ test IN expression with expression::
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q.x
-  FROM (
-    SELECT users.x AS x FROM public.users AS users WHERE users.id IN [1, 2]) AS q
+  SELECT users.x AS x FROM public.users AS users WHERE users.id IN [1, 2]
 
 test IN expression with parameter:
   $ ./compile_and_run '

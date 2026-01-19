@@ -29,11 +29,9 @@ SETTINGS with literal values:
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q.x
-  FROM (
-    SELECT users.x AS x
-    FROM public.users AS users
-    SETTINGS max_threads=4, use_cache='true') AS q
+  SELECT users.x AS x
+  FROM public.users AS users
+  SETTINGS max_threads=4, use_cache='true'
 
 SETTINGS with parameter:
   $ ./compile_and_run '
@@ -188,8 +186,6 @@ SETTINGS with boolean values (rendered as ints):
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q.x
-  FROM (
-    SELECT users.x AS x
-    FROM public.users AS users
-    SETTINGS enable_analyzer=0, use_cache=1) AS q
+  SELECT users.x AS x
+  FROM public.users AS users
+  SETTINGS enable_analyzer=0, use_cache=1

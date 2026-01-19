@@ -32,11 +32,11 @@ module Ch_database = struct
     >
     let users =
       let scope ~alias =
-        let column name = unsafe (alias ^ "." ^ name) in
+        let col name = unsafe_col alias name in
         object
-          method id : (non_null, int number) expr = column "id"
-          method name : (non_null, string) expr = column "name"
-          method is_active : (non_null, bool) expr = column "is_active"
+          method id : (non_null, int number) expr = col "id"
+          method name : (non_null, string) expr = col "name"
+          method is_active : (non_null, bool) expr = col "is_active"
         end
       in
       from_table ~db:"public" ~table:"users" scope
@@ -86,8 +86,7 @@ Finally to generate SQL from the query, one needs to define what exactly to
 select and how to parse each column:
 ```ocaml
 # let sql, parse_row = Ch_queries.query {%q|SELECT users.id FROM db.users|} Row.(fun __q -> col {%e|q.id|} Parse.int);;
-val sql : string =
-  "SELECT q._1 FROM (SELECT users.id AS _1 FROM public.users AS users) AS q"
+val sql : string = "SELECT users.id AS id FROM public.users AS users"
 val parse_row : json list -> int = <fun>
 ```
 

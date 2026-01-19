@@ -52,12 +52,10 @@
   in
   print_endline sql
   >>> RUNNING
-  SELECT q._1
-  FROM (
-    SELECT coalesce(profiles.name, users.x) AS _1
-    FROM public.users AS users
-    INNER JOIN public.profiles AS profiles
-    ON users.id = profiles.user_id) AS q
+  SELECT coalesce(profiles.name, users.x) AS _1
+  FROM public.users AS users
+  INNER JOIN public.profiles AS profiles
+  ON users.id = profiles.user_id
 
 The param within the scope receives the scope as argument:
   $ ./compile_and_run '
@@ -148,11 +146,9 @@ The param within the scope receives the scope as argument:
              users : Ch_database.Public.users Ch_queries.scope > ->
            ('a, 'b) Ch_queries.expr) ->
     < field : ('a, 'b) Ch_queries.expr > Ch_queries.scope Ch_queries.select
-  SELECT q._1
+  SELECT q._1 AS _1
   FROM (
-    SELECT q._1 AS _1
-    FROM (
-      SELECT coalesce(profiles.name, users.x) AS _1
-      FROM public.users AS users
-      INNER JOIN public.profiles AS profiles
-      ON users.id = profiles.user_id) AS q) AS q
+    SELECT coalesce(profiles.name, users.x) AS _1
+    FROM public.users AS users
+    INNER JOIN public.profiles AS profiles
+    ON users.id = profiles.user_id) AS q

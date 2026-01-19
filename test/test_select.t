@@ -16,10 +16,7 @@ there's a form `%ch.select` which generates SQL + row parser out of a query:
     users:(alias:string ->
            Ch_database.Public.users Ch_queries.scope Ch_queries.from_one) ->
     unit -> string * (Ch_queries.json list -> users_row)
-  SELECT q.id, q.is_active
-  FROM (
-    SELECT users.is_active AS is_active, users.id AS id FROM public.users AS users)
-    AS q
+  SELECT users.id AS id, users.is_active AS is_active FROM public.users AS users
 
 It's possible to use `Any` type to skip parsing a certain field (it'll be returned as JSON instead):
   $ ./compile_and_run '
