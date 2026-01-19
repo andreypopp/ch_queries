@@ -33,9 +33,8 @@ basic form:
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q._1
-  FROM (
-    SELECT users.x AS _1 FROM public.users AS users WHERE users.is_active) AS q
+  SELECT q.x
+  FROM (SELECT users.x AS x FROM public.users AS users WHERE users.is_active) AS q
 
 select from a subquery:
   $ ./compile_and_run '
@@ -96,12 +95,13 @@ select from a subquery:
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q._1
+  SELECT q.x
   FROM (
-    SELECT q._2 AS _1
+    SELECT q.x AS x
     FROM (
-      SELECT users.is_active AS _1, users.x AS _2 FROM public.users AS users) AS q
-    WHERE q._1) AS q
+      SELECT users.is_active AS is_active, users.x AS x FROM public.users AS users)
+      AS q
+    WHERE q.is_active) AS q
 
 select from a subquery (no alias default to "q"):
   $ ./compile_and_run '
@@ -162,12 +162,13 @@ select from a subquery (no alias default to "q"):
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q._1
+  SELECT q.x
   FROM (
-    SELECT q._2 AS _1
+    SELECT q.x AS x
     FROM (
-      SELECT users.is_active AS _1, users.x AS _2 FROM public.users AS users) AS q
-    WHERE q._1) AS q
+      SELECT users.is_active AS is_active, users.x AS x FROM public.users AS users)
+      AS q
+    WHERE q.is_active) AS q
 
 select from an OCaml value (parameter syntax):
   $ ./compile_and_run '
@@ -390,9 +391,9 @@ select with PREWHERE clause:
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q._1
+  SELECT q.x
   FROM (
-    SELECT users.x AS _1
+    SELECT users.x AS x
     FROM public.users AS users
     PREWHERE users.is_active
     WHERE users.id = 10) AS q
@@ -454,8 +455,8 @@ expressions referenced multiple times result in a single column added to teh sub
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q._1
+  SELECT q.is_active
   FROM (
-    SELECT q._1 AS _1
-    FROM (SELECT users.is_active AS _1 FROM public.users AS users) AS q
-    WHERE q._1) AS q
+    SELECT q.is_active AS is_active
+    FROM (SELECT users.is_active AS is_active FROM public.users AS users) AS q
+    WHERE q.is_active) AS q

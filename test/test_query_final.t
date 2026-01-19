@@ -32,9 +32,9 @@ select from table with FINAL keyword:
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q._1
+  SELECT q.x
   FROM (
-    SELECT users.x AS _1 FROM public.users AS users FINAL WHERE users.is_active)
+    SELECT users.x AS x FROM public.users AS users FINAL WHERE users.is_active)
     AS q
 
 if FINAL keyword is applied to param, then it expects the table:
@@ -76,7 +76,7 @@ if FINAL keyword is applied to param, then it expects the table:
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q._1
+  SELECT q.x
   FROM (
-    SELECT users.x AS _1 FROM public.users AS users FINAL WHERE users.is_active)
+    SELECT users.x AS x FROM public.users AS users FINAL WHERE users.is_active)
     AS q

@@ -75,11 +75,11 @@ CTE is supported:
   
   print_endline sql
   >>> RUNNING
-  SELECT [q._2, q._1]
+  SELECT [q.x_1, q.x]
   FROM (
-    WITH users AS (SELECT users.x AS _1 FROM public.users AS users)
-    SELECT y._1 AS _1, x._1 AS _2
-    FROM users AS x INNER JOIN users AS y ON x._1 = y._1) AS q
+    WITH users AS (SELECT users.x AS x FROM public.users AS users)
+    SELECT y.x AS x, x.x AS x_1
+    FROM users AS x INNER JOIN users AS y ON x.x = y.x) AS q
 
 CTE can be defined programmatically and then used as query params:
   $ ./compile_and_run '
@@ -90,11 +90,11 @@ CTE can be defined programmatically and then used as query params:
   > print_endline sql;;
   > ' --run-only
   >>> RUNNING
-  SELECT [q._2, q._1]
+  SELECT [q.x_1, q.x]
   FROM (
-    WITH users AS (SELECT users.x AS _1 FROM public.users AS users)
-    SELECT y._1 AS _1, x._1 AS _2
-    FROM users AS x INNER JOIN users AS y ON x._1 = y._1) AS q
+    WITH users AS (SELECT users.x AS x FROM public.users AS users)
+    SELECT y.x AS x, x.x AS x_1
+    FROM users AS x INNER JOIN users AS y ON x.x = y.x) AS q
 
 materilized CTE is supported as well:
   $ ./compile_and_run '
@@ -106,11 +106,11 @@ materilized CTE is supported as well:
   > print_endline sql;;
   > ' --run-only
   >>> RUNNING
-  SELECT [q._2, q._1]
+  SELECT [q.x_1, q.x]
   FROM (
-    WITH users AS MATERIALIZED (SELECT users.x AS _1 FROM public.users AS users)
-    SELECT y._1 AS _1, x._1 AS _2
-    FROM users AS x INNER JOIN users AS y ON x._1 = y._1) AS q
+    WITH users AS MATERIALIZED (SELECT users.x AS x FROM public.users AS users)
+    SELECT y.x AS x, x.x AS x_1
+    FROM users AS x INNER JOIN users AS y ON x.x = y.x) AS q
 
 a query within CTE can be a param:
   $ ./compile_and_run '
@@ -120,10 +120,10 @@ a query within CTE can be a param:
   > print_endline sql;;
   > ' --run-only
   >>> RUNNING
-  SELECT q._1
+  SELECT q.x
   FROM (
-    WITH u AS (SELECT users.x AS _1 FROM public.users AS users)
-    SELECT u._1 AS _1
+    WITH u AS (SELECT users.x AS x FROM public.users AS users)
+    SELECT u.x AS x
     FROM u AS u) AS q
 
 a CTE used in IN:
@@ -141,11 +141,12 @@ a CTE used in IN:
   FROM (
     WITH
       u AS (
-        SELECT users.is_active AS _1, users.x AS _2 FROM public.users AS users
+        SELECT users.is_active AS is_active, users.x AS x
+        FROM public.users AS users
       )
     SELECT 1 AS _1
     FROM u AS u
-    WHERE u._2 IN (SELECT u._2 AS _1 FROM u AS u) AND u._1) AS q
+    WHERE u.x IN (SELECT u.x AS x FROM u AS u) AND u.is_active) AS q
 
 a CTE used in IN (only IN references CTE):
   $ ./compile_and_run '
@@ -160,7 +161,7 @@ a CTE used in IN (only IN references CTE):
   >>> RUNNING
   SELECT q._1
   FROM (
-    WITH u AS (SELECT users.x AS _1 FROM public.users AS users)
+    WITH u AS (SELECT users.x AS x FROM public.users AS users)
     SELECT 1 AS _1
     FROM u AS u
-    WHERE u._1 IN (SELECT u._1 AS _1 FROM u AS u)) AS q
+    WHERE u.x IN (SELECT u.x AS x FROM u AS u)) AS q

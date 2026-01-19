@@ -52,7 +52,7 @@ optional join with a table (elimination):
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q._1 FROM (SELECT u.id AS _1 FROM public.users AS u) AS q
+  SELECT q.id FROM (SELECT u.id AS id FROM public.users AS u) AS q
 
 optional join with a table (in use):
   $ ./compile_and_run '
@@ -108,9 +108,9 @@ optional join with a table (in use):
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q._1
+  SELECT q.name
   FROM (
-    SELECT p.name AS _1
+    SELECT p.name AS name
     FROM public.users AS u LEFT JOIN public.profiles AS p ON u.id = p.user_id)
     AS q
 
@@ -190,7 +190,7 @@ optional join with a subquery (elimination):
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q._1 FROM (SELECT u.id AS _1 FROM public.users AS u) AS q
+  SELECT q.id FROM (SELECT u.id AS id FROM public.users AS u) AS q
 
 optional join with a subquery (in use):
   $ ./compile_and_run '
@@ -268,10 +268,10 @@ optional join with a subquery (in use):
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q._1
+  SELECT q.name
   FROM (
-    SELECT p._1 AS _1
+    SELECT p.name AS name
     FROM public.users AS u
     LEFT JOIN
-    (SELECT p.name AS _1, p.user_id AS _2 FROM public.profiles AS p) AS p
-    ON u.id = p._2) AS q
+    (SELECT p.name AS name, p.user_id AS user_id FROM public.profiles AS p) AS p
+    ON u.id = p.user_id) AS q

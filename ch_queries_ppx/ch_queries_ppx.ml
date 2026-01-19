@@ -837,13 +837,18 @@ and stage_field_syntax ~on_evar ~from:from_ctx { Syntax.expr; alias } =
   let alias =
     match alias with
     | Some name -> name.node
-    | None -> (
-        match expr.node with
-        | E_id id -> id.node
-        | E_col (_, id) -> id.node
-        | _ ->
-            Location.raise_errorf ~loc
-              "%%ch.query_syntax: field requires an explicit alias")
+    | None ->
+        let rec alias expr =
+          match expr.Syntax.node with
+          | Syntax.E_id id -> id.node
+          | E_col (_, id) -> id.node
+          | E_ascribe (expr, _) -> alias expr
+          | E_query (_, expr) -> alias expr
+          | _ ->
+              Location.raise_errorf ~loc
+                "%%ch.query_syntax: field requires an explicit alias"
+        in
+        alias expr
   in
   let expr = stage_expr ~on_evar ~params:[] ~from:from_ctx expr in
   (alias, [%expr Ch_queries.A_field ([%e expr], [%e estring ~loc alias])])

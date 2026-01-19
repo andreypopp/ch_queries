@@ -34,8 +34,8 @@ GROUP BY single column:
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q._1
-  FROM (SELECT users.x AS _1 FROM public.users AS users GROUP BY users.x) AS q
+  SELECT q.x
+  FROM (SELECT users.x AS x FROM public.users AS users GROUP BY users.x) AS q
 
 GROUP BY multiple columns:
   $ ./compile_and_run '
@@ -77,9 +77,9 @@ GROUP BY multiple columns:
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q._1
+  SELECT q.x
   FROM (
-    SELECT users.x AS _1 FROM public.users AS users GROUP BY users.x, users.id)
+    SELECT users.x AS x FROM public.users AS users GROUP BY users.x, users.id)
     AS q
 
 GROUP BY with a parameter:
@@ -248,5 +248,5 @@ GROUP BY can refer to SELECTed columns:
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q._1
-  FROM (SELECT users.x AS _1 FROM public.users AS users GROUP BY users.x) AS q
+  SELECT q.x
+  FROM (SELECT users.x AS x FROM public.users AS users GROUP BY users.x) AS q

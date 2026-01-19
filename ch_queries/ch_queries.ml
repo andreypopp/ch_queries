@@ -1,4 +1,5 @@
 module Syntax = Ch_queries_syntax.Syntax
+module SS = Set.Make (String)
 
 type uint64 = Unsigned.uint64
 type null = [ `null | `not_null ]
@@ -54,6 +55,7 @@ and 'scope select_payload = {
   settings :
     (string * [ `Int of int | `String of string | `Bool of bool ]) list;
   mutable fields : a_field list;  (** list of fields build within the SELECT *)
+  mutable fields_aliases : SS.t;
 }
 
 and cte_query = Cte_query : string * _ select0 * bool -> cte_query
@@ -250,6 +252,7 @@ module To_syntax = struct
             offset;
             settings;
             fields;
+            fields_aliases = _;
             scope = _;
           } ->
           let select =
@@ -382,6 +385,11 @@ let select_syntax ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by
   let order_by = Option.map (fun order_by -> order_by inner_scope) order_by in
   let limit = Option.map (fun limit -> A_expr (limit inner_scope)) limit in
   let offset = Option.map (fun offset -> A_expr (offset inner_scope)) offset in
+  let fields_aliases, fields =
+    List.fold_left (select inner_scope) ~init:(SS.empty, [])
+      ~f:(fun (fields_aliases, fields) (A_field (expr, alias)) ->
+        (SS.add alias fields_aliases, A_field (expr, alias) :: fields))
+  in
   let select =
     Select
       {
@@ -397,13 +405,16 @@ let select_syntax ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by
         limit;
         offset;
         settings;
-        fields = List.rev (select inner_scope);
+        fields;
+        fields_aliases;
       }
   in
   To_syntax.to_syntax select
 
 let unsafe x = Syntax.make_expr (E_unsafe (Syntax.make_id x))
-let col q x = Syntax.make_expr (E_col (Syntax.make_id q, Syntax.make_id x))
+
+let unsafe_col q x =
+  Syntax.make_expr (E_col (Syntax.make_id q, Syntax.make_id x))
 
 let unsafe_concat xs =
   let xs = List.map xs ~f:(fun (A_expr expr) -> expr) in
@@ -652,11 +663,32 @@ let mem_field expr select =
     | A_field (expr', alias) when Syntax.equal_expr expr expr' -> Some alias
     | _ -> None)
 
-let add_field ?(force = false) expr select =
+let add_field ?(force = false) ~expr select =
   let do_add () =
-    let alias = Printf.sprintf "_%d" (List.length select.fields + 1) in
+    let rec alias expr =
+      match expr.Syntax.node with
+      | Syntax.E_col (_, name) -> Some name.node
+      | Syntax.E_id id -> Some id.node
+      | Syntax.E_ascribe (expr, _) -> alias expr
+      | Syntax.E_query (_, expr) -> alias expr
+      | _ -> None
+    in
+    let alias =
+      match alias expr with
+      | None -> Printf.sprintf "_%d" (List.length select.fields + 1)
+      | Some alias ->
+          let rec find_unique alias n =
+            let alias' =
+              if n = 0 then alias else Printf.sprintf "%s_%d" alias n
+            in
+            if SS.mem alias' select.fields_aliases then find_unique alias (n + 1)
+            else alias'
+          in
+          find_unique alias 0
+    in
     let field = A_field (expr, alias) in
     select.fields <- field :: select.fields;
+    select.fields_aliases <- SS.add alias select.fields_aliases;
     alias
   in
   match mem_field expr select with
@@ -682,7 +714,7 @@ let with_cte ?(materialized = false) ~alias:cte_alias cte_query :
                let add ~force =
                  let x = add ~force in
                  match x.Syntax.node with
-                 | E_col (_, name) -> col alias name.node
+                 | E_col (_, name) -> unsafe_col alias name.node
                  | _ -> failwith "invariant violation: expected column"
                in
                (witness, add)
@@ -694,7 +726,7 @@ let with_cte ?(materialized = false) ~alias:cte_alias cte_query :
                List.map xs ~f:(fun (A_expr e) ->
                    let e =
                      match e.Syntax.node with
-                     | E_col (_, name) -> col alias name.node
+                     | E_col (_, name) -> unsafe_col alias name.node
                      | _ -> failwith "invariant violation: expected column"
                    in
                    A_expr e)
@@ -741,19 +773,19 @@ let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit
         scope =
           (object (self)
              method query' f =
-               let e = f scope' in
-               ( e,
+               let expr = f scope' in
+               ( expr,
                  fun ~force ->
-                   let c = add_field ~force e (Lazy.force select) in
-                   col alias c )
+                   let c = add_field ~force ~expr (Lazy.force select) in
+                   unsafe_col alias c )
 
              method query f = snd (self#query' f) ~force:false
 
              method query_many f =
                let xs = f scope' in
-               List.map xs ~f:(fun (A_expr e) ->
-                   let c = add_field e (Lazy.force select) in
-                   A_expr (col alias c))
+               List.map xs ~f:(fun (A_expr expr) ->
+                   let c = add_field ~expr (Lazy.force select) in
+                   A_expr (unsafe_col alias c))
            end
             : _ scope);
         prewhere;
@@ -766,6 +798,7 @@ let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit
         offset;
         settings;
         fields = [];
+        fields_aliases = SS.empty;
       }
   in
   Select (Lazy.force select)

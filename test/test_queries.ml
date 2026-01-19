@@ -11,14 +11,14 @@ module Ch_database = struct
     let users : final:bool -> alias:string -> users scope from_one =
       let scope ~alias =
         object
-          method id : (non_null, int number) expr = unsafe (alias ^ ".id")
-          method x : (non_null, string) expr = unsafe (alias ^ ".x")
+          method id : (non_null, int number) expr = unsafe_col alias "id"
+          method x : (non_null, string) expr = unsafe_col alias "x"
 
           method xs : (non_null, (non_null, string) array) expr =
-            unsafe (alias ^ ".xs")
+            unsafe_col alias "xs"
 
           method is_active : (non_null, bool) expr =
-            unsafe (alias ^ ".is_active")
+            unsafe_col alias "is_active"
         end
       in
       from_table ~db:"public" ~table:"users" scope
@@ -30,9 +30,9 @@ module Ch_database = struct
       let scope ~alias =
         object
           method user_id : (non_null, int number) expr =
-            unsafe (alias ^ ".user_id")
+            unsafe_col alias "user_id"
 
-          method name : (non_null, string) expr = unsafe (alias ^ ".name")
+          method name : (non_null, string) expr = unsafe_col alias "name"
         end
       in
       from_table ~db:"public" ~table:"profiles" scope

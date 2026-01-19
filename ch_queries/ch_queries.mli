@@ -81,6 +81,9 @@ type 'a in_rhs =
 
 val in_ : (_, 'a) expr -> 'a in_rhs -> (non_null, bool) expr
 
+val unsafe_col : string -> string -> _ expr
+(** Construct and unsafe column expression. *)
+
 val unsafe : string -> _ expr
 (** Inject a string into an expression without any checks. This is unsafe to do,
     if string comes from user input (= SQL injection). *)

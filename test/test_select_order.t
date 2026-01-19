@@ -11,9 +11,10 @@ querying columns:
   > let () = print_endline @@ Yojson.Basic.to_string @@ parse_row [`String "x"; `Bool false];;
   > ' --run-only
   >>> RUNNING
-  SELECT q._1, q._2
+  SELECT q.x, q.is_active
   FROM (
-    SELECT users.x AS _1, users.is_active AS _2 FROM public.users AS users) AS q
+    SELECT users.x AS x, users.is_active AS is_active FROM public.users AS users)
+    AS q
   ["x",false]
 
 querying a list of columns:
@@ -28,7 +29,8 @@ querying a list of columns:
   > let () = print_endline @@ Yojson.Basic.to_string @@ parse_row [`String "x"; `Bool false];;
   > ' --run-only
   >>> RUNNING
-  SELECT q._2, q._1
+  SELECT q.x, q.is_active
   FROM (
-    SELECT users.is_active AS _1, users.x AS _2 FROM public.users AS users) AS q
+    SELECT users.is_active AS is_active, users.x AS x FROM public.users AS users)
+    AS q
   ["x",false]
