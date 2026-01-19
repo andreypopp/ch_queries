@@ -77,6 +77,7 @@
     | Parser.UNSAFE _ -> Printf.sprintf "UNSAFE(...)"
     | Parser.STRING s -> Printf.sprintf "STRING(%s)" s
     | Parser.NUMBER n -> Printf.sprintf "NUMBER(%d)" n
+    | Parser.FLOAT n -> Printf.sprintf "FLOAT(%g)" n
     | Parser.TRUE -> "TRUE"
     | Parser.FALSE -> "FALSE"
     | Parser.SELECT -> "SELECT"
@@ -153,11 +154,13 @@ let letter = ['a'-'z' 'A'-'Z']
 let id_char = letter | digit | '_'
 let id = (letter | '_') id_char*
 let number = digit+
+let float = digit+ '.' digit* | '.' digit+
 let param_char = '$'
 
 rule token = parse
   | whitespace+         { token lexbuf }
   | newline             { Lexing.new_line lexbuf; token lexbuf }
+  | float as s          { FLOAT (float_of_string s) }
   | number as s         { NUMBER (int_of_string s) }
   | '\''                {
     (* remember start position to restore later, needed because string token is matched through multiple patterns *)

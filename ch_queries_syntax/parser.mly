@@ -27,6 +27,7 @@
 %token <Syntax.expr> UNSAFE
 %token <string> STRING
 %token <int> NUMBER
+%token <float> FLOAT
 %token TRUE FALSE
 %token SELECT FROM PREWHERE WHERE AS DOT COLONCOLON
 %token LPAREN RPAREN LBRACKET RBRACKET COMMA
@@ -238,6 +239,7 @@ setting_value:
 
 setting_literal:
     n=NUMBER { L_int n }
+  | f=FLOAT  { L_float f }
   | s=STRING { L_string s }
   | TRUE     { L_bool true }
   | FALSE    { L_bool false }
@@ -309,6 +311,8 @@ expr:
     { make_expr $startpos $endpos (E_query (ns, e)) }
   | n=NUMBER
     { make_expr $startpos $endpos (E_lit (L_int n)) }
+  | f=FLOAT
+    { make_expr $startpos $endpos (E_lit (L_float f)) }
   | s=STRING
     { make_expr $startpos $endpos (E_lit (L_string s)) }
   | TRUE
