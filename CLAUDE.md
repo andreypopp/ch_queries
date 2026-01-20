@@ -47,6 +47,13 @@ The user typically runs dune build in watch mode outside Claude session):
 
 when exploring a project structure, it is fine to read entire files (they are small)
 
+## How to add tests
+
+- Add test cases in `test/` directory in cram format (`*.t` files).
+- Run them: `dune test test/<your_test_file>.t`
+- Verify outputs are correct.
+- To update expected outputs after verifying correctness: `dune test --auto-promote`
+
 ## Architecture overview
 
 The `ch_queries_ppx` parses the surface syntax with `ch_queries_syntax` and
