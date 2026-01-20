@@ -103,6 +103,8 @@ val string : string -> (non_null, string) expr
 val bool : bool -> (non_null, bool) expr
 val float : float -> (non_null, float number) expr
 val null : (null, 'a) expr
+val date : float -> (non_null, date) expr
+val datetime : float -> (non_null, datetime) expr
 
 val interval :
   int ->
