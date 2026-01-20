@@ -564,8 +564,8 @@ module Expr : sig
   val avg :
     ?partition_by:a_expr list ->
     ?order_by:(a_expr * [ `ASC | `DESC ]) list ->
-    ('n, 't number) expr ->
-    (non_null, 't number) expr
+    ('n, _ number) expr ->
+    (non_null, float number) expr
 
   val count :
     ?partition_by:a_expr list ->
@@ -624,7 +624,7 @@ module Expr : sig
   (** {2 Aggregate functions with -If suffix} *)
 
   val avgIf :
-    ('n, 't number) expr -> (_, bool) expr -> (non_null, 't number) expr
+    ('n, _ number) expr -> (_, bool) expr -> (non_null, float number) expr
 
   val countIf : ('n, _) expr -> (_, bool) expr -> (non_null, int64 number) expr
 
@@ -648,7 +648,7 @@ module Expr : sig
   (** {2 Aggregate functions with -State suffix} *)
 
   val avgState :
-    ('n, 't number) expr -> (non_null, (non_null, 't number) agg_state) expr
+    ('n, _ number) expr -> (non_null, (non_null, float number) agg_state) expr
 
   val countState :
     ('n, _) expr -> (non_null, (non_null, int64 number) agg_state) expr
@@ -682,9 +682,9 @@ module Expr : sig
   (** {2 Aggregate functions with -StateIf suffix} *)
 
   val avgStateIf :
-    ('n, 't number) expr ->
+    ('n, _ number) expr ->
     (_, bool) expr ->
-    (non_null, (non_null, 't number) agg_state) expr
+    (non_null, (non_null, float number) agg_state) expr
 
   val countStateIf :
     ('n, _) expr ->
@@ -738,7 +738,8 @@ module Expr : sig
   (** {2 Aggregate functions with -Merge suffix} *)
 
   val avgMerge :
-    (_, (non_null, 't number) agg_state) expr -> (non_null, 't number) expr
+    (_, (non_null, float number) agg_state) expr ->
+    (non_null, float number) expr
 
   val countMerge :
     (_, (non_null, int64 number) agg_state) expr ->
@@ -804,9 +805,9 @@ module Expr : sig
   (** sumMap with Merge and State combinators. *)
 
   val avgMergeStateIf :
-    (_, (non_null, 't number) agg_state) expr ->
+    (_, (non_null, float number) agg_state) expr ->
     (_, bool) expr ->
-    (non_null, (non_null, 't number) agg_state) expr
+    (non_null, (non_null, float number) agg_state) expr
   (** avgMerge with State and If combinators. *)
 
   (* {2 Join/Dict table functions} *)
