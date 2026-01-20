@@ -573,6 +573,10 @@ let rec stage_expr ~on_evar ~params ~(from : from_ctx) expr =
           in
           let args = List.map args ~f:(stage_expr ~on_evar ~params ~from) in
           eapply ~loc f [ pexp_tuple ~loc args ]
+      | Func { node = ("greatest" | "least") as name; _ } ->
+          let f = evar ~loc ("Ch_queries.Expr." ^ name) in
+          let args = List.map args ~f:(stage_expr ~on_evar ~params ~from) in
+          eapply ~loc f [ elist ~loc args ]
       | Func { node = ("joinGet" | "joinGetOrNull") as fname; _ } ->
           (* joinGet(DICT, VALUE, KEYS...) stages as:
              Ch_queries.Expr.joinGet
