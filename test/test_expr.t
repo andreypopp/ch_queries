@@ -227,16 +227,16 @@ parameter expressions with nested complex types:
 
 arithmetics:
   $ ./compile_and_run '
-  > let x = {%e|1+2/4*2-1|}
+  > let x = {%e|1.0+2.0/4.0*2.0-1.0|}
   > '
   >>> PREPROCESSING
   let x =
     Ch_queries.Expr.( - )
-      (Ch_queries.Expr.( + ) (Ch_queries.int 1)
+      (Ch_queries.Expr.( + ) (Ch_queries.float 1.)
          (Ch_queries.Expr.( * )
-            (Ch_queries.Expr.( / ) (Ch_queries.int 2) (Ch_queries.int 4))
-            (Ch_queries.int 2)))
-      (Ch_queries.int 1)
+            (Ch_queries.Expr.( / ) (Ch_queries.float 2.) (Ch_queries.float 4.))
+            (Ch_queries.float 2.)))
+      (Ch_queries.float 1.)
   >>> RUNNING
 
 comparison:
