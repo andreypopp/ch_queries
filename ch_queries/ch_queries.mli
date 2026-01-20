@@ -424,11 +424,34 @@ module Expr : sig
   val nullIf : ('n, 'a) expr -> ('n, 'a) expr -> (null, 'a) expr
   (** [nullIf x y] returns NULL if [x] equals [y], otherwise returns [x]. *)
 
+  val ifNull : (null, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
+  (** [ifNull x alt] returns [alt] if [x] is NULL, otherwise returns [x]. *)
+
   (** {2 String} *)
 
   val empty : ('n, string) expr -> ('n, bool) expr
   val notEmpty : ('n, string) expr -> ('n, bool) expr
   val lowerUTF8 : ('n, string) expr -> ('n, string) expr
+
+  val concat : ('n, string) expr list -> ('n, string) expr
+  (** Concatenates strings. *)
+
+  val substring :
+    ('n, string) expr ->
+    (non_null, int number) expr ->
+    (non_null, int number) expr ->
+    ('n, string) expr
+  (** [substring s offset length] extracts a substring starting at [offset]
+      (1-based) with [length] bytes. *)
+
+  val substringUTF8 :
+    ('n, string) expr ->
+    (non_null, int number) expr ->
+    (non_null, int number) expr ->
+    ('n, string) expr
+  (** [substringUTF8 s offset length] extracts a substring starting at [offset]
+      (1-based) with [length] Unicode code points. *)
+
   val match_ : ('n, string) expr -> (non_null, string) expr -> ('n, bool) expr
 
   (** {2 String replacement} *)
@@ -502,8 +525,29 @@ module Expr : sig
   (** Returns 1 if the Float32/Float64 argument is not infinite and not NaN,
       otherwise returns 0. *)
 
+  val isNull : ('n, _) expr -> (non_null, bool) expr
+  (** Returns 1 if the argument is NULL, 0 otherwise. *)
+
   val isNotNull : ('n, _) expr -> (non_null, bool) expr
   (** Returns 1 if the argument is not NULL, 0 otherwise. *)
+
+  (** {2 Conditional} *)
+
+  val greatest : ('n, 'a) expr list -> ('n, 'a) expr
+  (** Returns the greatest value from the arguments. *)
+
+  val least : ('n, 'a) expr list -> ('n, 'a) expr
+  (** Returns the least value from the arguments. *)
+
+  (** {2 Hash functions} *)
+
+  val farmFingerprint64 : ('n, _) expr -> ('n, uint64 number) expr
+  (** Produces a 64-bit FarmHash fingerprint. *)
+
+  (** {2 Rounding functions} *)
+
+  val round : ('n, 'a number) expr -> ('n, 'a number) expr
+  (** Rounds a value to the nearest integer. *)
 
   (** {1 Aggregate functions} *)
 

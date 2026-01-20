@@ -589,8 +589,7 @@ let rec stage_expr ~on_evar ~params ~(from : from_ctx) expr =
           (* Stage dict - db.table, 'db.table', or $param *)
           let dict =
             match dict.Syntax.node with
-            | E_col (db, table) ->
-                evar ~loc (refer_to_db_table db table)
+            | E_col (db, table) -> evar ~loc (refer_to_db_table db table)
             | E_lit (L_string s) -> (
                 match String.split_on_char ~by:'.' s with
                 | [ db; table ] ->
@@ -669,8 +668,7 @@ let rec stage_expr ~on_evar ~params ~(from : from_ctx) expr =
           (* Stage dict - db.table, 'db.table', or $param *)
           let dict =
             match dict.Syntax.node with
-            | E_col (db, table) ->
-                evar ~loc (refer_to_db_table db table)
+            | E_col (db, table) -> evar ~loc (refer_to_db_table db table)
             | E_lit (L_string s) -> (
                 match String.split_on_char ~by:'.' s with
                 | [ db; table ] ->
@@ -710,7 +708,8 @@ let rec stage_expr ~on_evar ~params ~(from : from_ctx) expr =
           in
           (* Stage key - single expression *)
           let key_expr = stage_expr ~on_evar ~params ~from key_arg in
-          eapply ~loc [%expr Ch_queries.Expr.dictGet] [ dict; value_expr; key_expr ]
+          eapply ~loc [%expr Ch_queries.Expr.dictGet]
+            [ dict; value_expr; key_expr ]
       | Func name ->
           let f =
             let loc = to_location name in

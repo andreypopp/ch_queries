@@ -659,12 +659,19 @@ module Expr = struct
   let toNullable x = def "toNullable" [ x ]
   let coalesce xs ~else_ = def "coalesce" (xs @ [ else_ ])
   let nullIf x y = def "nullIf" [ x; y ]
+  let ifNull x alt = def "ifNull" [ x; alt ]
 
   (** {2 String} *)
 
   let empty str = def "empty" [ str ]
   let notEmpty str = def "notEmpty" [ str ]
   let lowerUTF8 str = def "lowerUTF8" [ str ]
+  let concat strs = def "concat" strs
+  let substring str offset length = def "substring" [ str; offset; length ]
+
+  let substringUTF8 str offset length =
+    def "substringUTF8" [ str; offset; length ]
+
   let match_ hay pattern = def "match" [ hay; pattern ]
 
   (** {2 String replacement} *)
@@ -706,7 +713,21 @@ module Expr = struct
   let toFloat64 x = def "toFloat64" [ x ]
   let toString x = def "toString" [ x ]
   let isFinite x = def "isFinite" [ x ]
+  let isNull x = def "isNull" [ x ]
   let isNotNull x = def "isNotNull" [ x ]
+
+  (** {2 Conditional} *)
+
+  let greatest xs = def "greatest" xs
+  let least xs = def "least" xs
+
+  (** {2 Hash functions} *)
+
+  let farmFingerprint64 x = def "farmFingerprint64" [ x ]
+
+  (** {2 Rounding functions} *)
+
+  let round x = def "round" [ x ]
 
   (** {1 Aggregate functions} *)
 
