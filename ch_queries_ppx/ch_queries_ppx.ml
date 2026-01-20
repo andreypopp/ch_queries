@@ -460,7 +460,8 @@ let rec stage_expr ~on_evar ~params ~(from : from_ctx) expr =
         match order_by with
         | None -> args
         | Some order_by ->
-            (Labelled "order_by", stage_order_by ~on_evar ~loc ~from order_by)
+            ( Labelled "order_by",
+              stage_window_order_by ~on_evar ~loc ~from order_by )
             :: args
       in
       pexp_apply ~loc f args
@@ -625,18 +626,87 @@ and stage_dimensions ~on_evar ~loc ~from dimensions =
   in
   [%expr List.concat [%e elist ~loc body]]
 
+and stage_fill ~on_evar ~loc ~from fill =
+  let fill_from =
+    match fill.Syntax.fill_from with
+    | None -> [%expr None]
+    | Some e ->
+        let e = stage_expr ~on_evar ~params:[] ~from e in
+        [%expr Some (Ch_queries.A_expr [%e e])]
+  in
+  let fill_to =
+    match fill.fill_to with
+    | None -> [%expr None]
+    | Some e ->
+        let e = stage_expr ~on_evar ~params:[] ~from e in
+        [%expr Some (Ch_queries.A_expr [%e e])]
+  in
+  let fill_step =
+    match fill.fill_step with
+    | None -> [%expr None]
+    | Some e ->
+        let e = stage_expr ~on_evar ~params:[] ~from e in
+        [%expr Some (Ch_queries.A_expr [%e e])]
+  in
+  let fill_interpolate =
+    let items_expr =
+      List.map fill.fill_interpolate
+        ~f:(fun { Syntax.interpolate_col; interpolate_expr } ->
+          let col_str = estring ~loc interpolate_col.Syntax.node in
+          let expr_opt =
+            match interpolate_expr with
+            | None -> [%expr None]
+            | Some e ->
+                let e = stage_expr ~on_evar ~params:[] ~from e in
+                [%expr Some (Ch_queries.A_expr [%e e])]
+          in
+          [%expr [%e col_str], [%e expr_opt]])
+    in
+    elist ~loc items_expr
+  in
+  [%expr
+    {
+      Ch_queries.fill_from = [%e fill_from];
+      fill_to = [%e fill_to];
+      fill_step = [%e fill_step];
+      fill_interpolate = [%e fill_interpolate];
+    }]
+
+(** Generate order_by for window functions - uses simple (a_expr * dir) tuples
+*)
+and stage_window_order_by ~on_evar ~loc ~from order_by =
+  let xs =
+    List.map order_by ~f:(function
+      | Syntax.Order_by_splice id ->
+          let e = Syntax.make_expr ~loc:id.loc (E_param id) in
+          stage_expr ~on_evar ~params:[] ~from e
+      | Syntax.Order_by_expr (expr, dir, _fill) ->
+          (* fill is ignored for window functions *)
+          let expr = stage_expr ~on_evar ~params:[] ~from expr in
+          let dir =
+            match dir with `ASC -> [%expr `ASC] | `DESC -> [%expr `DESC]
+          in
+          [%expr [ (Ch_queries.A_expr [%e expr], [%e dir]) ]])
+  in
+  [%expr List.concat [%e elist ~loc xs]]
+
 and stage_order_by ~on_evar ~loc ~from order_by =
   let xs =
     List.map order_by ~f:(function
       | Syntax.Order_by_splice id ->
           let e = Syntax.make_expr ~loc:id.loc (E_param id) in
           stage_expr ~on_evar ~params:[] ~from e
-      | Syntax.Order_by_expr (expr, dir) ->
+      | Syntax.Order_by_expr (expr, dir, fill) ->
           let expr = stage_expr ~on_evar ~params:[] ~from expr in
           let dir =
             match dir with `ASC -> [%expr `ASC] | `DESC -> [%expr `DESC]
           in
-          [%expr [ (Ch_queries.A_expr [%e expr], [%e dir]) ]])
+          let fill =
+            match fill with
+            | None -> [%expr None]
+            | Some fill -> [%expr Some [%e stage_fill ~on_evar ~loc ~from fill]]
+          in
+          [%expr [ (Ch_queries.A_expr [%e expr], [%e dir], [%e fill]) ]])
   in
   [%expr List.concat [%e elist ~loc xs]]
 
@@ -858,9 +928,11 @@ and stage_query_args ~on_evar args ({ Ch_queries_syntax.Syntax.node; _ } as q) =
       let args =
         match order_by with
         | None -> args
-        | Some order_by ->
+        | Some order_by_items ->
             let loc = to_location q in
-            let order_by = stage_order_by ~on_evar ~loc ~from:From order_by in
+            let order_by =
+              stage_order_by ~on_evar ~loc ~from:From order_by_items
+            in
             let order_by = make_hole ~loc order_by in
             (Labelled "order_by", order_by) :: args
       in

@@ -43,6 +43,15 @@ and 'a nullable_scope =
 
 and a_field = A_field : Ch_queries_syntax.Syntax.expr * string -> a_field
 
+and fill = {
+  fill_from : a_expr option;
+  fill_to : a_expr option;
+  fill_step : a_expr option;
+  fill_interpolate : (string * a_expr option) list;
+}
+
+and an_order_by = a_expr * [ `ASC | `DESC ] * fill option
+
 and 'scope select_payload = {
   mutable ctes : cte_query list;
   from : a_from0;
@@ -52,7 +61,7 @@ and 'scope select_payload = {
   qualify : a_expr option;
   group_by : a_expr list option;
   having : a_expr option;
-  order_by : (a_expr * [ `ASC | `DESC ]) list option;
+  order_by : an_order_by list option;
   limit : a_expr option;
   offset : a_expr option;
   settings :
@@ -235,9 +244,23 @@ module To_syntax = struct
   let rec group_by_to_syntax dimensions =
     List.map dimensions ~f:(fun (A_expr expr) -> Syntax.Dimension_expr expr)
 
+  and fill_to_syntax { fill_from; fill_to; fill_step; fill_interpolate } =
+    let fill_from = Option.map (fun (A_expr e) -> e) fill_from in
+    let fill_to = Option.map (fun (A_expr e) -> e) fill_to in
+    let fill_step = Option.map (fun (A_expr e) -> e) fill_step in
+    let fill_interpolate =
+      List.map fill_interpolate ~f:(fun (col, expr_opt) ->
+          {
+            Syntax.interpolate_col = Syntax.make_id col;
+            interpolate_expr = Option.map (fun (A_expr e) -> e) expr_opt;
+          })
+    in
+    { Syntax.fill_from; fill_to; fill_step; fill_interpolate }
+
   and order_by_to_syntax order_by =
-    List.map order_by ~f:(fun (A_expr expr, dir) ->
-        Syntax.Order_by_expr (expr, dir))
+    List.map order_by ~f:(fun (A_expr expr, dir, fill) ->
+        let fill = Option.map fill_to_syntax fill in
+        Syntax.Order_by_expr (expr, dir, fill))
 
   and to_syntax : type a. a select0 -> Syntax.query =
    fun q ->
@@ -660,7 +683,7 @@ module Expr = struct
         let order_by =
           Option.map
             (List.map ~f:(fun (A_expr expr, dir) ->
-                 Syntax.Order_by_expr (expr, dir)))
+                 Syntax.Order_by_expr (expr, dir, None)))
             order_by
         in
         let window = { Syntax.partition_by; order_by } in

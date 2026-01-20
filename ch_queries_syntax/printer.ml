@@ -88,10 +88,12 @@ let rec pp_expr opts ~parent_prec expr =
         | None -> empty
         | Some orders ->
             let pp_order = function
-              | Order_by_expr (expr, `ASC) ->
-                  pp_expr opts ~parent_prec:0 expr ^^ space ^^ string "ASC"
-              | Order_by_expr (expr, `DESC) ->
-                  pp_expr opts ~parent_prec:0 expr ^^ space ^^ string "DESC"
+              | Order_by_expr (expr, `ASC, fill) ->
+                  pp_expr opts ~parent_prec:0 expr
+                  ^^ space ^^ string "ASC" ^^ pp_with_fill opts fill
+              | Order_by_expr (expr, `DESC, fill) ->
+                  pp_expr opts ~parent_prec:0 expr
+                  ^^ space ^^ string "DESC" ^^ pp_with_fill opts fill
               | Order_by_splice id -> pp_id id
             in
             string "ORDER BY" ^^ space
@@ -246,6 +248,38 @@ let rec pp_expr opts ~parent_prec expr =
            (pp_id param ^/^ string "->"
            ^/^ parens (pp_expr opts ~parent_prec:0 body)))
 
+and pp_with_fill opts = function
+  | None -> empty
+  | Some fill ->
+      let parts =
+        [ string " WITH FILL" ]
+        @ (match fill.fill_from with
+          | None -> []
+          | Some e -> [ string " FROM " ^^ pp_expr opts ~parent_prec:0 e ])
+        @ (match fill.fill_to with
+          | None -> []
+          | Some e -> [ string " TO " ^^ pp_expr opts ~parent_prec:0 e ])
+        @ (match fill.fill_step with
+          | None -> []
+          | Some e -> [ string " STEP " ^^ pp_expr opts ~parent_prec:0 e ])
+        @
+        match fill.fill_interpolate with
+        | [] -> []
+        | items -> [ pp_interpolate opts items ]
+      in
+      concat parts
+
+and pp_interpolate opts items =
+  let pp_item { interpolate_col; interpolate_expr } =
+    match interpolate_expr with
+    | None -> pp_id interpolate_col
+    | Some e ->
+        pp_id interpolate_col ^^ string " AS " ^^ pp_expr opts ~parent_prec:0 e
+  in
+  string " INTERPOLATE ("
+  ^^ separate (string ", ") (List.map ~f:pp_item items)
+  ^^ string ")"
+
 and pp_dimension opts = function
   | Dimension_expr expr -> pp_expr opts ~parent_prec:0 expr
   | Dimension_splice id -> pp_id id ^^ string "..."
@@ -399,11 +433,11 @@ and pp_query opts { node; eq = _; loc = _ } =
         | Some items ->
             let pp_item = function
               | Syntax.Order_by_splice id -> pp_id id ^^ string "..."
-              | Syntax.Order_by_expr (expr, dir) ->
+              | Syntax.Order_by_expr (expr, dir, fill) ->
                   let dir = match dir with `ASC -> "ASC" | `DESC -> "DESC" in
                   group
                     (pp_expr opts ~parent_prec:0 expr
-                    ^^ string " " ^^ string dir)
+                    ^^ string " " ^^ string dir ^^ pp_with_fill opts fill)
             in
             let pp_items = separate (string ", ") (List.map ~f:pp_item items) in
             Some (group (string "ORDER BY " ^^ pp_items))

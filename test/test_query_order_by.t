@@ -21,7 +21,11 @@ ORDER BY single column (default ASC):
         end)
       ~order_by:(fun __q ->
         List.concat
-          [ [ (Ch_queries.A_expr (__q#users#query (fun __q -> __q#x)), `ASC) ] ])
+          [
+            [
+              (Ch_queries.A_expr (__q#users#query (fun __q -> __q#x)), `ASC, None);
+            ];
+          ])
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
@@ -54,7 +58,11 @@ ORDER BY with DESC:
         end)
       ~order_by:(fun __q ->
         List.concat
-          [ [ (Ch_queries.A_expr (__q#users#query (fun __q -> __q#x)), `DESC) ] ])
+          [
+            [
+              (Ch_queries.A_expr (__q#users#query (fun __q -> __q#x)), `DESC, None);
+            ];
+          ])
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
@@ -88,8 +96,14 @@ ORDER BY multiple columns:
       ~order_by:(fun __q ->
         List.concat
           [
-            [ (Ch_queries.A_expr (__q#users#query (fun __q -> __q#x)), `ASC) ];
-            [ (Ch_queries.A_expr (__q#users#query (fun __q -> __q#id)), `DESC) ];
+            [
+              (Ch_queries.A_expr (__q#users#query (fun __q -> __q#x)), `ASC, None);
+            ];
+            [
+              ( Ch_queries.A_expr (__q#users#query (fun __q -> __q#id)),
+                `DESC,
+                None );
+            ];
           ])
   
   let sql, _parse_row =
@@ -126,6 +140,6 @@ ORDER BY with a parameter:
   >>> RUNNING
   val users :
     ord:(< users : Ch_database.Public.users Ch_queries.scope > ->
-         (Ch_queries.a_expr * [ `ASC | `DESC ]) list) ->
+         Ch_queries.an_order_by list) ->
     < x : (Ch_queries.non_null, string) Ch_queries.expr > Ch_queries.scope
     Ch_queries.select

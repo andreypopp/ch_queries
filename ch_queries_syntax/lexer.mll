@@ -55,6 +55,10 @@
     ("SECOND", SECOND);
     ("SECONDS", SECOND);
     ("WITH", WITH);
+    ("FILL", FILL);
+    ("STEP", STEP);
+    ("TO", TO);
+    ("INTERPOLATE", INTERPOLATE);
   ]
 
   let keyword_table = Hashtbl.create 16
@@ -138,6 +142,10 @@
     | Parser.SECOND -> "SECOND"
     | Parser.ARROW -> "ARROW"
     | Parser.WITH -> "WITH"
+    | Parser.FILL -> "FILL"
+    | Parser.STEP -> "STEP"
+    | Parser.TO -> "TO"
+    | Parser.INTERPOLATE -> "INTERPOLATE"
     | Parser.AS_MATERIALIZED -> "AS_MATERIALIZED"
     | Parser.AS_LPAREN -> "AS_LPAREN"
     | Parser.AS_PARAM s -> Printf.sprintf "AS_PARAM(%s)" s

@@ -46,6 +46,7 @@
 %token YEAR MONTH WEEK DAY HOUR MINUTE SECOND
 %token ARROW
 %token WITH
+%token FILL STEP TO INTERPOLATE
 %token AS_MATERIALIZED AS_LPAREN
 %token <string> AS_PARAM
 %token EOF
@@ -216,9 +217,30 @@ order_by:
 
 order_by_item:
     e=param_splice { Order_by_splice e }
-  | e=expr { Order_by_expr (e, `ASC) }
-  | e=expr ASC { Order_by_expr (e, `ASC) }
-  | e=expr DESC { Order_by_expr (e, `DESC) }
+  | e=expr fill=with_fill { Order_by_expr (e, `ASC, fill) }
+  | e=expr ASC fill=with_fill { Order_by_expr (e, `ASC, fill) }
+  | e=expr DESC fill=with_fill { Order_by_expr (e, `DESC, fill) }
+
+with_fill:
+    { None }
+  | WITH FILL from_=fill_from? to_=fill_to? step=fill_step? interpolate=interpolate_clause?
+    { Some { fill_from = from_; fill_to = to_; fill_step = step;
+             fill_interpolate = Option.value interpolate ~default:[] } }
+
+fill_from: FROM e=expr { e }
+fill_to: TO e=expr { e }
+fill_step: STEP e=expr { e }
+
+interpolate_clause:
+    INTERPOLATE { [] }
+  | INTERPOLATE LPAREN items=flex_list(COMMA, interpolate_item) RPAREN { items }
+
+interpolate_item:
+    col=id { { interpolate_col = col; interpolate_expr = None } }
+  | col=id AS e=expr { { interpolate_col = col; interpolate_expr = Some e } }
+  | col=id p=as_param {
+      let e = make_expr $startpos(p) $endpos(p) (E_param p) in
+      { interpolate_col = col; interpolate_expr = Some e } }
 
 limit:
     LIMIT e=expr { e }

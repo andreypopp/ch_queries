@@ -44,8 +44,17 @@ and window_spec = {
   order_by : order_by list option;
 }
 
+and interpolate_item = { interpolate_col : id; interpolate_expr : expr option }
+
+and with_fill = {
+  fill_from : expr option;
+  fill_to : expr option;
+  fill_step : expr option;
+  fill_interpolate : interpolate_item list;
+}
+
 and order_by =
-  | Order_by_expr of expr * [ `ASC | `DESC ]
+  | Order_by_expr of expr * [ `ASC | `DESC ] * with_fill option
   | Order_by_splice of id
 
 (** used for GROUP BY *)

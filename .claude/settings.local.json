@@ -8,7 +8,9 @@
       "Bash(grep:*)",
       "Skill(clickhouse-know-how)",
       "WebFetch(domain:clickhouse.com)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(cat:*)",
+      "Bash(xxd:*)"
     ],
     "deny": [],
     "ask": []

@@ -29,6 +29,17 @@ type (+'null, +'typ) expr
     BY, ORDER BY, etc.). *)
 type a_expr = A_expr : _ expr -> a_expr
 
+type fill = {
+  fill_from : a_expr option;
+  fill_to : a_expr option;
+  fill_step : a_expr option;
+  fill_interpolate : (string * a_expr option) list;
+}
+(** Fill specification for ORDER BY WITH FILL clause. *)
+
+type an_order_by = a_expr * [ `ASC | `DESC ] * fill option
+(** ORDER BY item with optional fill specification. *)
+
 type 'a scope =
   < query' :
       'n 'e.
@@ -98,7 +109,7 @@ val select :
   ?qualify:('from -> (_, bool) expr) ->
   ?group_by:('from -> a_expr list) ->
   ?having:('from -> (_, bool) expr) ->
-  ?order_by:('from -> (a_expr * [ `ASC | `DESC ]) list) ->
+  ?order_by:('from -> an_order_by list) ->
   ?limit:('from -> (_, int number) expr) ->
   ?offset:('from -> (_, int number) expr) ->
   ?settings:(string * [ `Int of int | `String of string | `Bool of bool ]) list ->
@@ -156,7 +167,7 @@ val select_syntax :
   ?qualify:('from -> (_, bool) expr) ->
   ?group_by:('from -> a_expr list) ->
   ?having:('from -> (_, bool) expr) ->
-  ?order_by:('from -> (a_expr * [ `ASC | `DESC ]) list) ->
+  ?order_by:('from -> an_order_by list) ->
   ?limit:('from -> (_, int number) expr) ->
   ?offset:('from -> (_, int number) expr) ->
   ?settings:(string * [ `Int of int | `String of string | `Bool of bool ]) list ->
