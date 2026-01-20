@@ -270,6 +270,10 @@ module Expr : sig
 
   val length : ('n, _ array) expr -> ('n, int number) expr
 
+  val arrayJoin : ('n, ('m, 'a) array) expr -> ('m, 'a) expr
+  (** [arrayJoin arr] unfolds the array into multiple rows - one per element.
+      This is a special function that affects all query clauses. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
@@ -509,6 +513,11 @@ module Expr : sig
     (non_null, (non_null, uint64 number) array) expr
   (** Returns an array of indices of all matching patterns (1-based). *)
 
+  val extract :
+    ('n, string) expr -> (non_null, string) expr -> ('n, string) expr
+  (** [extract haystack pattern] extracts the first regex match.
+      Returns empty string if no match found. Uses RE2 regex library. *)
+
   (** {2 URL functions} *)
 
   val extractURLParameter :
@@ -518,6 +527,47 @@ module Expr : sig
 
   val decodeURLComponent : ('n, string) expr -> ('n, string) expr
   (** Decodes a URL-encoded string. *)
+
+  (** {2 JSON functions} *)
+
+  val simpleJSONExtractString :
+    ('n, string) expr -> (non_null, string) expr -> ('n, string) expr
+  (** [simpleJSONExtractString json field] extracts a string value from JSON.
+      Returns empty string if field doesn't exist or isn't a string. *)
+
+  val simpleJSONExtractInt :
+    ('n, string) expr -> (non_null, string) expr -> ('n, int64 number) expr
+  (** [simpleJSONExtractInt json field] extracts an integer value from JSON.
+      Returns 0 if field doesn't exist or isn't numeric. *)
+
+  val simpleJSONExtractFloat :
+    ('n, string) expr -> (non_null, string) expr -> ('n, float number) expr
+  (** [simpleJSONExtractFloat json field] extracts a float value from JSON.
+      Returns 0 if field doesn't exist or isn't numeric. *)
+
+  val simpleJSONExtractBool :
+    ('n, string) expr -> (non_null, string) expr -> ('n, bool) expr
+  (** [simpleJSONExtractBool json field] extracts a boolean value from JSON.
+      Returns false if field doesn't exist or isn't a boolean. *)
+
+  val simpleJSONExtractRaw :
+    ('n, string) expr -> (non_null, string) expr -> ('n, string) expr
+  (** [simpleJSONExtractRaw json field] extracts raw unparsed value from JSON.
+      Returns empty string if field doesn't exist. *)
+
+  val jsonExtractKeys :
+    ('n, string) expr -> (non_null, (non_null, string) array) expr
+  (** [jsonExtractKeys json] extracts keys from a JSON object.
+      Returns array of key names. *)
+
+  (** {2 Splitting functions} *)
+
+  val splitByChar :
+    (non_null, string) expr ->
+    ('n, string) expr ->
+    ('n, (non_null, string) array) expr
+  (** [splitByChar separator s] splits a string by a single character separator.
+      Returns array of substrings. *)
 
   (** {2 Type conversions} *)
 

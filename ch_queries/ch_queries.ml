@@ -559,6 +559,7 @@ module Expr = struct
   let arrayElementOrNull arr i = def "arrayElementOrNull" [ arr; i ]
   let arrayFilter f x = def "arrayFilter" [ f; x ]
   let length x = def "length" [ x ]
+  let arrayJoin arr = def "arrayJoin" [ arr ]
 
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]
@@ -704,10 +705,35 @@ module Expr = struct
   let multiMatchAllIndices hay patterns =
     def "multiMatchAllIndices" [ hay; patterns ]
 
+  let extract hay pattern = def "extract" [ hay; pattern ]
+
   (** {2 URL functions} *)
 
   let extractURLParameter url name = def "extractURLParameter" [ url; name ]
   let decodeURLComponent url = def "decodeURLComponent" [ url ]
+
+  (** {2 JSON functions} *)
+
+  let simpleJSONExtractString json field =
+    def "simpleJSONExtractString" [ json; field ]
+
+  let simpleJSONExtractInt json field =
+    def "simpleJSONExtractInt" [ json; field ]
+
+  let simpleJSONExtractFloat json field =
+    def "simpleJSONExtractFloat" [ json; field ]
+
+  let simpleJSONExtractBool json field =
+    def "simpleJSONExtractBool" [ json; field ]
+
+  let simpleJSONExtractRaw json field =
+    def "simpleJSONExtractRaw" [ json; field ]
+
+  let jsonExtractKeys json = def "JSONExtractKeys" [ json ]
+
+  (** {2 Splitting functions} *)
+
+  let splitByChar sep str = def "splitByChar" [ sep; str ]
 
   (** {2 Type conversions} *)
 
