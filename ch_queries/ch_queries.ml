@@ -139,6 +139,31 @@ and 'a from = unit -> 'a from0
 and a_from0 = A_from : 'a from0 -> a_from0
 and a_from_one0 = A_from_one : 'a from_one0 -> a_from_one0
 
+module Dict = struct
+  type ('keys, 'values) t = {
+    db : string;
+    table : string;
+    keys : 'keys;
+    values : 'values scope;
+  }
+
+  let make ~db ~table ~keys ~values =
+    let values =
+      object (self)
+        method query' f =
+          let e = f values in
+          let commit ~force:_ = e in
+          (e, commit)
+
+        method query f = snd (self#query' f) ~force:false
+        method query_many f = f values
+      end
+    in
+    { db; table; keys; values }
+
+  let unsafe_value name = Syntax.make_expr (E_lit (L_string name))
+end
+
 let rec scope_from : type scope. scope from0 -> scope = function
   | From { scope; _ } -> scope
   | From_join { scope; _ } -> scope
@@ -802,6 +827,21 @@ module Expr = struct
   let sumMapMerge x = def "sumMapMerge" [ x ]
   let sumMapMergeState keys values = def "sumMapMergeState" [ keys; values ]
   let avgMergeStateIf x cond = def "avgMergeStateIf" [ x; cond ]
+
+  (** {2 Join Tables / Dictionaries} *)
+
+  let joinGet ({ db; table; keys = _; values = _ } : _ Dict.t) value keys =
+    let keys =
+      match keys.Syntax.node with
+      | Syntax.E_call (Syntax.Func { node = "tuple"; _ }, args) -> args
+      | _ -> [ keys ]
+    in
+    def "joinGet" (unsafe (Printf.sprintf "%s.%s" db table) :: value :: keys)
+
+  let joinGetOrNull = joinGet
+
+  let dictGet ({ db; table; keys = _; values = _ } : _ Dict.t) value key =
+    def "dictGet" [ unsafe (Printf.sprintf "%s.%s" db table); value; key ]
 
   (** {2 Tuples} *)
 

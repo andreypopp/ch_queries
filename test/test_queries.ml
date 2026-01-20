@@ -36,6 +36,25 @@ module Ch_database = struct
         end
       in
       from_table ~db:"public" ~table:"profiles" scope
+
+    let dict =
+      Dict.make ~db:"public" ~table:"dict"
+        ~keys:(unsafe "key" : (non_null, int number) expr)
+        ~values:
+          (object
+             method value : (non_null, string) expr = Dict.unsafe_value "value"
+          end)
+
+    let multikey_dict =
+      Dict.make ~db:"public" ~table:"dict"
+        ~keys:
+          (Expr.tuple2
+             ( (unsafe "key" : (non_null, int number) expr),
+               (unsafe "key" : (non_null, int number) expr) ))
+        ~values:
+          (object
+             method value : (non_null, string) expr = Dict.unsafe_value "value"
+          end)
   end
 end
 

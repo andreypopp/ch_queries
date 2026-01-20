@@ -68,6 +68,24 @@ and 'a nullable_scope =
 (** Represents a table's or a subquery's scope when one is used on the right
     side of a LEFT JOIN. *)
 
+module Dict : sig
+  type ('keys, 'values) t = {
+    db : string;
+    table : string;
+    keys : 'keys;
+    values : 'values scope;
+  }
+
+  val make :
+    db:string ->
+    table:string ->
+    keys:'keys ->
+    values:'values ->
+    ('keys, 'values) t
+
+  val unsafe_value : string -> ('n, 'a) expr
+end
+
 type 'scope select
 (** SELECT query. *)
 
@@ -736,6 +754,26 @@ module Expr : sig
     (_, bool) expr ->
     (non_null, (non_null, 't number) agg_state) expr
   (** avgMerge with State and If combinators. *)
+
+  (* {2 Join/Dict table functions} *)
+
+  val joinGet :
+    ((non_null, 'keys) expr, 'values) Dict.t ->
+    ('n, 'a) expr ->
+    (non_null, 'keys) expr ->
+    ('n, 'a) expr
+
+  val joinGetOrNull :
+    ((non_null, 'keys) expr, 'values) Dict.t ->
+    ('n, 'a) expr ->
+    (non_null, 'keys) expr ->
+    (null, 'a) expr
+
+  val dictGet :
+    ((non_null, 'key) expr, 'values) Dict.t ->
+    ('n, 'a) expr ->
+    (non_null, 'key) expr ->
+    ('n, 'a) expr
 
   (* {2 Tuples} *)
 

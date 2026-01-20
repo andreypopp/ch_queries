@@ -560,6 +560,157 @@ let rec stage_expr ~on_evar ~params ~(from : from_ctx) expr =
               (Nolabel, elist ~loc args);
               (Labelled "else_", stage_expr ~on_evar ~params ~from else_);
             ]
+      | Func { node = "tuple"; _ } ->
+          let arity = List.length args in
+          let f =
+            match arity with
+            | 2 -> [%expr Ch_queries.Expr.tuple2]
+            | 3 -> [%expr Ch_queries.Expr.tuple3]
+            | 4 -> [%expr Ch_queries.Expr.tuple4]
+            | _ ->
+                Location.raise_errorf ~loc
+                  "tuple(...) requires 2, 3, or 4 arguments"
+          in
+          let args = List.map args ~f:(stage_expr ~on_evar ~params ~from) in
+          eapply ~loc f [ pexp_tuple ~loc args ]
+      | Func { node = ("joinGet" | "joinGetOrNull") as fname; _ } ->
+          (* joinGet(DICT, VALUE, KEYS...) stages as:
+             Ch_queries.Expr.joinGet
+               (DICT : _ Ch_queries.Dict.t)
+               DICT.Ch_queries.Dict.values#VALUE
+               tuple<N>(KEYS...) *)
+          let dict, value_arg, key_args =
+            match args with
+            | dict :: value :: keys -> (dict, value, keys)
+            | _ ->
+                Location.raise_errorf ~loc
+                  "%s requires at least 2 arguments (dict, value)" fname
+          in
+          (* Stage dict - db.table, 'db.table', or $param *)
+          let dict =
+            match dict.Syntax.node with
+            | E_col (db, table) ->
+                evar ~loc (refer_to_db_table db table)
+            | E_lit (L_string s) -> (
+                match String.split_on_char ~by:'.' s with
+                | [ db; table ] ->
+                    let db_id = Syntax.make_id db in
+                    let table_id = Syntax.make_id table in
+                    evar ~loc (refer_to_db_table db_id table_id)
+                | _ ->
+                    Location.raise_errorf ~loc
+                      "%s: dict string must be 'db.table'" fname)
+            | E_param id ->
+                on_evar id;
+                evar ~loc:(to_location id) id.Syntax.node
+            | _ ->
+                Location.raise_errorf ~loc
+                  "%s: dict must be db.table, 'db.table', or $param" fname
+          in
+          let dict = [%expr ([%e dict] : _ Ch_queries.Dict.t)] in
+          (* Stage value - either 'literal' -> dict.values#literal or $param *)
+          let value_expr =
+            match value_arg.Syntax.node with
+            | E_lit (L_string value_name) ->
+                let scope = [%expr [%e dict].Ch_queries.Dict.values] in
+                let q = pexp_send ~loc scope (Located.mk ~loc "query") in
+                [%expr
+                  [%e q] (fun __q ->
+                      [%e
+                        pexp_send ~loc [%expr __q] (Located.mk ~loc value_name)])]
+            | E_param id ->
+                on_evar id;
+                let e = evar ~loc:(to_location id) id.Syntax.node in
+                let scope = [%expr [%e dict].Ch_queries.Dict.values] in
+                let q = pexp_send ~loc scope (Located.mk ~loc "query") in
+                [%expr [%e q] (fun __q -> [%e e] __q)]
+            | _ ->
+                Location.raise_errorf ~loc
+                  "%s: value must be 'literal' or $param" fname
+          in
+          (* Stage keys - 1 to 4 keys, wrapped in tuple if multiple *)
+          let num_keys = List.length key_args in
+          if num_keys = 0 then
+            Location.raise_errorf ~loc "%s requires at least 1 key argument"
+              fname
+          else if num_keys > 4 then
+            Location.raise_errorf ~loc "%s supports at most 4 key arguments"
+              fname
+          else
+            let key_exprs =
+              List.map key_args ~f:(stage_expr ~on_evar ~params ~from)
+            in
+            let keys_expr =
+              match key_exprs with
+              | [ k ] -> k
+              | [ k1; k2 ] -> [%expr Ch_queries.Expr.tuple2 ([%e k1], [%e k2])]
+              | [ k1; k2; k3 ] ->
+                  [%expr Ch_queries.Expr.tuple3 ([%e k1], [%e k2], [%e k3])]
+              | [ k1; k2; k3; k4 ] ->
+                  [%expr
+                    Ch_queries.Expr.tuple4 ([%e k1], [%e k2], [%e k3], [%e k4])]
+              | _ -> assert false
+            in
+            let f = evar ~loc (Printf.sprintf "Ch_queries.Expr.%s" fname) in
+            eapply ~loc f [ dict; value_expr; keys_expr ]
+      | Func { node = "dictGet"; _ } ->
+          (* dictGet(DICT, VALUE, KEY) stages as:
+             Ch_queries.Expr.dictGet
+               (DICT : _ Ch_queries.Dict.t)
+               DICT.Ch_queries.Dict.values#VALUE
+               KEY *)
+          let dict, value_arg, key_arg =
+            match args with
+            | [ dict; value; key ] -> (dict, value, key)
+            | _ ->
+                Location.raise_errorf ~loc
+                  "dictGet requires exactly 3 arguments (dict, value, key)"
+          in
+          (* Stage dict - db.table, 'db.table', or $param *)
+          let dict =
+            match dict.Syntax.node with
+            | E_col (db, table) ->
+                evar ~loc (refer_to_db_table db table)
+            | E_lit (L_string s) -> (
+                match String.split_on_char ~by:'.' s with
+                | [ db; table ] ->
+                    let db_id = Syntax.make_id db in
+                    let table_id = Syntax.make_id table in
+                    evar ~loc (refer_to_db_table db_id table_id)
+                | _ ->
+                    Location.raise_errorf ~loc
+                      "dictGet: dict string must be 'db.table'")
+            | E_param id ->
+                on_evar id;
+                evar ~loc:(to_location id) id.Syntax.node
+            | _ ->
+                Location.raise_errorf ~loc
+                  "dictGet: dict must be db.table, 'db.table', or $param"
+          in
+          let dict = [%expr ([%e dict] : _ Ch_queries.Dict.t)] in
+          (* Stage value - either 'literal' -> dict.values#literal or $param *)
+          let value_expr =
+            match value_arg.Syntax.node with
+            | E_lit (L_string value_name) ->
+                let scope = [%expr [%e dict].Ch_queries.Dict.values] in
+                let q = pexp_send ~loc scope (Located.mk ~loc "query") in
+                [%expr
+                  [%e q] (fun __q ->
+                      [%e
+                        pexp_send ~loc [%expr __q] (Located.mk ~loc value_name)])]
+            | E_param id ->
+                on_evar id;
+                let e = evar ~loc:(to_location id) id.Syntax.node in
+                let scope = [%expr [%e dict].Ch_queries.Dict.values] in
+                let q = pexp_send ~loc scope (Located.mk ~loc "query") in
+                [%expr [%e q] (fun __q -> [%e e] __q)]
+            | _ ->
+                Location.raise_errorf ~loc
+                  "dictGet: value must be 'literal' or $param"
+          in
+          (* Stage key - single expression *)
+          let key_expr = stage_expr ~on_evar ~params ~from key_arg in
+          eapply ~loc [%expr Ch_queries.Expr.dictGet] [ dict; value_expr; key_expr ]
       | Func name ->
           let f =
             let loc = to_location name in
