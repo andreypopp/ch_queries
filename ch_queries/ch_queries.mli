@@ -499,6 +499,12 @@ module Expr : sig
   (** Returns the leftmost offset in a haystack string which matches any of
       multiple needle strings, otherwise 0, if there was no match *)
 
+  val multiMatchAllIndices :
+    ('n, string) expr ->
+    (non_null, (non_null, string) array) expr ->
+    (non_null, (non_null, uint64 number) array) expr
+  (** Returns an array of indices of all matching patterns (1-based). *)
+
   (** {2 URL functions} *)
 
   val extractURLParameter :

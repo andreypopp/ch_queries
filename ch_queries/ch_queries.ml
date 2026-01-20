@@ -699,6 +699,9 @@ module Expr = struct
   let multiSearchFirstPosition hay needle =
     def "multiSearchFirstPosition" [ hay; needle ]
 
+  let multiMatchAllIndices hay patterns =
+    def "multiMatchAllIndices" [ hay; patterns ]
+
   (** {2 URL functions} *)
 
   let extractURLParameter url name = def "extractURLParameter" [ url; name ]
