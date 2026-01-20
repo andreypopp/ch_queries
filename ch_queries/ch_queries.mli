@@ -235,10 +235,10 @@ module Expr : sig
     ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
 
   val divide :
-    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
+    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, float number) expr
 
   val ( / ) :
-    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
+    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, float number) expr
 
   val negate : ('n, 'a number) expr -> ('n, 'a number) expr
   val abs : ('n, 'a number) expr -> ('n, 'a number) expr
@@ -517,6 +517,7 @@ module Expr : sig
 
   (** {2 Type conversions} *)
 
+  val toInt32 : ('n, _) expr -> ('n, int number) expr
   val toInt64 : ('n, _) expr -> ('n, int64 number) expr
   val toUInt64 : ('n, _) expr -> ('n, uint64 number) expr
   val toUInt32 : ('n, _) expr -> ('n, int number) expr
@@ -524,6 +525,7 @@ module Expr : sig
   val toUInt32OrDefault :
     ('n, _) expr -> (non_null, int number) expr -> (non_null, int number) expr
 
+  val toFloat32 : ('n, _) expr -> ('n, float number) expr
   val toFloat64 : ('n, _) expr -> ('n, float number) expr
   val toString : ('n, _) expr -> ('n, string) expr
 

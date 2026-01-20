@@ -709,10 +709,12 @@ module Expr = struct
 
   (** {2 Type conversions} *)
 
+  let toInt32 x = def "toInt32" [ x ]
   let toInt64 x = def "toInt64" [ x ]
   let toUInt64 x = def "toUInt64" [ x ]
   let toUInt32 x = def "toUInt32" [ x ]
   let toUInt32OrDefault x default = def "toUInt32OrDefault" [ x; default ]
+  let toFloat32 x = def "toFloat32" [ x ]
   let toFloat64 x = def "toFloat64" [ x ]
   let toString x = def "toString" [ x ]
   let isFinite x = def "isFinite" [ x ]
