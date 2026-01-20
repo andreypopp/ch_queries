@@ -270,10 +270,10 @@ module Expr : sig
 
   (** {2 Conditional} *)
 
-  val if_ : ('n, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
+  val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
 
   val multiIf :
-    ((non_null, bool) expr * ('n, 'a) expr) list ->
+    ((_, bool) expr * ('n, 'a) expr) list ->
     else_:('n, 'a) expr ->
     ('n, 'a) expr
 
