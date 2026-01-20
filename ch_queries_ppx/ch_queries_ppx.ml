@@ -153,12 +153,9 @@ let rec stage_typ' typ =
   match typ.node with
   | T_any -> (`ANY, [%type: _])
   | T_custom _ -> (`ANY, [%type: _]) (* treat Custom(_) as Any for casts *)
-  | T { node = "Date"; _ } ->
-      (`NON_NULL, [%type: Ch_queries.date Ch_queries.timestamp])
-  | T { node = "DateTime64"; _ } ->
-      (`NON_NULL, [%type: Ch_queries.datetime64 Ch_queries.timestamp])
-  | T { node = "DateTime"; _ } ->
-      (`NON_NULL, [%type: Ch_queries.datetime Ch_queries.timestamp])
+  | T { node = "Date"; _ } -> (`NON_NULL, [%type: Ch_queries.date])
+  | T { node = "DateTime64"; _ } -> (`NON_NULL, [%type: Ch_queries.datetime64])
+  | T { node = "DateTime"; _ } -> (`NON_NULL, [%type: Ch_queries.datetime])
   | T { node = "String"; _ } -> (`NON_NULL, [%type: string])
   | T { node = "Bool"; _ } -> (`NON_NULL, [%type: bool])
   | T { node = "Int8" | "UInt8" | "Int16" | "UInt16" | "Int32" | "UInt32"; _ }
