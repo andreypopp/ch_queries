@@ -399,7 +399,9 @@ module Expr : sig
   (** {2 Logical} *)
 
   val ( && ) : ('n, bool) expr -> ('n, bool) expr -> ('n, bool) expr
+  val ( &&? ) : ('n, bool) expr -> ('n, bool) expr option -> ('n, bool) expr
   val ( || ) : ('n, bool) expr -> ('n, bool) expr -> ('n, bool) expr
+  val ( ||? ) : ('n, bool) expr -> ('n, bool) expr option -> ('n, bool) expr
   val not_ : ('n, bool) expr -> ('n, bool) expr
 
   (** {2 Map}*)

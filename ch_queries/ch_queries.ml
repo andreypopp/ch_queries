@@ -633,9 +633,11 @@ module Expr = struct
   let toStartOfInterval x interval = def "toStartOfInterval" [ x; interval ]
 
   (** {2 Logical} *)
-  let ( && ) x y = def "AND" [ x; y ]
 
+  let ( && ) x y = def "AND" [ x; y ]
+  let ( &&? ) x y = match y with None -> x | Some y -> x && y
   let ( || ) x y = def "OR" [ x; y ]
+  let ( ||? ) x y = match y with None -> x | Some y -> x || y
   let not_ x = def "NOT" [ x ]
 
   (** {2 Array} *)
