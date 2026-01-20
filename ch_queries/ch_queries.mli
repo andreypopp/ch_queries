@@ -8,17 +8,26 @@ type null = [ `not_null | `null ]
 type non_null = [ `not_null ]
 type 'a nullable = 'a constraint 'a = [< null ]
 
-(** Used for "subtyping" of numeric types. *)
-type 'a number = private A_number
+(** Types tagged with this are comparable. *)
+type 'a comparable = private A_comparable
 
-type 'a timestamp = private A_timestamp
+type 'a number0 = private A_number
+
+type 'a number = 'a number0 comparable
+(** Used for "subtyping" of numeric types. *)
+
+type 'a timestamp0 = private A_timestamp
+type 'a timestamp = 'a timestamp0 comparable
 type ('null, 'a) array = private A_array
 type ('nullk, 'k, 'nullv, 'v) map = private A_map
 type ('null, 'a) typ = private A_typ
 type ('x, 'y) tuple2 = private A_tuple2
-type date = private Date
-type datetime = private DateTime
-type datetime64 = private DateTime64
+type date0 = private Date
+type date = date0 timestamp
+type datetime0 = private DateTime
+type datetime = datetime0 timestamp
+type datetime640 = private DateTime64
+type datetime64 = datetime640 timestamp
 type interval = private Interval
 type ('n, 'a) agg_state = private Agg_state
 
@@ -245,35 +254,48 @@ module Expr : sig
     else_:('n, 'a) expr ->
     ('n, 'a) expr
 
-  (** {2 Comparisons} *)
+  (** {2 Equality} *)
 
   val equals : ('n, 'a) expr -> ('n, 'a) expr -> ('n, bool) expr
   val ( = ) : ('n, 'a) expr -> ('n, 'a) expr -> ('n, bool) expr
   val notEquals : ('n, 'a) expr -> ('n, 'a) expr -> ('n, bool) expr
   val ( != ) : ('n, 'a) expr -> ('n, 'a) expr -> ('n, bool) expr
   val ( <> ) : ('n, 'a) expr -> ('n, 'a) expr -> ('n, bool) expr
-  val greater : ('n, 'a number) expr -> ('n, 'b number) expr -> ('n, bool) expr
-  val ( > ) : ('n, 'a number) expr -> ('n, 'b number) expr -> ('n, bool) expr
-  val less : ('n, 'a number) expr -> ('n, 'b number) expr -> ('n, bool) expr
-  val ( < ) : ('n, 'a number) expr -> ('n, 'b number) expr -> ('n, bool) expr
+
+  (** {2 Comparison} *)
+
+  val greater :
+    ('n, 'a comparable) expr -> ('n, 'b comparable) expr -> ('n, bool) expr
+
+  val ( > ) :
+    ('n, 'a comparable) expr -> ('n, 'b comparable) expr -> ('n, bool) expr
+
+  val less :
+    ('n, 'a comparable) expr -> ('n, 'b comparable) expr -> ('n, bool) expr
+
+  val ( < ) :
+    ('n, 'a comparable) expr -> ('n, 'b comparable) expr -> ('n, bool) expr
 
   val greaterOrEquals :
-    ('n, 'a number) expr -> ('n, 'b number) expr -> ('n, bool) expr
+    ('n, 'a comparable) expr -> ('n, 'b comparable) expr -> ('n, bool) expr
 
-  val ( >= ) : ('n, 'a number) expr -> ('n, 'b number) expr -> ('n, bool) expr
+  val ( >= ) :
+    ('n, 'a comparable) expr -> ('n, 'b comparable) expr -> ('n, bool) expr
 
   val lessOrEquals :
-    ('n, 'a number) expr -> ('n, 'b number) expr -> ('n, bool) expr
+    ('n, 'a comparable) expr -> ('n, 'b comparable) expr -> ('n, bool) expr
 
-  val ( <= ) : ('n, 'a number) expr -> ('n, 'b number) expr -> ('n, bool) expr
+  val ( <= ) :
+    ('n, 'a comparable) expr -> ('n, 'b comparable) expr -> ('n, bool) expr
 
   (** {2 Dates and times} *)
 
-  val toDate : ('n, _) expr -> ('n, date timestamp) expr
-  val toDateTime : ('n, _) expr -> ('n, datetime timestamp) expr
-  val now : unit -> (non_null, datetime timestamp) expr
-  val today : unit -> (non_null, date timestamp) expr
-  val yesterday : unit -> (non_null, date timestamp) expr
+  val toDate : ('n, _) expr -> ('n, date) expr
+  val toDateTime : ('n, _) expr -> ('n, datetime) expr
+  val now : unit -> (non_null, datetime) expr
+  val now64 : unit -> (non_null, datetime64) expr
+  val today : unit -> (non_null, date) expr
+  val yesterday : unit -> (non_null, date) expr
 
   val addDate :
     ('n, 'a timestamp) expr -> ('n, interval) expr -> ('n, 'a timestamp) expr
@@ -303,6 +325,9 @@ module Expr : sig
     ('n, 'a timestamp) expr -> ('n, int number) expr -> ('n, 'a timestamp) expr
 
   val subDate :
+    ('n, 'a timestamp) expr -> ('n, interval) expr -> ('n, 'a timestamp) expr
+
+  val subtractInterval :
     ('n, 'a timestamp) expr -> ('n, interval) expr -> ('n, 'a timestamp) expr
 
   val subtractDays :
@@ -340,7 +365,7 @@ module Expr : sig
     (non_null, interval) expr ->
     ('n, 'a timestamp) expr
 
-  val fromUnixTimestamp : ('n, _ number) expr -> ('n, datetime timestamp) expr
+  val fromUnixTimestamp : ('n, int number) expr -> ('n, datetime) expr
   val toIntervalMinute : ('n, int number) expr -> ('n, interval) expr
   val toIntervalHour : ('n, int number) expr -> ('n, interval) expr
   val toIntervalDay : ('n, int number) expr -> ('n, interval) expr
@@ -727,8 +752,8 @@ module Parse : sig
   val int64 : (non_null, int64 number, int64) t
   val uint64 : (non_null, uint64 number, uint64) t
   val float : (non_null, float number, float) t
-  val date : (non_null, date timestamp, float) t
-  val datetime : (non_null, datetime timestamp, float) t
+  val date : (non_null, date, float) t
+  val datetime : (non_null, datetime, float) t
 
   val any : (_, _, json) t
   (** [any] parses any JSON value as-is. Returns JSON. *)

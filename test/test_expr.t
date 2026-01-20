@@ -63,7 +63,8 @@ arrays:
   Error: This expression has type (Ch_queries.non_null, bool) Ch_queries.expr
          but an expression was expected of type
            (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr
-         Type bool is not compatible with type int Ch_queries.number
+         Type bool is not compatible with type
+           int Ch_queries.number = int Ch_queries.number0 Ch_queries.comparable
 string literal:
   $ echo "let x = [%e \"'hello world'\"]"
   let x = [%e "'hello world'"]
