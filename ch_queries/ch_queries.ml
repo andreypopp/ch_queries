@@ -22,6 +22,8 @@ type ('null, 'a) array = private A_array
 type ('nullk, 'k, 'nullv, 'v) map = private A_map
 type ('null, 'a) typ = private A_typ
 type ('x, 'y) tuple2 = private A_tuple2
+type ('x, 'y, 'z) tuple3 = private A_tuple3
+type ('x, 'y, 'z, 'w) tuple4 = private A_tuple4
 type interval = private Interval
 type ('n, 'a) agg_state = private Agg_state
 
@@ -445,6 +447,7 @@ let select_syntax ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by
   To_syntax.to_syntax select
 
 let expr_to_syntax x = x
+let expr_to_string x = Ch_queries_syntax.Printer.print_expr x
 let unsafe x = Syntax.make_expr (E_unsafe (Syntax.make_id x))
 
 let unsafe_col q x =
@@ -576,6 +579,7 @@ module Expr = struct
   let addWeeks date num = def "addWeeks" [ date; num ]
   let addYears date num = def "addYears" [ date; num ]
   let subDate date interval = def "subDate" [ date; interval ]
+
   let subtractInterval datetime interval =
     def "subtractInterval" [ datetime; interval ]
 
@@ -798,6 +802,12 @@ module Expr = struct
   let sumMapMerge x = def "sumMapMerge" [ x ]
   let sumMapMergeState keys values = def "sumMapMergeState" [ keys; values ]
   let avgMergeStateIf x cond = def "avgMergeStateIf" [ x; cond ]
+
+  (** {2 Tuples} *)
+
+  let tuple2 (x, y) = def "tuple" [ x; y ]
+  let tuple3 (x, y, z) = def "tuple" [ x; y; z ]
+  let tuple4 (a, b, c, d) = def "tuple" [ a; b; c; d ]
 end
 
 let in_ x xs =

@@ -22,6 +22,8 @@ type ('null, 'a) array = private A_array
 type ('nullk, 'k, 'nullv, 'v) map = private A_map
 type ('null, 'a) typ = private A_typ
 type ('x, 'y) tuple2 = private A_tuple2
+type ('x, 'y, 'z) tuple3 = private A_tuple3
+type ('x, 'y, 'z, 'w) tuple4 = private A_tuple4
 type date0 = private Date
 type date = date0 timestamp
 type datetime0 = private DateTime
@@ -187,6 +189,9 @@ val select_syntax :
 
 val expr_to_syntax : _ expr -> Ch_queries_syntax.Syntax.expr
 (** Convert an expression to syntax AST. *)
+
+val expr_to_string : _ expr -> string
+(** Convert an expression to string. *)
 
 module Expr : sig
   (** {1 Regular functions} *)
@@ -731,6 +736,23 @@ module Expr : sig
     (_, bool) expr ->
     (non_null, (non_null, 't number) agg_state) expr
   (** avgMerge with State and If combinators. *)
+
+  (* {2 Tuples} *)
+
+  val tuple2 :
+    ('na, 'a) expr * ('nb, 'b) expr ->
+    (non_null, (('na, 'a) expr, ('nb, 'b) expr) tuple2) expr
+
+  val tuple3 :
+    ('na, 'a) expr * ('nb, 'b) expr * ('nc, 'c) expr ->
+    (non_null, (('na, 'a) expr, ('nb, 'b) expr, ('nc, 'c) expr) tuple3) expr
+
+  val tuple4 :
+    ('na, 'a) expr * ('nb, 'b) expr * ('nc, 'c) expr * ('nd, 'd) expr ->
+    ( non_null,
+      (('na, 'a) expr, ('nb, 'b) expr, ('nc, 'c) expr, ('nd, 'd) expr) tuple4
+    )
+    expr
 end
 
 type json =
