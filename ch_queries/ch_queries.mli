@@ -331,6 +331,11 @@ module Expr : sig
     ('m, ('n, 'a) array) expr ->
     ('m, ('n, 'a) array) expr
 
+  val arrayAll :
+    (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
+    ('m, ('n, 'a) array) expr list ->
+    (non_null, int number) expr
+
   val length : ('n, _ array) expr -> ('n, int number) expr
 
   val arrayJoin : ('n, ('m, 'a) array) expr -> ('m, 'a) expr

@@ -587,6 +587,7 @@ module Expr = struct
   let arrayElement arr i = def "arrayElement" [ arr; i ]
   let arrayElementOrNull arr i = def "arrayElementOrNull" [ arr; i ]
   let arrayFilter f x = def "arrayFilter" [ f; x ]
+  let arrayAll f xs = def "arrayAll" (f :: xs)
   let length x = def "length" [ x ]
   let arrayJoin arr = def "arrayJoin" [ arr ]
 

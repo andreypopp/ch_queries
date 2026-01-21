@@ -526,6 +526,16 @@ let rec stage_expr ~params expr =
           let f = evar ~loc ("Ch_queries.Expr." ^ name) in
           let args = List.map args ~f:(stage_expr ~params) in
           eapply ~loc f [ elist ~loc args ]
+      | Func { node = "arrayAll"; _ } ->
+          let f = evar ~loc "Ch_queries.Expr.arrayAll" in
+          (match args with
+          | lambda :: arrays when List.length arrays >= 1 ->
+              let lambda = stage_expr ~params lambda in
+              let arrays = List.map arrays ~f:(stage_expr ~params) in
+              eapply ~loc f [ lambda; elist ~loc arrays ]
+          | _ ->
+              Location.raise_errorf ~loc
+                "arrayAll requires a lambda and at least one array argument")
       | Func { node = "divideDecimal"; _ } ->
           let f = evar ~loc "Ch_queries.Expr.divideDecimal" in
           (match args with
