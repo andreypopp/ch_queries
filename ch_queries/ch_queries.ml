@@ -1000,6 +1000,7 @@ module Expr = struct
 
   (** {2 Bit functions} *)
 
+  let bitAnd x y = def "bitAnd" [ x; y ]
   let byteSwap x = def "byteSwap" [ x ]
 
   (** {2 Machine learning functions} *)

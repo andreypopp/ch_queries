@@ -1335,6 +1335,9 @@ module Expr : sig
 
   (** {2 Bit functions} *)
 
+  val bitAnd : ('n, 'a number) expr -> ('n, 'b number) expr -> ('n, 'c number) expr
+  (** [bitAnd a b] performs bitwise AND operation between two values. *)
+
   val byteSwap : ('n, 'a number) expr -> ('n, 'a number) expr
   (** Reverses the bytes of an integer, i.e. changes its endianness. *)
 
