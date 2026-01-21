@@ -760,6 +760,7 @@ module Expr = struct
   let toFloat64 x = def "toFloat64" [ x ]
   let toString x = def "toString" [ x ]
   let isFinite x = def "isFinite" [ x ]
+  let ifNotFinite x y = def "ifNotFinite" [ x; y ]
   let isNull x = def "isNull" [ x ]
   let isNotNull x = def "isNotNull" [ x ]
 
