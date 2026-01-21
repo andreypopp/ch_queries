@@ -489,6 +489,9 @@ module Expr : sig
       multiple arrays are passed, [func] operates on corresponding elements
       from all arrays. *)
 
+  val arrayFlatten : ('n, ('m, ('o, 'a) array) array) expr -> ('n, ('o, 'a) array) expr
+  (** [arrayFlatten arr] converts an array of arrays to a flat array. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
