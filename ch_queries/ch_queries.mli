@@ -761,6 +761,17 @@ module Expr : sig
       corresponding elements from all arrays, but only the first array is
       split. *)
 
+  val arraySplit :
+    (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
+    ('m, ('n, 'a) array) expr list ->
+    ('m, (non_null, ('n, 'a) array) array) expr
+  (** [arraySplit func arrays] splits the source array into multiple arrays.
+      When [func] returns something other than zero, the array will be split to
+      the left of the element. The array will not be split before the first
+      element. When multiple arrays are passed, [func] operates on
+      corresponding elements from all arrays, but only the first array is
+      split. *)
+
   val arrayShiftLeft :
     ?default:('m, 'a) expr ->
     ('n, ('m, 'a) array) expr ->
