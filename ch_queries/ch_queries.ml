@@ -607,6 +607,7 @@ module Expr = struct
   let arrayExcept source except = def "arrayExcept" [ source; except ]
   let arrayExists f xs = def "arrayExists" (f :: xs)
   let arrayFill f xs = def "arrayFill" (f :: xs)
+  let arrayFirst f xs = def "arrayFirst" (f :: xs)
 
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]

@@ -462,6 +462,15 @@ module Expr : sig
       corresponding elements from all arrays, but only the first array is
       modified. *)
 
+  val arrayFirst :
+    (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
+    ('m, ('n, 'a) array) expr list ->
+    ('n, 'a) expr
+  (** [arrayFirst func arrays] returns the first element in the source array
+      for which [func] returns true, otherwise it returns a default value.
+      When multiple arrays are passed, [func] operates on corresponding
+      elements from all arrays. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
