@@ -95,6 +95,38 @@ val sql : string = "SELECT users.id AS id FROM public.users AS users"
 val parse_row : json list -> int = <fun>
 ```
 
+## `%ch.query_and_map` - queries with row parsing
+
+The `%ch.query_and_map` syntax form is a convenient way to define a query along
+with a row-mapping function. It returns a tuple `(sql, map)` where `sql` is the
+generated SQL string and `map` parses rows:
+```ocaml
+# let sql, map = {%ch.query_and_map|
+    SELECT users.id::Int32 AS id, users.is_active::Bool AS is_active
+    FROM db.users
+  |};;
+val sql : string =
+  "SELECT users.id AS id, users.is_active AS is_active FROM public.users AS users"
+val map : json list -> (id:int -> is_active:bool -> '_weak1) -> '_weak1 =
+  <fun>
+```
+
+The `map` function takes a JSON row and a callback that receives the parsed
+fields as labeled arguments.
+
+### Type annotations
+
+Fields must have type annotations (e.g., `::Int32`, `::Bool`, `::String`) to
+specify how they should be parsed. Fields without type annotation default to
+`Any`, which returns raw JSON:
+```ocaml
+# let sql, map = {%ch.query_and_map|
+    SELECT users.name AS data FROM db.users
+  |};;
+val sql : string = "SELECT users.name AS name FROM public.users AS users"
+val map : json list -> (data:json -> '_weak2) -> '_weak2 = <fun>
+```
+
 ## `%e` - expressions, `%s` - scopes
 
 There's a `%e` syntax form which allows you to define standalone expressions, which
