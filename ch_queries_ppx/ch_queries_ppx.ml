@@ -899,6 +899,38 @@ let rec stage_expr ~params expr =
                 ]
           | _ ->
               Location.raise_errorf ~loc "arrayAUCPR requires 2 or 3 arguments")
+      | Func { node = "arrayROCAUC"; _ } -> (
+          let f = evar ~loc "Ch_queries.Expr.arrayROCAUC" in
+          match args with
+          | [ scores; labels ] ->
+              let scores = stage_expr ~params scores in
+              let labels = stage_expr ~params labels in
+              eapply ~loc f [ scores; labels ]
+          | [ scores; labels; scale ] ->
+              let scores = stage_expr ~params scores in
+              let labels = stage_expr ~params labels in
+              let scale = stage_expr ~params scale in
+              pexp_apply ~loc f
+                [
+                  (Labelled "scale", scale);
+                  (Nolabel, scores);
+                  (Nolabel, labels);
+                ]
+          | [ scores; labels; scale; partial_offsets ] ->
+              let scores = stage_expr ~params scores in
+              let labels = stage_expr ~params labels in
+              let scale = stage_expr ~params scale in
+              let partial_offsets = stage_expr ~params partial_offsets in
+              pexp_apply ~loc f
+                [
+                  (Labelled "scale", scale);
+                  (Labelled "partial_offsets", partial_offsets);
+                  (Nolabel, scores);
+                  (Nolabel, labels);
+                ]
+          | _ ->
+              Location.raise_errorf ~loc
+                "arrayROCAUC requires 2, 3, or 4 arguments")
       | Func { node = "arrayPartialShuffle"; _ } -> (
           (* arrayPartialShuffle(arr [, limit[, seed]]) *)
           let f = evar ~loc "Ch_queries.Expr.arrayPartialShuffle" in

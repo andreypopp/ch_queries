@@ -905,6 +905,14 @@ module Expr = struct
     | None -> def "arrayAUCPR" [ scores; labels ]
     | Some offsets -> def "arrayAUCPR" [ scores; labels; offsets ]
 
+  let arrayROCAUC ?scale ?partial_offsets scores labels =
+    match (scale, partial_offsets) with
+    | None, None -> def "arrayROCAUC" [ scores; labels ]
+    | Some s, None -> def "arrayROCAUC" [ scores; labels; s ]
+    | Some s, Some offsets -> def "arrayROCAUC" [ scores; labels; s; offsets ]
+    | None, Some _ ->
+        failwith "arrayROCAUC: partial_offsets requires scale to be specified"
+
   let arrayNormalizedGini predicted label =
     def "arrayNormalizedGini" [ predicted; label ]
 

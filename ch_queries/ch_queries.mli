@@ -1016,6 +1016,17 @@ module Expr : sig
   (** [arrayAUCPR ?partial_offsets scores labels] calculates the area under the
       precision-recall (PR) curve. Returns a value between 0 and 1. *)
 
+  val arrayROCAUC :
+    ?scale:('n, bool) expr ->
+    ?partial_offsets:('n, ('m, 'b number) array) expr ->
+    ('n, ('m, 'a number) array) expr ->
+    ('n, ('m, 'c number) array) expr ->
+    ('n, float number) expr
+  (** [arrayROCAUC ?scale ?partial_offsets scores labels] calculates the area
+      under the receiver operating characteristic (ROC) curve. Returns a value
+      between 0 and 1. If [scale] is false, returns the area under the TP x FP
+      curve instead. *)
+
   val arrayNormalizedGini :
     ('n, ('m, 'a number) array) expr ->
     ('n, ('m, 'b number) array) expr ->
