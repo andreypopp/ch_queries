@@ -1005,6 +1005,7 @@ module Expr = struct
   let bitOr x y = def "bitOr" [ x; y ]
   let bitHammingDistance x y = def "bitHammingDistance" [ x; y ]
   let bitNot x = def "bitNot" [ x ]
+  let bitRotateLeft x n = def "bitRotateLeft" [ x; n ]
   let byteSwap x = def "byteSwap" [ x ]
 
   (** {2 Machine learning functions} *)

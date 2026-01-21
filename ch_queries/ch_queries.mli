@@ -1353,6 +1353,10 @@ module Expr : sig
   val bitNot : ('n, 'a number) expr -> ('n, 'a number) expr
   (** [bitNot x] performs the bitwise NOT operation, returning [x] with all bits flipped. *)
 
+  val bitRotateLeft : ('n, 'a number) expr -> ('m, 'b number) expr -> ('n, 'a number) expr
+  (** [bitRotateLeft a n] rotates bits of [a] left by [n] positions. Bits that
+      fall off wrap around to the right. *)
+
   val byteSwap : ('n, 'a number) expr -> ('n, 'a number) expr
   (** Reverses the bytes of an integer, i.e. changes its endianness. *)
 
