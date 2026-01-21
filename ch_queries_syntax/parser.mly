@@ -401,7 +401,9 @@ expr:
   | e=expr IN e_rhs=expr
     { make_expr $startpos $endpos (E_in (e, In_expr e_rhs)) }
   | param=id ARROW body=expr
-    { make_expr $startpos $endpos (E_lambda (param, body)) }
+    { make_expr $startpos $endpos (E_lambda ([param], body)) }
+  | LPAREN param1=id COMMA params_rest=nonempty_flex_list(COMMA, id) RPAREN ARROW body=expr
+    { make_expr $startpos $endpos (E_lambda (param1 :: params_rest, body)) }
   | e=expr COLONCOLON t=typ
     { make_expr $startpos $endpos (E_ascribe (e, t)) }
 

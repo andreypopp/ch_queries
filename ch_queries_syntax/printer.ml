@@ -241,11 +241,16 @@ let rec pp_expr opts ~parent_prec expr =
             ^/^ pp_expr opts ~parent_prec:prec expr'
       in
       if needs_parens then group (parens content) else group content
-  | E_lambda (param, body) ->
+  | E_lambda (params, body) ->
       (* we will always print lambdas with parentheses around them *)
+      let pp_params =
+        match params with
+        | [param] -> pp_id param
+        | params -> parens (separate (string ", ") (List.map ~f:pp_id params))
+      in
       group
         (parens
-           (pp_id param ^/^ string "->"
+           (pp_params ^/^ string "->"
            ^/^ parens (pp_expr opts ~parent_prec:0 body)))
 
 and pp_with_fill opts = function

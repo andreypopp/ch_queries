@@ -116,6 +116,12 @@ val lambda :
   (('pn, 'pa) expr -> ('n, 'a) expr) ->
   (non_null, ('pn, 'pa) expr -> ('n, 'a) expr) expr
 
+val lambda2 :
+  string ->
+  string ->
+  (('pn1, 'pa1) expr -> ('pn2, 'pa2) expr -> ('n, 'a) expr) ->
+  (non_null, ('pn1, 'pa1) expr -> ('pn2, 'pa2) expr -> ('n, 'a) expr) expr
+
 val array : ('n, 'a) expr list -> (non_null, ('n, 'a) array) expr
 
 type 'a in_rhs =
@@ -490,7 +496,16 @@ module Expr : sig
       from all arrays. *)
 
   val arrayFlatten : ('n, ('m, ('o, 'a) array) array) expr -> ('n, ('o, 'a) array) expr
-  (** [arrayFlatten arr] converts an array of arrays to a flat array. *)
+
+  val arrayFold :
+    (non_null, ('na, 'acc) expr -> ('n, 'a) expr -> ('na, 'acc) expr) expr ->
+    ('m, ('n, 'a) array) expr list ->
+    ('na, 'acc) expr ->
+    ('na, 'acc) expr
+  (** [arrayFold func arrays acc] applies [func] to one or more equally-sized
+      arrays and collects the result in an accumulator. The [func] is a lambda
+      function that takes an accumulator and array values, returning the new
+      accumulator value. [acc] is the initial accumulator value. *)
 
   (** {2 Conditional} *)
 

@@ -21,7 +21,7 @@ and exprsyn =
   | E_ocaml_expr of string  (** OCaml expression for splicing *)
   | E_in of expr * in_query
       (** in-query, e.g. `expr IN (query)` or `expr IN (expr)` *)
-  | E_lambda of id * expr  (** lambda expression: param -> body *)
+  | E_lambda of id list * expr  (** lambda expression: (p1, p2, ...) -> body *)
   | E_unsafe of string node  (** unsafe injection of an SQL fragment *)
   | E_unsafe_concat of expr list  (** unsafe concatenation of SQL fragments *)
   | E_ascribe of expr * typ  (** type ascription, e.g. `expr: Typ` *)

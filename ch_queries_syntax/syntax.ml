@@ -21,7 +21,7 @@ and exprsyn =
   | E_param of param
   | E_ocaml_expr of string
   | E_in of expr * in_query
-  | E_lambda of id * expr
+  | E_lambda of id list * expr
   | E_unsafe of string node
   | E_unsafe_concat of expr list
   | E_ascribe of expr * typ

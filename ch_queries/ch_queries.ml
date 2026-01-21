@@ -534,7 +534,16 @@ let lambda :
     (non_null, ('pn, 'pa) expr -> ('n, 'a) expr) expr =
  fun param f ->
   let body = f (unsafe param) in
-  Syntax.make_expr (E_lambda (Syntax.make_id param, body))
+  Syntax.make_expr (E_lambda ([Syntax.make_id param], body))
+
+let lambda2 :
+    string ->
+    string ->
+    (('pn1, 'pa1) expr -> ('pn2, 'pa2) expr -> ('n, 'a) expr) ->
+    (non_null, ('pn1, 'pa1) expr -> ('pn2, 'pa2) expr -> ('n, 'a) expr) expr =
+ fun param1 param2 f ->
+  let body = f (unsafe param1) (unsafe param2) in
+  Syntax.make_expr (E_lambda ([Syntax.make_id param1; Syntax.make_id param2], body))
 
 let array xs = Syntax.make_expr (E_call (Syntax.Func (Syntax.make_id "["), xs))
 
@@ -611,6 +620,7 @@ module Expr = struct
   let arrayFirstIndex f xs = def "arrayFirstIndex" (f :: xs)
   let arrayFirstOrNull f xs = def "arrayFirstOrNull" (f :: xs)
   let arrayFlatten arr = def "arrayFlatten" [ arr ]
+  let arrayFold f xs acc = def "arrayFold" (f :: xs @ [ acc ])
 
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]

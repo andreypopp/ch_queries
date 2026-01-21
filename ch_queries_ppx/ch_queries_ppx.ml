@@ -593,6 +593,25 @@ let rec stage_expr ~params expr =
               Location.raise_errorf ~loc
                 "arrayFirstOrNull requires a lambda and at least one array \
                  argument")
+      | Func { node = "arrayFold"; _ } ->
+          let f = evar ~loc "Ch_queries.Expr.arrayFold" in
+          (match args with
+          | lambda :: rest when List.length rest >= 2 ->
+              (* arrayFold(lambda, arr1, ..., arrN, acc) *)
+              let arrays, acc =
+                let rev_rest = List.rev rest in
+                match rev_rest with
+                | acc :: rev_arrays -> (List.rev rev_arrays, acc)
+                | _ -> assert false (* checked by length condition *)
+              in
+              let lambda = stage_expr ~params lambda in
+              let arrays = List.map arrays ~f:(stage_expr ~params) in
+              let acc = stage_expr ~params acc in
+              eapply ~loc f [ lambda; elist ~loc arrays; acc ]
+          | _ ->
+              Location.raise_errorf ~loc
+                "arrayFold requires a lambda, at least one array, and an \
+                 accumulator argument")
       | Func { node = "arrayAvg"; _ } ->
           let f = evar ~loc "Ch_queries.Expr.arrayAvg" in
           (match args with
@@ -903,11 +922,19 @@ let rec stage_expr ~params expr =
       | Syntax.In_expr expr' ->
           let expr' = stage_expr ~params expr' in
           [%expr Ch_queries.in_ [%e expr] (Ch_queries.In_array [%e expr'])])
-  | Syntax.E_lambda (param, body) ->
-      let param_name = param.node in
-      let body_expr = stage_expr ~params:(param :: params) body in
-      [%expr
-        Ch_queries.lambda [%e estring ~loc param_name] (fun x -> [%e body_expr])]
+  | Syntax.E_lambda (lambda_params, body) ->
+      let all_params = List.rev_append lambda_params params in
+      let body_expr = stage_expr ~params:all_params body in
+      (match lambda_params with
+      | [param] ->
+          let param_name = param.node in
+          [%expr Ch_queries.lambda [%e estring ~loc param_name] (fun x -> [%e body_expr])]
+      | [param1; param2] ->
+          let param1_name = param1.node in
+          let param2_name = param2.node in
+          [%expr Ch_queries.lambda2 [%e estring ~loc param1_name] [%e estring ~loc param2_name] (fun x y -> [%e body_expr])]
+      | _ ->
+          Location.raise_errorf ~loc "lambdas with more than 2 parameters are not supported")
 
 and stage_dimensions ~loc dimensions =
   let body =
