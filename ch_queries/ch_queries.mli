@@ -442,6 +442,15 @@ module Expr : sig
   (** [arrayExcept source except] returns an array containing elements from
       [source] that are not present in [except], preserving the original order. *)
 
+  val arrayExists :
+    (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
+    ('m, ('n, 'a) array) expr list ->
+    (non_null, int number) expr
+  (** [arrayExists func arrays] returns 1 if there is at least one element in
+      the source array for which [func] returns true, otherwise returns 0. When
+      multiple arrays are passed, [func] operates on corresponding elements from
+      all arrays. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
