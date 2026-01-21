@@ -608,6 +608,7 @@ module Expr = struct
   let arrayExists f xs = def "arrayExists" (f :: xs)
   let arrayFill f xs = def "arrayFill" (f :: xs)
   let arrayFirst f xs = def "arrayFirst" (f :: xs)
+  let arrayFirstIndex f xs = def "arrayFirstIndex" (f :: xs)
 
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]
