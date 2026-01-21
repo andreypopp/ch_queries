@@ -9,23 +9,23 @@ This is an OCaml project named "ch_queries" using dune as the build system.
 
 ## Building and debugging the project
 
-### Dune watch mode
-
-The user typically runs dune build in watch mode outside Claude session):
-
-- Check for `_build/.lock` to see if watch mode is active
-- Build errors visible via `dune build <dir>` (works with watch mode)
-- **Never** kill dune, remove lock file, or clean build when watch mode is
-  active
-- In watch mode, When you make changes, check if there are build errors with
-  `dune build <dir>` first, otherwise you'll be running the old tests.
+- Build project with `dune build <dir>`, build often while doing changes, so
+  you can catch errors early
 - To run tests:
-    - `dune test` runs all tests
-    - `dune test <specific test>` runs a specific test
-  do not run tests if watch mode is active, as it will conflict with the build.
-- When running an executable, use (only works when watch mode is not active):
-    `dune exec ch_queries -- ARGS...`
-  so it doesn't conflict with the build running in watch mode.
+  - `dune test <specific test>` runs a specific test, prefer it when working on a specific feature
+  - `dune test` runs all tests, run it at the end to validate everything works
+- When running an executable, use `dune exec ch_queries -- ARGS...`
+
+If you need verify something or debug some thing, it's a good idea to add a
+small test instead and run it with `dune test <test_file>`. Consider keeping
+the test in `test/` directory if it's generally useful.
+
+## How to add tests
+
+- Add test cases in `test/` directory in cram format (`*.t` files).
+- Run them: `dune test test/<your_test_file>.t`
+- Verify outputs are correct.
+- To update expected outputs after verifying correctness: `dune test --auto-promote`
 
 ## Project structure
 
@@ -46,13 +46,6 @@ The user typically runs dune build in watch mode outside Claude session):
     - to run and promote the changes in expected vs current: `dune test --auto-promote`, only use when you've verified the changes are correct
 
 when exploring a project structure, it is fine to read entire files (they are small)
-
-## How to add tests
-
-- Add test cases in `test/` directory in cram format (`*.t` files).
-- Run them: `dune test test/<your_test_file>.t`
-- Verify outputs are correct.
-- To update expected outputs after verifying correctness: `dune test --auto-promote`
 
 ## Architecture overview
 

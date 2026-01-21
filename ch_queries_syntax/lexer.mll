@@ -168,6 +168,7 @@ let param_char = '$'
 rule token = parse
   | whitespace+         { token lexbuf }
   | newline             { Lexing.new_line lexbuf; token lexbuf }
+  | "--" [^ '\r' '\n']* { token lexbuf }
   | float as s          { FLOAT (float_of_string s) }
   | number as s         { NUMBER (int_of_string s) }
   | '\''                {
