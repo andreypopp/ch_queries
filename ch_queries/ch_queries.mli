@@ -782,6 +782,16 @@ module Expr : sig
       probability of appearance. If [seed] is specified, it's used for random
       number generation. *)
 
+  val arraySimilarity :
+    ('n, ('m, 'a) array) expr ->
+    ('n, ('m, 'a) array) expr ->
+    ('n, ('m, 'w number) array) expr ->
+    ('n, ('m, 'w number) array) expr ->
+    ('n, float number) expr
+  (** [arraySimilarity arr_from arr_to from_weights to_weights] calculates the
+      similarity of two arrays from 0 to 1 based on weighted Levenshtein
+      distance. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr

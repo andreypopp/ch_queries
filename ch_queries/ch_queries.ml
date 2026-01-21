@@ -730,6 +730,9 @@ module Expr = struct
     | None -> def "arrayShuffle" [ arr ]
     | Some s -> def "arrayShuffle" [ arr; s ]
 
+  let arraySimilarity arr_from arr_to from_weights to_weights =
+    def "arraySimilarity" [ arr_from; arr_to; from_weights; to_weights ]
+
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]
 
