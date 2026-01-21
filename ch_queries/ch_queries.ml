@@ -713,6 +713,8 @@ module Expr = struct
     | None -> def "arrayReverseSort" arrs
     | Some f -> def "arrayReverseSort" (f :: arrs)
 
+  let arrayReverseSplit f xs = def "arrayReverseSplit" (f :: xs)
+
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]
 

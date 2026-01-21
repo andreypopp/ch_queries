@@ -741,6 +741,17 @@ module Expr : sig
       arrays are passed, [f] operates on corresponding elements from all
       arrays. *)
 
+  val arrayReverseSplit :
+    (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
+    ('m, ('n, 'a) array) expr list ->
+    ('m, (non_null, ('n, 'a) array) array) expr
+  (** [arrayReverseSplit func arrays] splits the source array into multiple
+      arrays. When [func] returns something other than zero, the array will be
+      split to the right of the element. The array will not be split after the
+      last element. When multiple arrays are passed, [func] operates on
+      corresponding elements from all arrays, but only the first array is
+      split. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
