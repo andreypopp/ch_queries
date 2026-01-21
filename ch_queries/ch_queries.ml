@@ -564,6 +564,8 @@ module Expr = struct
     | None -> def "divideDecimal" [ x; y ]
     | Some scale -> def "divideDecimal" [ x; y; scale ]
 
+  let divideOrNull x y = def "divideOrNull" [ x; y ]
+
   (** {2 Arrays} *)
 
   let arrayElement arr i = def "arrayElement" [ arr; i ]

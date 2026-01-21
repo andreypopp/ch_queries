@@ -257,6 +257,10 @@ module Expr : sig
     ('n, 'b number) expr ->
     ('n, 'c number) expr
 
+  val divideOrNull :
+    ('n, 'a number) expr -> ('n, 'a number) expr -> (null, float number) expr
+  (** Same as [divide] but returns NULL when dividing by zero. *)
+
   (** {2 Arrays} *)
 
   val arrayElement :
