@@ -1361,6 +1361,10 @@ module Expr : sig
   (** [bitRotateRight a n] rotates bits of [a] right by [n] positions. Bits that
       fall off wrap around to the left. *)
 
+  val bitShiftLeft : ('n, 'a number) expr -> ('m, 'b number) expr -> ('n, 'a number) expr
+  (** [bitShiftLeft a n] shifts the binary representation of [a] to the left by
+      [n] bit positions. *)
+
   val byteSwap : ('n, 'a number) expr -> ('n, 'a number) expr
   (** Reverses the bytes of an integer, i.e. changes its endianness. *)
 
