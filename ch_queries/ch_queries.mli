@@ -613,6 +613,9 @@ module Expr : sig
   (** Returns 1 if the Float32/Float64 argument is infinite, otherwise returns 0.
       Note that 0 is returned for NaN. *)
 
+  val isNaN : ('n, float number) expr -> ('n, bool) expr
+  (** Returns 1 if the Float32/Float64 argument is NaN, otherwise returns 0. *)
+
   val ifNotFinite :
     ('n, float number) expr -> ('n, float number) expr -> ('n, float number) expr
   (** [ifNotFinite x y] returns [x] if [x] is finite, otherwise returns [y]. *)

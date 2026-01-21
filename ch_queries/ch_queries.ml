@@ -763,6 +763,7 @@ module Expr = struct
   let toString x = def "toString" [ x ]
   let isFinite x = def "isFinite" [ x ]
   let isInfinite x = def "isInfinite" [ x ]
+  let isNaN x = def "isNaN" [ x ]
   let ifNotFinite x y = def "ifNotFinite" [ x; y ]
   let isNull x = def "isNull" [ x ]
   let isNotNull x = def "isNotNull" [ x ]
