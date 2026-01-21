@@ -662,6 +662,7 @@ module Expr = struct
     match f with None -> def "arrayMin" xs | Some f -> def "arrayMin" (f :: xs)
 
   let arrayPopBack arr = def "arrayPopBack" [ arr ]
+  let arrayPopFront arr = def "arrayPopFront" [ arr ]
 
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]

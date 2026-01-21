@@ -597,6 +597,9 @@ module Expr : sig
   val arrayPopBack : ('n, ('m, 'a) array) expr -> ('n, ('m, 'a) array) expr
   (** [arrayPopBack arr] removes the last element from the array. *)
 
+  val arrayPopFront : ('n, ('m, 'a) array) expr -> ('n, ('m, 'a) array) expr
+  (** [arrayPopFront arr] removes the first element from the array. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
