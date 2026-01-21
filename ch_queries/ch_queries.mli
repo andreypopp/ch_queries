@@ -343,6 +343,15 @@ module Expr : sig
   (** [arrayAvg func arrays] returns the average of elements of the lambda
       results. The [func] is applied to corresponding elements from all arrays. *)
 
+  val arrayCount :
+    ?f:(non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
+    ('m, ('n, 'a) array) expr list ->
+    (non_null, int number) expr
+  (** [arrayCount ?f arrays] returns the number of elements for which [f]
+      returns true. If [f] is not specified, returns the number of non-zero
+      elements in the array. The [f] is applied to corresponding elements from
+      all arrays. *)
+
   val length : ('n, _ array) expr -> ('n, int number) expr
 
   val arrayJoin : ('n, ('m, 'a) array) expr -> ('m, 'a) expr

@@ -551,6 +551,22 @@ let rec stage_expr ~params expr =
           | _ ->
               Location.raise_errorf ~loc
                 "arrayAvg requires a lambda and at least one array argument")
+      | Func { node = "arrayCount"; _ } ->
+          let f = evar ~loc "Ch_queries.Expr.arrayCount" in
+          (match args with
+          | ({ node = E_lambda _; _ } as lambda) :: arrays when List.length arrays >= 1 ->
+              (* arrayCount(lambda, arr1, ...) - with lambda *)
+              let lambda = stage_expr ~params lambda in
+              let arrays = List.map arrays ~f:(stage_expr ~params) in
+              pexp_apply ~loc f
+                [ (Labelled "f", lambda); (Nolabel, elist ~loc arrays) ]
+          | arrays when List.length arrays >= 1 ->
+              (* arrayCount(arr1, ...) - without lambda *)
+              let arrays = List.map arrays ~f:(stage_expr ~params) in
+              eapply ~loc f [ elist ~loc arrays ]
+          | _ ->
+              Location.raise_errorf ~loc
+                "arrayCount requires at least one array argument")
       | Func { node = "divideDecimal"; _ } ->
           let f = evar ~loc "Ch_queries.Expr.divideDecimal" in
           (match args with
