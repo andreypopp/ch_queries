@@ -562,6 +562,7 @@ module Expr = struct
   let modulo x y = def "modulo" [ x; y ]
   let moduloOrNull x y = def "moduloOrNull" [ x; y ]
   let moduloOrZero x y = def "moduloOrZero" [ x; y ]
+  let positiveModulo x y = def "positiveModulo" [ x; y ]
 
   let divideDecimal ?result_scale x y =
     match result_scale with

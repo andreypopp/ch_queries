@@ -267,6 +267,11 @@ module Expr : sig
     ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
   (** Same as [modulo] but returns zero when the divisor is zero. *)
 
+  val positiveModulo :
+    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
+  (** Calculates the remainder when dividing x by y. Similar to [modulo] except
+      that positiveModulo always returns a non-negative number. *)
+
   val divideDecimal :
     ?result_scale:('n, int number) expr ->
     ('n, 'a number) expr ->
