@@ -1342,6 +1342,11 @@ module Expr : sig
   (** [bitCount x] calculates the number of bits set to one in the binary
       representation of a number. *)
 
+  val bitHammingDistance : ('n, 'a number) expr -> ('n, 'b number) expr -> (non_null, int number) expr
+  (** [bitHammingDistance x y] returns the Hamming distance between the bit
+      representations of two numbers. The smaller the distance, the more
+      similar the values are. *)
+
   val byteSwap : ('n, 'a number) expr -> ('n, 'a number) expr
   (** Reverses the bytes of an integer, i.e. changes its endianness. *)
 
