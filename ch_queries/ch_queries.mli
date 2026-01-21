@@ -575,6 +575,13 @@ module Expr : sig
       present in one of the source arrays. The result contains only unique
       values. *)
 
+  val arrayUniq : ('n, ('m, 'a) array) expr list -> (non_null, int number) expr
+  (** [arrayUniq arrays] counts the number of unique elements in the array(s).
+      For a single argument, counts the number of different elements in the
+      array. For multiple arguments, counts the number of different tuples made
+      of elements at matching positions across all arrays. All arrays must have
+      the same length. *)
+
   val arrayJaccardIndex :
     ('n, ('m, 'a) array) expr ->
     ('n, ('m, 'a) array) expr ->

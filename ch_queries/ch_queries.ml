@@ -649,6 +649,7 @@ module Expr = struct
   let arrayIntersect arrs = def "arrayIntersect" arrs
   let arraySymmetricDifference arrs = def "arraySymmetricDifference" arrs
   let arrayUnion arrs = def "arrayUnion" arrs
+  let arrayUniq arrs = def "arrayUniq" arrs
   let arrayJaccardIndex arr_x arr_y = def "arrayJaccardIndex" [ arr_x; arr_y ]
 
   let arrayLevenshteinDistance arr_from arr_to =
