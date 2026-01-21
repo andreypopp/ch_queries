@@ -525,7 +525,7 @@ let rec stage_expr ~params expr =
           {
             node =
               ( "greatest" | "least" | "concat" | "midpoint" | "arrayConcat"
-              | "arrayEnumerateUniq" ) as name;
+              | "arrayEnumerateUniq" | "arrayIntersect" ) as name;
             _;
           } ->
           let f = evar ~loc ("Ch_queries.Expr." ^ name) in

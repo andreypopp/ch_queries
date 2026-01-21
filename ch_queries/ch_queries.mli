@@ -507,6 +507,10 @@ module Expr : sig
       function that takes an accumulator and array values, returning the new
       accumulator value. [acc] is the initial accumulator value. *)
 
+  val arrayIntersect : ('n, ('m, 'a) array) expr list -> ('n, ('m, 'a) array) expr
+  (** [arrayIntersect arrays] returns an array with elements that are present in
+      all source arrays. The result contains only unique values. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr

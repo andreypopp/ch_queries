@@ -621,6 +621,7 @@ module Expr = struct
   let arrayFirstOrNull f xs = def "arrayFirstOrNull" (f :: xs)
   let arrayFlatten arr = def "arrayFlatten" [ arr ]
   let arrayFold f xs acc = def "arrayFold" (f :: xs @ [ acc ])
+  let arrayIntersect arrs = def "arrayIntersect" arrs
 
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]
