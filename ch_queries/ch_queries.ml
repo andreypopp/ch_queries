@@ -713,6 +713,11 @@ module Expr = struct
     | None -> def "arrayReverseSort" arrs
     | Some f -> def "arrayReverseSort" (f :: arrs)
 
+  let arraySort ?f arrs =
+    match f with
+    | None -> def "arraySort" arrs
+    | Some f -> def "arraySort" (f :: arrs)
+
   let arrayReverseSplit f xs = def "arrayReverseSplit" (f :: xs)
 
   let arrayShiftLeft ?default arr n =

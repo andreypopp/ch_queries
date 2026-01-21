@@ -741,6 +741,15 @@ module Expr : sig
       arrays are passed, [f] operates on corresponding elements from all
       arrays. *)
 
+  val arraySort :
+    ?f:(non_null, ('n, 'a) expr -> (_, 'b) expr) expr ->
+    ('m, ('n, 'a) array) expr list ->
+    ('m, ('n, 'a) array) expr
+  (** [arraySort ?f arrs] sorts the elements of the array in ascending order.
+      If [f] is provided, sorting is done by the result of applying [f] to the
+      elements. When multiple arrays are passed, [f] operates on corresponding
+      elements from all arrays. *)
+
   val arrayReverseSplit :
     (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
     ('m, ('n, 'a) array) expr list ->
