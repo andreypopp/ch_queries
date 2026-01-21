@@ -690,6 +690,7 @@ module Expr = struct
         failwith "arrayPartialShuffle: seed requires limit to be specified"
 
   let arrayRandomSample arr samples = def "arrayRandomSample" [ arr; samples ]
+  let arrayReduce agg_func arrs = def "arrayReduce" (agg_func :: arrs)
 
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]

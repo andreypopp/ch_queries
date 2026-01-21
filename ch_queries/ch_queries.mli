@@ -656,6 +656,16 @@ module Expr : sig
       random elements of an input array. If [samples] exceeds the size of the
       input array, the sample size is limited to the size of the array. *)
 
+  val arrayReduce :
+    ('n, string) expr ->
+    ('m, ('o, 'a) array) expr list ->
+    ('p, 'r) expr
+  (** [arrayReduce agg_func arrs] applies an aggregate function to array
+      elements and returns its result. The name of the aggregation function
+      is passed as a string in single quotes e.g. ['max'], ['sum']. When using
+      parametric aggregate functions, the parameter is indicated after the
+      function name in parentheses e.g. ['uniqUpTo(6)']. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
