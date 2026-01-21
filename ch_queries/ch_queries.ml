@@ -627,6 +627,7 @@ module Expr = struct
   let arrayIntersect arrs = def "arrayIntersect" arrs
   let arrayJaccardIndex arr_x arr_y = def "arrayJaccardIndex" [ arr_x; arr_y ]
   let arrayLevenshteinDistance arr_from arr_to = def "arrayLevenshteinDistance" [ arr_from; arr_to ]
+  let arrayLevenshteinDistanceWeighted arr_from arr_to from_weights to_weights = def "arrayLevenshteinDistanceWeighted" [ arr_from; arr_to; from_weights; to_weights ]
 
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]

@@ -553,6 +553,16 @@ module Expr : sig
   (** [arrayLevenshteinDistance arr_from arr_to] calculates the Levenshtein
       distance between two arrays. *)
 
+  val arrayLevenshteinDistanceWeighted :
+    ('n, ('m, 'a) array) expr ->
+    ('n, ('m, 'a) array) expr ->
+    ('n, ('m, 'w number) array) expr ->
+    ('n, ('m, 'w number) array) expr ->
+    ('n, float number) expr
+  (** [arrayLevenshteinDistanceWeighted arr_from arr_to from_weights to_weights]
+      calculates the Levenshtein distance between two arrays with custom weights
+      for each element. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
