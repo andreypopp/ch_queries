@@ -1002,6 +1002,7 @@ module Expr = struct
 
   let bitAnd x y = def "bitAnd" [ x; y ]
   let bitCount x = def "bitCount" [ x ]
+  let bitOr x y = def "bitOr" [ x; y ]
   let bitHammingDistance x y = def "bitHammingDistance" [ x; y ]
   let bitNot x = def "bitNot" [ x ]
   let byteSwap x = def "byteSwap" [ x ]

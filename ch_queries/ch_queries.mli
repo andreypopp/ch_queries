@@ -1342,6 +1342,9 @@ module Expr : sig
   (** [bitCount x] calculates the number of bits set to one in the binary
       representation of a number. *)
 
+  val bitOr : ('n, 'a number) expr -> ('n, 'b number) expr -> ('n, 'c number) expr
+  (** [bitOr a b] performs bitwise OR operation between two values. *)
+
   val bitHammingDistance : ('n, 'a number) expr -> ('n, 'b number) expr -> (non_null, int number) expr
   (** [bitHammingDistance x y] returns the Hamming distance between the bit
       representations of two numbers. The smaller the distance, the more
