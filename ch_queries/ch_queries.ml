@@ -704,6 +704,7 @@ module Expr = struct
     | Some ext -> def "arrayResize" [ arr; size; ext ]
 
   let arrayReverse arr = def "arrayReverse" [ arr ]
+  let arrayRotateLeft arr n = def "arrayRotateLeft" [ arr; n ]
 
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]

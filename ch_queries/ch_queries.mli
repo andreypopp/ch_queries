@@ -709,6 +709,13 @@ module Expr : sig
   (** [arrayReverse arr] returns an array containing the elements of [arr] in
       reverse order. *)
 
+  val arrayRotateLeft :
+    ('n, ('m, 'a) array) expr ->
+    ('o, _ number) expr ->
+    ('n, ('m, 'a) array) expr
+  (** [arrayRotateLeft arr n] rotates the array to the left by [n] elements.
+      Negative values of [n] rotate to the right. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
