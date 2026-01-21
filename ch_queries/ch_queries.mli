@@ -677,6 +677,13 @@ module Expr : sig
       tuples [(i, r)] containing the index [i] from which to begin and the
       range [r] over which to aggregate. *)
 
+  val arrayRemove :
+    ('n, ('m, 'a) array) expr ->
+    ('m, 'a) expr ->
+    ('n, ('m, 'a) array) expr
+  (** [arrayRemove arr elem] removes all elements equal to [elem] from the
+      array. NULLs are treated as equal. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr

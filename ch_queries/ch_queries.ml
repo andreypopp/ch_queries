@@ -695,6 +695,8 @@ module Expr = struct
   let arrayReduceInRanges agg_func ranges arrs =
     def "arrayReduceInRanges" (agg_func :: ranges :: arrs)
 
+  let arrayRemove arr elem = def "arrayRemove" [ arr; elem ]
+
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]
 
