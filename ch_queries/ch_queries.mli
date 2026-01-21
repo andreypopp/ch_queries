@@ -349,6 +349,11 @@ module Expr : sig
   (** [arrayJoin arr] unfolds the array into multiple rows - one per element.
       This is a special function that affects all query clauses. *)
 
+  val arrayCompact : ('n, ('m, 'a) array) expr -> ('n, ('m, 'a) array) expr
+  (** [arrayCompact arr] removes consecutive duplicate elements from an array.
+      The order of values in the resulting array is determined by the order in
+      the source array. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr

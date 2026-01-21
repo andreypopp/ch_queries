@@ -591,6 +591,7 @@ module Expr = struct
   let arrayAvg f xs = def "arrayAvg" (f :: xs)
   let length x = def "length" [ x ]
   let arrayJoin arr = def "arrayJoin" [ arr ]
+  let arrayCompact arr = def "arrayCompact" [ arr ]
 
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]
