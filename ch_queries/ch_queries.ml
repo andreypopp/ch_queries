@@ -697,6 +697,11 @@ module Expr = struct
 
   let arrayRemove arr elem = def "arrayRemove" [ arr; elem ]
 
+  let arrayResize ?extender arr size =
+    match extender with
+    | None -> def "arrayResize" [ arr; size ]
+    | Some ext -> def "arrayResize" [ arr; size; ext ]
+
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]
 

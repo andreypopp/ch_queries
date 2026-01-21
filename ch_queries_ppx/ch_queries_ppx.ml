@@ -978,6 +978,27 @@ let rec stage_expr ~params expr =
           | _ ->
               Location.raise_errorf ~loc
                 "arrayPartialShuffle requires 1, 2, or 3 arguments")
+      | Func { node = "arrayResize"; _ } -> (
+          (* arrayResize(arr, size[, extender]) *)
+          let f = evar ~loc "Ch_queries.Expr.arrayResize" in
+          match args with
+          | [ arr; size ] ->
+              let arr = stage_expr ~params arr in
+              let size = stage_expr ~params size in
+              eapply ~loc f [ arr; size ]
+          | [ arr; size; extender ] ->
+              let arr = stage_expr ~params arr in
+              let size = stage_expr ~params size in
+              let extender = stage_expr ~params extender in
+              pexp_apply ~loc f
+                [
+                  (Labelled "extender", extender);
+                  (Nolabel, arr);
+                  (Nolabel, size);
+                ]
+          | _ ->
+              Location.raise_errorf ~loc
+                "arrayResize requires 2 or 3 arguments")
       | Func { node = ("joinGet" | "joinGetOrNull") as fname; _ } ->
           (* joinGet(DICT, VALUE, KEYS...) stages as:
              Ch_queries.Expr.joinGet

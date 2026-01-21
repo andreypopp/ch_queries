@@ -684,6 +684,16 @@ module Expr : sig
   (** [arrayRemove arr elem] removes all elements equal to [elem] from the
       array. NULLs are treated as equal. *)
 
+  val arrayResize :
+    ?extender:('m, 'a) expr ->
+    ('n, ('m, 'a) array) expr ->
+    ('o, _ number) expr ->
+    ('n, ('m, 'a) array) expr
+  (** [arrayResize ?extender arr size] changes the length of the array. If
+      [size] is less than the original size, the array is truncated from the
+      right. If [size] is larger, the array is extended with [extender] values
+      or default values for the data type if [extender] is not provided. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
