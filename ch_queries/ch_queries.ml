@@ -692,6 +692,9 @@ module Expr = struct
   let arrayRandomSample arr samples = def "arrayRandomSample" [ arr; samples ]
   let arrayReduce agg_func arrs = def "arrayReduce" (agg_func :: arrs)
 
+  let arrayReduceInRanges agg_func ranges arrs =
+    def "arrayReduceInRanges" (agg_func :: ranges :: arrs)
+
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]
 

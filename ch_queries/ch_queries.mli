@@ -666,6 +666,17 @@ module Expr : sig
       parametric aggregate functions, the parameter is indicated after the
       function name in parentheses e.g. ['uniqUpTo(6)']. *)
 
+  val arrayReduceInRanges :
+    ('n, string) expr ->
+    ('m, ('o, 'r) array) expr ->
+    ('p, ('q, 'a) array) expr list ->
+    ('s, 't) expr
+  (** [arrayReduceInRanges agg_func ranges arrs] applies an aggregate function
+      to array elements in the given ranges and returns an array containing the
+      result corresponding to each range. The [ranges] argument is an array of
+      tuples [(i, r)] containing the index [i] from which to begin and the
+      range [r] over which to aggregate. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr

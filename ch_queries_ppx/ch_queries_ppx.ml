@@ -542,6 +542,18 @@ let rec stage_expr ~params expr =
               Location.raise_errorf ~loc
                 "arrayReduce requires an aggregate function name and at least \
                  one array argument")
+      | Func { node = "arrayReduceInRanges"; _ } -> (
+          let f = evar ~loc "Ch_queries.Expr.arrayReduceInRanges" in
+          match args with
+          | agg_func :: ranges :: arrays when List.length arrays >= 1 ->
+              let agg_func = stage_expr ~params agg_func in
+              let ranges = stage_expr ~params ranges in
+              let arrays = List.map arrays ~f:(stage_expr ~params) in
+              eapply ~loc f [ agg_func; ranges; elist ~loc arrays ]
+          | _ ->
+              Location.raise_errorf ~loc
+                "arrayReduceInRanges requires an aggregate function name, \
+                 ranges, and at least one array argument")
       | Func { node = "arrayAll"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.arrayAll" in
           match args with
