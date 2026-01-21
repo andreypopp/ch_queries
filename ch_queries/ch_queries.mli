@@ -383,6 +383,11 @@ module Expr : sig
   val arrayConcat : ('n, ('m, 'a) array) expr list -> ('n, ('m, 'a) array) expr
   (** [arrayConcat arrays] combines arrays passed as arguments. *)
 
+  val arrayDifference : ('n, ('m, 'a) array) expr -> ('n, ('m, 'a) array) expr
+  (** [arrayDifference arr] calculates an array of differences between adjacent
+      array elements. The first element will be 0, the second [arr\[1\] - arr\[0\]],
+      the third [arr\[2\] - arr\[1\]], etc. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
