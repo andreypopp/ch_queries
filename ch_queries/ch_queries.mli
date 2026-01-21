@@ -611,6 +611,17 @@ module Expr : sig
       on corresponding elements from all arrays. Remaining elements beyond limit
       are in unspecified order. *)
 
+  val arrayPartialSort :
+    ?f:(non_null, ('n, 'a) expr -> (_, 'b) expr) expr ->
+    ('m, ('n, 'a) array) expr list ->
+    ('o, _ number) expr ->
+    ('m, ('n, 'a) array) expr
+  (** [arrayPartialSort ?f arrs limit] sorts elements in range [1..limit]
+      in ascending order. If [f] is provided, sorting is done by the result of
+      applying [f] to the elements. When multiple arrays are passed, [f] operates
+      on corresponding elements from all arrays. Remaining elements beyond limit
+      are in unspecified order. *)
+
   val arrayPartialShuffle :
     ?limit:('o, _ number) expr ->
     ?seed:('o, _ number) expr ->

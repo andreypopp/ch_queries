@@ -669,6 +669,11 @@ module Expr = struct
     | None -> def "arrayPartialReverseSort" (arrs @ [ limit ])
     | Some f -> def "arrayPartialReverseSort" ((f :: arrs) @ [ limit ])
 
+  let arrayPartialSort ?f arrs limit =
+    match f with
+    | None -> def "arrayPartialSort" (arrs @ [ limit ])
+    | Some f -> def "arrayPartialSort" ((f :: arrs) @ [ limit ])
+
   let arrayPartialShuffle ?limit ?seed arr =
     match (limit, seed) with
     | None, None -> def "arrayPartialShuffle" [ arr ]
