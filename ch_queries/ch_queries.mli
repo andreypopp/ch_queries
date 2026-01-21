@@ -360,6 +360,15 @@ module Expr : sig
       the elements in the source array. If [f] is specified, the sum is computed
       from applying the lambda to the array elements at each position. *)
 
+  val arrayCumSumNonNegative :
+    ?f:(non_null, ('n, 'a) expr -> (_, _ number) expr) expr ->
+    ('m, ('n, 'a) array) expr list ->
+    ('m, ('n, 'a) array) expr
+  (** [arrayCumSumNonNegative ?f arrays] returns an array of the partial
+      (running) sums of the elements in the source array, replacing any negative
+      running sum with zero. If [f] is specified, the sum is computed from
+      applying the lambda to the array elements at each position. *)
+
   val length : ('n, _ array) expr -> ('n, int number) expr
 
   val arrayJoin : ('n, ('m, 'a) array) expr -> ('m, 'a) expr
