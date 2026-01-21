@@ -621,6 +621,7 @@ module Expr = struct
   let arrayFirstOrNull f xs = def "arrayFirstOrNull" (f :: xs)
   let arrayFlatten arr = def "arrayFlatten" [ arr ]
   let arrayLast f xs = def "arrayLast" (f :: xs)
+  let arrayLastIndex f xs = def "arrayLastIndex" (f :: xs)
   let arrayFold f xs acc = def "arrayFold" (f :: xs @ [ acc ])
   let arrayIntersect arrs = def "arrayIntersect" arrs
   let arrayJaccardIndex arr_x arr_y = def "arrayJaccardIndex" [ arr_x; arr_y ]
