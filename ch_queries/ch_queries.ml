@@ -648,6 +648,7 @@ module Expr = struct
   let arrayFold f xs acc = def "arrayFold" ((f :: xs) @ [ acc ])
   let arrayIntersect arrs = def "arrayIntersect" arrs
   let arraySymmetricDifference arrs = def "arraySymmetricDifference" arrs
+  let arrayUnion arrs = def "arrayUnion" arrs
   let arrayJaccardIndex arr_x arr_y = def "arrayJaccardIndex" [ arr_x; arr_y ]
 
   let arrayLevenshteinDistance arr_from arr_to =

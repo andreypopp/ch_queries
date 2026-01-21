@@ -570,6 +570,11 @@ module Expr : sig
       not present in all source arrays. The result contains only unique values.
       Elements are included if they do not occur in all input sets. *)
 
+  val arrayUnion : ('n, ('m, 'a) array) expr list -> ('n, ('m, 'a) array) expr
+  (** [arrayUnion arrays] returns an array which contains all elements that are
+      present in one of the source arrays. The result contains only unique
+      values. *)
+
   val arrayJaccardIndex :
     ('n, ('m, 'a) array) expr ->
     ('n, ('m, 'a) array) expr ->
