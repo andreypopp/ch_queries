@@ -650,6 +650,9 @@ module Expr = struct
   let arraySymmetricDifference arrs = def "arraySymmetricDifference" arrs
   let arrayUnion arrs = def "arrayUnion" arrs
   let arrayUniq arrs = def "arrayUniq" arrs
+  let arrayWithConstant length x = def "arrayWithConstant" [ length; x ]
+  let arrayZip arrs = def "arrayZip" arrs
+  let arrayZipUnaligned arrs = def "arrayZipUnaligned" arrs
   let arrayJaccardIndex arr_x arr_y = def "arrayJaccardIndex" [ arr_x; arr_y ]
 
   let arrayLevenshteinDistance arr_from arr_to =
@@ -749,6 +752,41 @@ module Expr = struct
     match length with
     | None -> def "arraySlice" [ arr; offset ]
     | Some len -> def "arraySlice" [ arr; offset; len ]
+
+  let countEqual arr x = def "countEqual" [ arr; x ]
+
+  let emptyArrayDate () = def "emptyArrayDate" []
+  let emptyArrayDateTime () = def "emptyArrayDateTime" []
+  let emptyArrayFloat32 () = def "emptyArrayFloat32" []
+  let emptyArrayFloat64 () = def "emptyArrayFloat64" []
+  let emptyArrayInt16 () = def "emptyArrayInt16" []
+  let emptyArrayInt32 () = def "emptyArrayInt32" []
+  let emptyArrayInt64 () = def "emptyArrayInt64" []
+  let emptyArrayInt8 () = def "emptyArrayInt8" []
+  let emptyArrayString () = def "emptyArrayString" []
+  let emptyArrayToSingle arr = def "emptyArrayToSingle" [ arr ]
+  let emptyArrayUInt16 () = def "emptyArrayUInt16" []
+  let emptyArrayUInt32 () = def "emptyArrayUInt32" []
+  let emptyArrayUInt64 () = def "emptyArrayUInt64" []
+  let emptyArrayUInt8 () = def "emptyArrayUInt8" []
+
+  let has arr x = def "has" [ arr; x ]
+  let hasAll set subset = def "hasAll" [ set; subset ]
+  let hasAny arr_x arr_y = def "hasAny" [ arr_x; arr_y ]
+  let hasSubstr arr1 arr2 = def "hasSubstr" [ arr1; arr2 ]
+
+  let indexOf arr x = def "indexOf" [ arr; x ]
+  let indexOfAssumeSorted arr x = def "indexOfAssumeSorted" [ arr; x ]
+
+  let range ?start ?step end_ =
+    match (start, step) with
+    | None, None -> def "range" [ end_ ]
+    | Some s, None -> def "range" [ s; end_ ]
+    | Some s, Some st -> def "range" [ s; end_; st ]
+    | None, Some _ -> failwith "range: step requires start to be specified"
+
+  let replicate x arr = def "replicate" [ x; arr ]
+  let reverse arr = def "reverse" [ arr ]
 
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]

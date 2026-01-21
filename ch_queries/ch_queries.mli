@@ -582,6 +582,22 @@ module Expr : sig
       of elements at matching positions across all arrays. All arrays must have
       the same length. *)
 
+  val arrayWithConstant :
+    ('n, _ number) expr -> ('m, 'a) expr -> (non_null, ('m, 'a) array) expr
+  (** [arrayWithConstant length x] creates an array of length [length] filled
+      with the constant [x]. *)
+
+  val arrayZip : ('n, ('m, 'a) array) expr list -> ('n, _ array) expr
+  (** [arrayZip arrs] combines multiple arrays into a single array. The
+      resulting array contains the corresponding elements of the source arrays
+      grouped into tuples in the listed order of arguments. *)
+
+  val arrayZipUnaligned : ('n, ('m, 'a) array) expr list -> ('n, _ array) expr
+  (** [arrayZipUnaligned arrs] combines multiple arrays into a single array,
+      allowing for unaligned arrays (arrays of differing lengths). The resulting
+      array contains the corresponding elements of the source arrays grouped
+      into tuples in the listed order of arguments. *)
+
   val arrayJaccardIndex :
     ('n, ('m, 'a) array) expr ->
     ('n, ('m, 'a) array) expr ->
@@ -848,6 +864,115 @@ module Expr : sig
       negative value indicates an offset from the right. Numbering starts at 1.
       If [length] is provided, returns at most that many elements. A negative
       [length] returns an open slice [offset, array_length - length]. *)
+
+  val countEqual :
+    ('n, ('m, 'a) array) expr -> ('m, 'a) expr -> (non_null, int64 number) expr
+  (** [countEqual arr x] returns the number of elements in the array equal to
+      [x]. Equivalent to [arrayCount(elem -> elem = x, arr)]. [NULL] elements
+      are handled as separate values. *)
+
+  val emptyArrayDate : unit -> (non_null, (non_null, date) array) expr
+  (** Returns an empty Date array. *)
+
+  val emptyArrayDateTime : unit -> (non_null, (non_null, datetime) array) expr
+  (** Returns an empty DateTime array. *)
+
+  val emptyArrayFloat32 : unit -> (non_null, (non_null, float number) array) expr
+  (** Returns an empty Float32 array. *)
+
+  val emptyArrayFloat64 : unit -> (non_null, (non_null, float number) array) expr
+  (** Returns an empty Float64 array. *)
+
+  val emptyArrayInt16 : unit -> (non_null, (non_null, int number) array) expr
+  (** Returns an empty Int16 array. *)
+
+  val emptyArrayInt32 : unit -> (non_null, (non_null, int number) array) expr
+  (** Returns an empty Int32 array. *)
+
+  val emptyArrayInt64 : unit -> (non_null, (non_null, int64 number) array) expr
+  (** Returns an empty Int64 array. *)
+
+  val emptyArrayInt8 : unit -> (non_null, (non_null, int number) array) expr
+  (** Returns an empty Int8 array. *)
+
+  val emptyArrayString : unit -> (non_null, (non_null, string) array) expr
+  (** Returns an empty String array. *)
+
+  val emptyArrayToSingle :
+    ('n, ('m, 'a) array) expr -> ('n, ('m, 'a) array) expr
+  (** [emptyArrayToSingle arr] accepts an empty array and returns a one-element
+      array that is equal to the default value. *)
+
+  val emptyArrayUInt16 : unit -> (non_null, (non_null, int number) array) expr
+  (** Returns an empty UInt16 array. *)
+
+  val emptyArrayUInt32 : unit -> (non_null, (non_null, int number) array) expr
+  (** Returns an empty UInt32 array. *)
+
+  val emptyArrayUInt64 : unit -> (non_null, (non_null, uint64 number) array) expr
+  (** Returns an empty UInt64 array. *)
+
+  val emptyArrayUInt8 : unit -> (non_null, (non_null, int number) array) expr
+  (** Returns an empty UInt8 array. *)
+
+  val has :
+    ('n, ('m, 'a) array) expr -> ('m, 'a) expr -> (non_null, bool) expr
+  (** [has arr x] returns whether the array contains the specified element. *)
+
+  val hasAll :
+    ('n, ('m, 'a) array) expr ->
+    ('n, ('m, 'a) array) expr ->
+    (non_null, bool) expr
+  (** [hasAll set subset] checks whether one array is a subset of another. An
+      empty array is a subset of any array. [Null] is processed as a value.
+      The order of values in both the arrays does not matter. *)
+
+  val hasAny :
+    ('n, ('m, 'a) array) expr ->
+    ('n, ('m, 'a) array) expr ->
+    (non_null, bool) expr
+  (** [hasAny arr_x arr_y] checks whether two arrays have intersection by some
+      elements. [Null] is processed as a value. The order of the values in both
+      of the arrays does not matter. *)
+
+  val hasSubstr :
+    ('n, ('m, 'a) array) expr ->
+    ('n, ('m, 'a) array) expr ->
+    (non_null, bool) expr
+  (** [hasSubstr arr1 arr2] checks whether all the elements of [arr2] appear in
+      [arr1] in the same exact order. Returns [1] if [arr2] is empty. [Null] is
+      processed as a value. *)
+
+  val indexOf :
+    ('n, ('m, 'a) array) expr -> ('m, 'a) expr -> (non_null, int64 number) expr
+  (** [indexOf arr x] returns the index of the first element with value [x]
+      (starting from 1) if it is in the array. If the array does not contain
+      the searched-for value, the function returns [0]. Elements set to [NULL]
+      are handled as normal values. *)
+
+  val indexOfAssumeSorted :
+    ('n, ('m, 'a) array) expr -> ('m, 'a) expr -> (non_null, int64 number) expr
+  (** [indexOfAssumeSorted arr x] returns the index of the first element with
+      value [x] (starting from 1) if it is in the array. If the array does not
+      contain the searched-for value, the function returns [0]. Unlike [indexOf],
+      this function assumes that the array is sorted in ascending order. *)
+
+  val range :
+    ?start:('n, _ number) expr ->
+    ?step:('n, _ number) expr ->
+    ('n, _ number) expr ->
+    ('n, (non_null, _ number) array) expr
+  (** [range ?start ?step end_] returns an array of numbers from [start] to
+      [end_ - 1] by [step]. If [start] is not specified, defaults to 0.
+      If [step] is not specified, defaults to 1. *)
+
+  val replicate :
+    ('n, 'a) expr -> ('m, ('o, 'b) array) expr -> ('m, ('n, 'a) array) expr
+  (** [replicate x arr] creates an array of the same length as [arr] filled
+      with value [x]. *)
+
+  val reverse : ('n, ('m, 'a) array) expr -> ('n, ('m, 'a) array) expr
+  (** [reverse arr] reverses the order of the elements in the input array. *)
 
   (** {2 Conditional} *)
 

@@ -526,7 +526,8 @@ let rec stage_expr ~params expr =
             node =
               ( "greatest" | "least" | "concat" | "midpoint" | "arrayConcat"
               | "arrayEnumerateUniq" | "arrayIntersect"
-              | "arraySymmetricDifference" | "arrayUnion" | "arrayUniq" ) as name;
+              | "arraySymmetricDifference" | "arrayUnion" | "arrayUniq"
+              | "arrayZip" | "arrayZipUnaligned" ) as name;
             _;
           } ->
           let f = evar ~loc ("Ch_queries.Expr." ^ name) in
@@ -1161,6 +1162,29 @@ let rec stage_expr ~params expr =
                 ]
           | _ ->
               Location.raise_errorf ~loc "arraySlice requires 2 or 3 arguments")
+      | Func { node = "range"; _ } -> (
+          (* range(end) or range(start, end) or range(start, end, step) *)
+          let f = evar ~loc "Ch_queries.Expr.range" in
+          match args with
+          | [ end_ ] ->
+              let end_ = stage_expr ~params end_ in
+              eapply ~loc f [ end_ ]
+          | [ start; end_ ] ->
+              let start = stage_expr ~params start in
+              let end_ = stage_expr ~params end_ in
+              pexp_apply ~loc f [ (Labelled "start", start); (Nolabel, end_) ]
+          | [ start; end_; step ] ->
+              let start = stage_expr ~params start in
+              let end_ = stage_expr ~params end_ in
+              let step = stage_expr ~params step in
+              pexp_apply ~loc f
+                [
+                  (Labelled "start", start);
+                  (Labelled "step", step);
+                  (Nolabel, end_);
+                ]
+          | _ ->
+              Location.raise_errorf ~loc "range requires 1, 2, or 3 arguments")
       | Func { node = ("joinGet" | "joinGetOrNull") as fname; _ } ->
           (* joinGet(DICT, VALUE, KEYS...) stages as:
              Ch_queries.Expr.joinGet
