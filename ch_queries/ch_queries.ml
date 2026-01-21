@@ -602,6 +602,7 @@ module Expr = struct
   let arrayEnumerate arr = def "arrayEnumerate" [ arr ]
   let arrayEnumerateDense arr = def "arrayEnumerateDense" [ arr ]
   let arrayEnumerateDenseRanked clear_depth arr max_array_depth = def "arrayEnumerateDenseRanked" [ clear_depth; arr; max_array_depth ]
+  let arrayEnumerateUniq arrs = def "arrayEnumerateUniq" arrs
 
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]

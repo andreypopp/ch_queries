@@ -416,6 +416,14 @@ module Expr : sig
       multidimensional array with the ability to specify how deep to look inside
       the array. *)
 
+  val arrayEnumerateUniq :
+    ('n, ('m, 'a) array) expr list ->
+    ('n, ('m, int number) array) expr
+  (** [arrayEnumerateUniq arrs] returns an array the same size as the source
+      array, indicating for each element what its position is among elements
+      with the same value. When multiple arrays are passed, uniqueness is
+      considered for tuples of elements in the same positions in all arrays. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
