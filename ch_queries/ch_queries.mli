@@ -605,6 +605,14 @@ module Expr : sig
       the minimum of the lambda results if [f] is provided. When multiple arrays
       are passed, [f] operates on corresponding elements from all arrays. *)
 
+  val arraySum :
+    ?f:(non_null, ('n, 'a) expr -> (_, _ number) expr) expr ->
+    ('m, ('n, 'a) array) expr list ->
+    (non_null, _ number) expr
+  (** [arraySum ?f arrays] returns the sum of elements in the source array, or
+      the sum of the lambda results if [f] is provided. When multiple arrays
+      are passed, [f] operates on corresponding elements from all arrays. *)
+
   val arrayPopBack : ('n, ('m, 'a) array) expr -> ('n, ('m, 'a) array) expr
   (** [arrayPopBack arr] removes the last element from the array. *)
 

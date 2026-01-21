@@ -662,6 +662,9 @@ module Expr = struct
   let arrayMin ?f xs =
     match f with None -> def "arrayMin" xs | Some f -> def "arrayMin" (f :: xs)
 
+  let arraySum ?f xs =
+    match f with None -> def "arraySum" xs | Some f -> def "arraySum" (f :: xs)
+
   let arrayPopBack arr = def "arrayPopBack" [ arr ]
   let arrayPopFront arr = def "arrayPopFront" [ arr ]
   let arrayPushBack arr x = def "arrayPushBack" [ arr; x ]

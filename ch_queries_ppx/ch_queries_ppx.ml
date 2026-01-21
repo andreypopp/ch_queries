@@ -770,6 +770,23 @@ let rec stage_expr ~params expr =
           | _ ->
               Location.raise_errorf ~loc
                 "arrayMin requires at least one array argument")
+      | Func { node = "arraySum"; _ } -> (
+          let f = evar ~loc "Ch_queries.Expr.arraySum" in
+          match args with
+          | ({ node = E_lambda _; _ } as lambda) :: arrays
+            when List.length arrays >= 1 ->
+              (* arraySum(lambda, arr1, ...) - with lambda *)
+              let lambda = stage_expr ~params lambda in
+              let arrays = List.map arrays ~f:(stage_expr ~params) in
+              pexp_apply ~loc f
+                [ (Labelled "f", lambda); (Nolabel, elist ~loc arrays) ]
+          | arrays when List.length arrays >= 1 ->
+              (* arraySum(arr1, ...) - without lambda *)
+              let arrays = List.map arrays ~f:(stage_expr ~params) in
+              eapply ~loc f [ elist ~loc arrays ]
+          | _ ->
+              Location.raise_errorf ~loc
+                "arraySum requires at least one array argument")
       | Func { node = "arrayProduct"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.arrayProduct" in
           match args with
