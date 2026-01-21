@@ -225,7 +225,7 @@ select from an OCaml value (id syntax):
 
 splicing ocaml values into WHERE:
   $ ./compile_and_run '
-  > let users ~where = [%q "SELECT users.x AS x FROM public.users WHERE $where"];;
+  > let users ~where = [%q "SELECT users.x AS x FROM public.users WHERE $.where"];;
   > #show users
   > '
   >>> PREPROCESSING
@@ -260,7 +260,7 @@ splicing ocaml values into WHERE:
 
 splicing ocaml values into WHERE:
   $ ./compile_and_run '
-  > let users ~where = [%q "SELECT users.x AS x FROM public.users WHERE $where::Bool"];;
+  > let users ~where = [%q "SELECT users.x AS x FROM public.users WHERE $.where::Bool"];;
   > #show users
   > '
   >>> PREPROCESSING
@@ -296,7 +296,7 @@ splicing ocaml values into WHERE:
 
 splicing ocaml values into SELECT:
   $ ./compile_and_run '
-  > let users ~what = [%q "SELECT $what AS field FROM public.users"];;
+  > let users ~what = [%q "SELECT $.what AS field FROM public.users"];;
   > #show users
   > '
   >>> PREPROCESSING
@@ -327,7 +327,7 @@ splicing ocaml values into SELECT:
 
 splicing ocaml values into SELECT as scope:
   $ ./compile_and_run '
-  > let users ~what = [%q "SELECT $what... FROM public.users"];;
+  > let users ~what = [%q "SELECT $.what... FROM public.users"];;
   > #show users
   > '
   >>> PREPROCESSING
@@ -341,7 +341,7 @@ splicing ocaml values into SELECT as scope:
              object
                method users = users
              end))
-      ~select:what
+      ~select:(fun __q -> what __q)
   >>> RUNNING
   val users :
     what:(< users : Ch_database.Public.users Ch_queries.scope > -> 'a) ->

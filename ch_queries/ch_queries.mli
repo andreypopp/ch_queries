@@ -515,8 +515,8 @@ module Expr : sig
 
   val extract :
     ('n, string) expr -> (non_null, string) expr -> ('n, string) expr
-  (** [extract haystack pattern] extracts the first regex match.
-      Returns empty string if no match found. Uses RE2 regex library. *)
+  (** [extract haystack pattern] extracts the first regex match. Returns empty
+      string if no match found. Uses RE2 regex library. *)
 
   (** {2 URL functions} *)
 
@@ -557,8 +557,8 @@ module Expr : sig
 
   val jsonExtractKeys :
     ('n, string) expr -> (non_null, (non_null, string) array) expr
-  (** [jsonExtractKeys json] extracts keys from a JSON object.
-      Returns array of key names. *)
+  (** [jsonExtractKeys json] extracts keys from a JSON object. Returns array of
+      key names. *)
 
   (** {2 Splitting functions} *)
 

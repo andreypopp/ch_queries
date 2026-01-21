@@ -50,7 +50,7 @@ joinGet PPX transformation with multiple keys:
 
 joinGet PPX transformation with $param value:
   $ ./compile_and_run '
-  > let x ~dict ~value = [%e "joinGet($dict, $value, 1)"];; #show x
+  > let x ~dict ~value = [%e "joinGet($dict, $.value, 1)"];; #show x
   > let q = x ~dict:Ch_database.Public.dict ~value:(fun __q -> {%e|value|});; #show q
   > ' --run-only
   >>> RUNNING
@@ -62,7 +62,7 @@ joinGet PPX transformation with $param value:
 
 joinGet PPX transformation with $param value:
   $ ./compile_and_run '
-  > let x ~dict ~value = [%e "joinGet(public.dict, $value, 1)"];; #show x
+  > let x ~dict ~value = [%e "joinGet(public.dict, $.value, 1)"];; #show x
   > let q = x ~value:(fun __q -> {%e|value|});; #show q
   > ' --run-only
   >>> RUNNING

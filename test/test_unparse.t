@@ -7,7 +7,7 @@ this showcases different parse/unparse combinators:
   > let int_opt = Ch_queries.Parse.(unparse (nullable int)) (Some 1);;
   > let int_opt_null = Ch_queries.Parse.(unparse (nullable int)) None;;
   > let x __q = [%eu "tuple($int64, $uint64, $date, $datetime, $int_opt, $int_opt_null)"];;
-  > let q = [%q "SELECT $x AS x FROM public.users"];;
+  > let q = [%q "SELECT $.x AS x FROM public.users"];;
   > let sql, _parse_row = Ch_queries.query q @@ fun __q -> Ch_queries.Row.ignore [%e "q.x"]
   > let () = print_endline sql;;
   > ' --run-only

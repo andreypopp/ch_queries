@@ -118,7 +118,7 @@ ORDER BY multiple columns:
 
 ORDER BY with a parameter:
   $ ./compile_and_run '
-  > let users ~ord = [%q "SELECT users.x FROM public.users ORDER BY $ord..."];;
+  > let users ~ord = [%q "SELECT users.x FROM public.users ORDER BY $.ord..."];;
   > #show users;;
   > '
   >>> PREPROCESSING

@@ -84,7 +84,7 @@ test edge case with dynamic scopes:
   > let select_z __q = object
   >   method get = function | `X -> Ch_queries.string "Z_X" | `Y -> Ch_queries.string "dup" | `Z -> Ch_queries.string "dup"
   > end;;
-  > let users = [%q "SELECT $select_x... FROM public.users UNION SELECT $select_y... FROM public.users UNION SELECT $select_z... FROM public.users"];;
+  > let users = [%q "SELECT $.select_x... FROM public.users UNION SELECT $.select_y... FROM public.users UNION SELECT $.select_z... FROM public.users"];;
   > let sql, _parse_row = Ch_queries.query users @@ fun __q -> 
   >   let open Ch_queries.Row in
   >   let+ _ = Ch_queries.Row.ignore [%e "q.get(${`X})"]
@@ -134,7 +134,7 @@ test edge case with dynamic scopes:
                    object
                      method users = users
                    end))
-            ~select:select_x)
+            ~select:(fun __q -> select_x __q))
          (Ch_queries.select ()
             ~from:
               (Ch_queries.map_from_scope
@@ -144,7 +144,7 @@ test edge case with dynamic scopes:
                    object
                      method users = users
                    end))
-            ~select:select_y))
+            ~select:(fun __q -> select_y __q)))
       (Ch_queries.select ()
          ~from:
            (Ch_queries.map_from_scope
@@ -154,7 +154,7 @@ test edge case with dynamic scopes:
                 object
                   method users = users
                 end))
-         ~select:select_z)
+         ~select:(fun __q -> select_z __q))
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->

@@ -80,7 +80,7 @@ GROUP BY multiple columns:
 
 GROUP BY with a parameter:
   $ ./compile_and_run '
-  > let users ~dimension = [%q "SELECT users.x AS x FROM public.users GROUP BY users.id, $dimension..."];;
+  > let users ~dimension = [%q "SELECT users.x AS x FROM public.users GROUP BY users.id, $.dimension..."];;
   > #show users;;
   > '
   >>> PREPROCESSING
@@ -121,7 +121,7 @@ GROUP BY with a parameter:
 GROUP BY GROUPING SETS:
   $ ./compile_and_run '
   > let group_by __q = Ch_queries.grouping_sets [];;
-  > let users = [%q "SELECT 1 as one FROM public.users GROUP BY $group_by"];;
+  > let users = [%q "SELECT 1 as one FROM public.users GROUP BY $.group_by"];;
   > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.ignore [%e "q.one"]
   > let () = print_endline sql;;
   > '
@@ -160,7 +160,7 @@ GROUP BY GROUPING SETS:
 
   $ ./compile_and_run '
   > let group_by (__q : < u : _ Ch_queries.scope; .. >) = Ch_queries.grouping_sets [[A_expr {%e|u.x|}; A_expr {%e|u.id|}]; [A_expr {%e|u.id|}]];;
-  > let users = [%q "SELECT 1 as one FROM public.users AS u GROUP BY $group_by"];;
+  > let users = [%q "SELECT 1 as one FROM public.users AS u GROUP BY $.group_by"];;
   > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.ignore [%e "q.one"]
   > let () = print_endline sql;;
   > '

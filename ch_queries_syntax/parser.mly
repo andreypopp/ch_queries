@@ -20,8 +20,8 @@
 %}
 
 %token <string> ID
-%token <string> PARAM
-%token <string> PARAM_SPLICE
+%token <string * bool> PARAM
+%token <string * bool> PARAM_SPLICE
 %token <string> CH_PARAM
 %token <string> OCAML_EXPR
 %token <Syntax.expr> UNSAFE
@@ -48,7 +48,7 @@
 %token WITH
 %token FILL STEP TO INTERPOLATE
 %token AS_MATERIALIZED AS_LPAREN
-%token <string> AS_PARAM
+%token <string * bool> AS_PARAM
 %token EOF
 
 %left UNION
@@ -140,7 +140,8 @@ with_field:
     { With_expr { expr = expr; alias = Some alias } }
 
 as_param:
-    id=AS_PARAM { make_id $startpos $endpos id }
+    id=AS_PARAM { let id, param_has_scope = id in
+                  {param=make_id $startpos $endpos id; param_has_scope} }
 
 %inline query_no_param:
     q=query_select { q }
@@ -188,10 +189,12 @@ alias_or_q:
   | id=alias { id }
 
 param:
-    id=PARAM { make_id $startpos $endpos id }
+    id=PARAM { let param, param_has_scope = id in
+               {param=make_id $startpos $endpos param; param_has_scope} }
 
 param_splice:
-    id=PARAM_SPLICE { make_id $startpos $endpos id }
+    id=PARAM_SPLICE { let param, param_has_scope = id in
+                      {param=make_id $startpos $endpos param; param_has_scope} }
 
 prewhere:
     PREWHERE e=expr { e }
@@ -290,8 +293,8 @@ from:
     { make_from $startpos $endpos (F_join { kind; from; join; on }) }
 
 from_one:
-    id=from_param t=query_ascription? alias=alias? final=final { 
-    let f = make_from_one $startpos $endpos (F_param {id; alias = Option.value alias ~default:id; final;}) in
+    param=from_param t=query_ascription? alias=alias? final=final { 
+    let f = make_from_one $startpos $endpos (F_param {param; alias = Option.value alias ~default:param.param; final;}) in
     let f = match t with None -> f | Some t -> make_from_one f.loc.start_pos f.loc.end_pos (F_ascribe (f, t)) in
     f }
   | db=id DOT table=id alias=alias? final=final
@@ -303,7 +306,7 @@ from_one:
 
 %inline from_param:
     id=param { id }
-  | id=id { id } (* TODO(andreypopp): probably need to deprecate this syntax *)
+  | id=id { {param=id; param_has_scope=false} } (* TODO(andreypopp): probably need to deprecate this syntax *)
 
 cluster_name:
     id=id { Cluster_name id }

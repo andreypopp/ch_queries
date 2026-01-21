@@ -388,9 +388,15 @@ module To_syntax = struct
                      cluster_name;
                })
       | From_cte_ref { cte_alias; alias; _ } ->
-          let id = Syntax.make_id cte_alias in
+          let param = Syntax.make_id cte_alias in
           let alias = Syntax.make_id alias in
-          Syntax.make_from_one (F_param { id; alias; final = false })
+          Syntax.make_from_one
+            (F_param
+               {
+                 param = { param; param_has_scope = false };
+                 alias;
+                 final = false;
+               })
     and from_to_syntax : type a. a from0 -> Syntax.from =
      fun from ->
       match from with

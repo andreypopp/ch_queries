@@ -155,7 +155,7 @@ splicing ocaml values into JOIN-ON:
   > let q cond = [%q "
   >   SELECT 1 as one
   >   FROM public.users AS u
-  >   LEFT JOIN public.profiles AS p ON $cond
+  >   LEFT JOIN public.profiles AS p ON $.cond
   >   LEFT JOIN public.profiles AS p2 ON true
   > "];;
   > #show q

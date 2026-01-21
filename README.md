@@ -62,24 +62,29 @@ val users :
 > allowed in `WHERE`, `GROUP BY`, etc) and they resolve to the columns defined
 > in `SELECT` fields.
 
-The `$param` syntax is used for parameters. If a parameter appears in the
-expression position, then it is expected to be a function which takes the current
-scope and returns an expression:
+The `$param` and `$.param` syntax is used for parameters.
+
+Regular `$param` syntax is used to splice in expressions defined outside of the
+query while `$.param` syntax is used to build expressions in the current query
+scope:
 ```ocaml
-# let users ~where = {%q|
-    SELECT users.id AS id, users.name AS name
+# let users ~field ~where = {%q|
+    SELECT users.id AS id, users.name AS name, $field::String AS extra_field
     FROM db.users
-    WHERE users.is_active AND $where
+    WHERE users.is_active AND $.where
   |}
 val users :
-  where:(< id : (non_null, int number) expr; name : (non_null, string) expr;
+  field:(non_null, string) expr ->
+  where:(< extra_field : (non_null, string) expr;
+           id : (non_null, int number) expr; name : (non_null, string) expr;
            users : < id : (non_null, int number) expr;
                      is_active : (non_null, bool) expr;
                      name : (non_null, string) expr >
                    scope > ->
          (non_null, bool) expr) ->
-  < id : (non_null, int number) expr; name : (non_null, string) expr > scope
-  select = <fun>
+  < extra_field : (non_null, string) expr; id : (non_null, int number) expr;
+    name : (non_null, string) expr >
+  scope select = <fun>
 ```
 
 Finally to generate SQL from the query, one needs to define what exactly to

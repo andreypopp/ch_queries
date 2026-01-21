@@ -64,7 +64,7 @@ let rec pp_expr opts ~parent_prec expr =
         | Second -> "SECONDS"
       in
       string (Printf.sprintf "INTERVAL %d %s" n unit_str)
-  | E_param v -> string (Printf.sprintf "$%s" v.node)
+  | E_param v -> string (Printf.sprintf "$%s" v.param.node)
   | E_window (name, args, window_spec) ->
       let pp_args =
         match args with
@@ -94,7 +94,7 @@ let rec pp_expr opts ~parent_prec expr =
               | Order_by_expr (expr, `DESC, fill) ->
                   pp_expr opts ~parent_prec:0 expr
                   ^^ space ^^ string "DESC" ^^ pp_with_fill opts fill
-              | Order_by_splice id -> pp_id id
+              | Order_by_splice p -> pp_id p.param
             in
             string "ORDER BY" ^^ space
             ^^ separate (string "," ^^ space) (List.map ~f:pp_order orders)
@@ -282,7 +282,7 @@ and pp_interpolate opts items =
 
 and pp_dimension opts = function
   | Dimension_expr expr -> pp_expr opts ~parent_prec:0 expr
-  | Dimension_splice id -> pp_id id ^^ string "..."
+  | Dimension_splice p -> pp_id p.param ^^ string "..."
 
 and pp_field opts { expr; alias } =
   match alias with
@@ -314,7 +314,7 @@ and pp_from_one opts from_one =
       let pp_cluster_name =
         match cluster_name with
         | Cluster_name id -> pp_id id
-        | Cluster_name_param id -> string "?" ^^ pp_id id
+        | Cluster_name_param p -> string "?" ^^ pp_id p.param
       in
       group
         (string "cluster" ^^ lparen ^^ pp_cluster_name ^^ comma ^^ space
@@ -326,9 +326,9 @@ and pp_from_one opts from_one =
         (lparen
         ^^ nest 2 (break 0 ^^ pp_query opts select ^^ rparen)
         ^^ pp_as alias)
-  | F_param { id; alias; final } ->
+  | F_param { param; alias; final } ->
       let final = if final then string " FINAL" else empty in
-      group (pp_id id ^^ pp_as alias ^^ final)
+      group (pp_id param.param ^^ pp_as alias ^^ final)
   | F_ascribe (from, typ) ->
       group (pp_from_one opts from ^^ string "::" ^^ pp_typ typ)
 
@@ -351,7 +351,7 @@ and pp_query opts { node; eq = _; loc = _ } =
   match node with
   | Q_union (q1, q2) ->
       group (pp_query opts q1 ^/^ string "UNION" ^/^ pp_query opts q2)
-  | Q_param id -> string "?" ^^ pp_id id
+  | Q_param p -> string "?" ^^ pp_id p.param
   | Q_ascribe (q, t) -> pp_query opts q ^^ string "::" ^^ pp_typ t
   | Q_select
       {
@@ -374,7 +374,7 @@ and pp_query opts { node; eq = _; loc = _ } =
             separate
               (string "," ^^ break 1)
               (List.map ~f:(pp_field opts) fields)
-        | Select_splice id -> pp_id id ^^ string "..."
+        | Select_splice p -> pp_id p.param ^^ string "..."
       in
       let with_clause =
         match with_fields with
@@ -432,7 +432,7 @@ and pp_query opts { node; eq = _; loc = _ } =
         | None -> None
         | Some items ->
             let pp_item = function
-              | Syntax.Order_by_splice id -> pp_id id ^^ string "..."
+              | Syntax.Order_by_splice p -> pp_id p.param ^^ string "..."
               | Syntax.Order_by_expr (expr, dir, fill) ->
                   let dir = match dir with `ASC -> "ASC" | `DESC -> "DESC" in
                   group
@@ -480,10 +480,10 @@ and pp_query opts { node; eq = _; loc = _ } =
                           | Second -> "SECONDS"
                         in
                         string (Printf.sprintf "INTERVAL %d %s" n unit_str)
-                    | Setting_param param -> string "?" ^^ pp_id param
+                    | Setting_param p -> string "?" ^^ pp_id p.param
                   in
                   pp_id id ^^ string "=" ^^ pp_value
-              | Setting_splice id -> string "?" ^^ pp_id id ^^ string "..."
+              | Setting_splice p -> string "?" ^^ pp_id p.param ^^ string "..."
             in
             let pp_items =
               separate (string ", ") (List.map ~f:pp_setting_item items)

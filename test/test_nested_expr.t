@@ -66,7 +66,7 @@ The param within the scope receives the scope as argument:
   >   |> Ch_queries.from_select
   > ;;
   > let q2 ~field =
-  >   {%q|SELECT q.($field) AS field FROM $q1 AS q|}
+  >   {%q|SELECT q.($.field) AS field FROM $q1 AS q|}
   > ;;
   > #show q2;;
   > let q = q2 ~field:(fun __q -> {%e|coalesce(profiles.name, users.x)|}) in

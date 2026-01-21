@@ -44,7 +44,7 @@ ORDER BY WITH FILL INTERPOLATE with AS expression:
 
 ORDER BY WITH FILL with params:
   $ ./compile_and_run '
-  > let users ~start ~stop = [%q "SELECT users.x FROM public.users ORDER BY users.x WITH FILL FROM $start TO $stop"];;
+  > let users ~start ~stop = [%q "SELECT users.x FROM public.users ORDER BY users.x WITH FILL FROM $.start TO $.stop"];;
   > #show users;;
   > ' --run-only
   >>> RUNNING
@@ -58,7 +58,7 @@ ORDER BY WITH FILL with params:
 
 ORDER BY WITH FILL INTERPOLATE with param expression:
   $ ./compile_and_run '
-  > let users ~default_id = [%q "SELECT users.x, users.id FROM public.users ORDER BY users.x WITH FILL FROM 0 TO 10 INTERPOLATE (id AS $default_id)"];;
+  > let users ~default_id = [%q "SELECT users.x, users.id FROM public.users ORDER BY users.x WITH FILL FROM 0 TO 10 INTERPOLATE (id AS $.default_id)"];;
   > #show users;;
   > ' --run-only
   >>> RUNNING

@@ -50,8 +50,6 @@ let refer_to_db_table db table =
     (String.capitalize_ascii db.Syntax.node)
     table.Syntax.node
 
-type from_ctx = From_none | From
-
 let rec from_scope_expr' from =
   let open Syntax in
   match from.node with
@@ -401,16 +399,16 @@ let parse_ocaml_expr ~loc ocaml_code =
       Location.raise_errorf ~loc:adjusted_loc
         "Error parsing OCaml expression: %s" (Printexc.to_string exn)
 
-let rec stage_expr ~on_evar ~params ~(from : from_ctx) expr =
+let rec stage_expr ~on_evar ~params expr =
   let loc = to_location expr in
   match expr.node with
   | Syntax.E_ascribe (e, t) ->
-      let e = stage_expr ~on_evar ~params ~from e in
+      let e = stage_expr ~on_evar ~params e in
       [%expr ([%e e] : [%t stage_typ t])]
   | Syntax.E_unsafe_concat xs ->
       let xs =
         List.map xs ~f:(fun e ->
-            [%expr Ch_queries.A_expr [%e stage_expr ~on_evar ~params ~from e]])
+            [%expr Ch_queries.A_expr [%e stage_expr ~on_evar ~params e]])
       in
       [%expr Ch_queries.unsafe_concat [%e elist ~loc xs]]
   | Syntax.E_unsafe id ->
@@ -418,7 +416,7 @@ let rec stage_expr ~on_evar ~params ~(from : from_ctx) expr =
       [%expr Ch_queries.unsafe [%e estring ~loc id.node]]
   | Syntax.E_col (scope, id) -> refer_to_scope ~loc scope id
   | Syntax.E_query (scope, expr) ->
-      query_scope ~loc scope (stage_expr ~on_evar ~params:[] ~from:From expr)
+      query_scope ~loc scope (stage_expr ~on_evar ~params:[] expr)
   | Syntax.E_id id -> (
       match CCList.mem id params ~eq:Syntax.equal_id with
       | true -> [%expr Ch_queries.unsafe [%e estring ~loc id.node]]
@@ -447,23 +445,20 @@ let rec stage_expr ~on_evar ~params ~(from : from_ctx) expr =
         evar ~loc ("Ch_queries.Expr." ^ name.node)
       in
       let args =
-        List.map args ~f:(fun arg ->
-            (Nolabel, stage_expr ~on_evar ~params ~from arg))
+        List.map args ~f:(fun arg -> (Nolabel, stage_expr ~on_evar ~params arg))
       in
       let args =
         match partition_by with
         | None -> args
         | Some dimensions ->
-            ( Labelled "partition_by",
-              stage_dimensions ~on_evar ~loc ~from dimensions )
+            (Labelled "partition_by", stage_dimensions ~on_evar ~loc dimensions)
             :: args
       in
       let args =
         match order_by with
         | None -> args
         | Some order_by ->
-            ( Labelled "order_by",
-              stage_window_order_by ~on_evar ~loc ~from order_by )
+            (Labelled "order_by", stage_window_order_by ~on_evar ~loc order_by)
             :: args
       in
       pexp_apply ~loc f args
@@ -471,7 +466,7 @@ let rec stage_expr ~on_evar ~params ~(from : from_ctx) expr =
       match func with
       | Func { node = "["; _ } ->
           let xs =
-            elist ~loc (List.map args ~f:(stage_expr ~on_evar ~params ~from))
+            elist ~loc (List.map args ~f:(stage_expr ~on_evar ~params))
           in
           [%expr Ch_queries.array [%e xs]]
       | Func ({ node = "map"; _ } as name) ->
@@ -497,8 +492,8 @@ let rec stage_expr ~on_evar ~params ~(from : from_ctx) expr =
                 List.map args ~f:(fun (k, v) ->
                     pexp_tuple ~loc
                       [
-                        stage_expr ~on_evar ~params ~from k;
-                        stage_expr ~on_evar ~params ~from v;
+                        stage_expr ~on_evar ~params k;
+                        stage_expr ~on_evar ~params v;
                       ])
           in
           eapply ~loc f [ elist ~loc args ]
@@ -530,14 +525,14 @@ let rec stage_expr ~on_evar ~params ~(from : from_ctx) expr =
                 List.map args ~f:(fun (k, v) ->
                     pexp_tuple ~loc
                       [
-                        stage_expr ~on_evar ~params ~from k;
-                        stage_expr ~on_evar ~params ~from v;
+                        stage_expr ~on_evar ~params k;
+                        stage_expr ~on_evar ~params v;
                       ])
           in
           pexp_apply ~loc f
             [
               (Nolabel, elist ~loc args);
-              (Labelled "else_", stage_expr ~on_evar ~params ~from else_);
+              (Labelled "else_", stage_expr ~on_evar ~params else_);
             ]
       | Func ({ node = "coalesce"; _ } as name) ->
           let args, else_ =
@@ -556,11 +551,11 @@ let rec stage_expr ~on_evar ~params ~(from : from_ctx) expr =
             let loc = to_location name in
             map_operator_to_expr ~loc name.node (List.length args)
           in
-          let args = List.map args ~f:(stage_expr ~on_evar ~params ~from) in
+          let args = List.map args ~f:(stage_expr ~on_evar ~params) in
           pexp_apply ~loc f
             [
               (Nolabel, elist ~loc args);
-              (Labelled "else_", stage_expr ~on_evar ~params ~from else_);
+              (Labelled "else_", stage_expr ~on_evar ~params else_);
             ]
       | Func { node = "tuple"; _ } ->
           let arity = List.length args in
@@ -573,11 +568,11 @@ let rec stage_expr ~on_evar ~params ~(from : from_ctx) expr =
                 Location.raise_errorf ~loc
                   "tuple(...) requires 2, 3, or 4 arguments"
           in
-          let args = List.map args ~f:(stage_expr ~on_evar ~params ~from) in
+          let args = List.map args ~f:(stage_expr ~on_evar ~params) in
           eapply ~loc f [ pexp_tuple ~loc args ]
       | Func { node = ("greatest" | "least" | "concat") as name; _ } ->
           let f = evar ~loc ("Ch_queries.Expr." ^ name) in
-          let args = List.map args ~f:(stage_expr ~on_evar ~params ~from) in
+          let args = List.map args ~f:(stage_expr ~on_evar ~params) in
           eapply ~loc f [ elist ~loc args ]
       | Func { node = ("joinGet" | "joinGetOrNull") as fname; _ } ->
           (* joinGet(DICT, VALUE, KEYS...) stages as:
@@ -605,9 +600,14 @@ let rec stage_expr ~on_evar ~params ~(from : from_ctx) expr =
                 | _ ->
                     Location.raise_errorf ~loc
                       "%s: dict string must be 'db.table'" fname)
-            | E_param id ->
-                on_evar id;
-                evar ~loc:(to_location id) id.Syntax.node
+            | E_param { param; param_has_scope } ->
+                if param_has_scope then
+                  Location.raise_errorf ~loc
+                    "%s: $.%s: scope-accessing parameters are not allowed for \
+                     dict"
+                    fname param.Syntax.node;
+                on_evar param;
+                evar ~loc:(to_location param) param.Syntax.node
             | _ ->
                 Location.raise_errorf ~loc
                   "%s: dict must be db.table, 'db.table', or $param" fname
@@ -623,12 +623,13 @@ let rec stage_expr ~on_evar ~params ~(from : from_ctx) expr =
                   [%e q] (fun __q ->
                       [%e
                         pexp_send ~loc [%expr __q] (Located.mk ~loc value_name)])]
-            | E_param id ->
-                on_evar id;
-                let e = evar ~loc:(to_location id) id.Syntax.node in
+            | E_param { param; param_has_scope } ->
+                on_evar param;
+                let e = evar ~loc:(to_location param) param.Syntax.node in
                 let scope = [%expr [%e dict].Ch_queries.Dict.values] in
                 let q = pexp_send ~loc scope (Located.mk ~loc "query") in
-                [%expr [%e q] (fun __q -> [%e e] __q)]
+                if param_has_scope then [%expr [%e q] (fun __q -> [%e e] __q)]
+                else [%expr [%e q] (fun _ -> [%e e])]
             | _ ->
                 Location.raise_errorf ~loc
                   "%s: value must be 'literal' or $param" fname
@@ -643,7 +644,7 @@ let rec stage_expr ~on_evar ~params ~(from : from_ctx) expr =
               fname
           else
             let key_exprs =
-              List.map key_args ~f:(stage_expr ~on_evar ~params ~from)
+              List.map key_args ~f:(stage_expr ~on_evar ~params)
             in
             let keys_expr =
               match key_exprs with
@@ -684,9 +685,14 @@ let rec stage_expr ~on_evar ~params ~(from : from_ctx) expr =
                 | _ ->
                     Location.raise_errorf ~loc
                       "dictGet: dict string must be 'db.table'")
-            | E_param id ->
-                on_evar id;
-                evar ~loc:(to_location id) id.Syntax.node
+            | E_param { param; param_has_scope } ->
+                if param_has_scope then
+                  Location.raise_errorf ~loc
+                    "dictGet: $.%s: scope-accessing parameters are not allowed \
+                     for dict"
+                    param.Syntax.node;
+                on_evar param;
+                evar ~loc:(to_location param) param.Syntax.node
             | _ ->
                 Location.raise_errorf ~loc
                   "dictGet: dict must be db.table, 'db.table', or $param"
@@ -702,18 +708,19 @@ let rec stage_expr ~on_evar ~params ~(from : from_ctx) expr =
                   [%e q] (fun __q ->
                       [%e
                         pexp_send ~loc [%expr __q] (Located.mk ~loc value_name)])]
-            | E_param id ->
-                on_evar id;
-                let e = evar ~loc:(to_location id) id.Syntax.node in
+            | E_param { param; param_has_scope } ->
+                on_evar param;
+                let e = evar ~loc:(to_location param) param.Syntax.node in
                 let scope = [%expr [%e dict].Ch_queries.Dict.values] in
                 let q = pexp_send ~loc scope (Located.mk ~loc "query") in
-                [%expr [%e q] (fun __q -> [%e e] __q)]
+                if param_has_scope then [%expr [%e q] (fun __q -> [%e e] __q)]
+                else [%expr [%e q] (fun _ -> [%e e])]
             | _ ->
                 Location.raise_errorf ~loc
                   "dictGet: value must be 'literal' or $param"
           in
           (* Stage key - single expression *)
-          let key_expr = stage_expr ~on_evar ~params ~from key_arg in
+          let key_expr = stage_expr ~on_evar ~params key_arg in
           eapply ~loc [%expr Ch_queries.Expr.dictGet]
             [ dict; value_expr; key_expr ]
       | Func name ->
@@ -724,84 +731,98 @@ let rec stage_expr ~on_evar ~params ~(from : from_ctx) expr =
           let args =
             match args with
             | [] -> [ [%expr ()] ]
-            | args -> List.map args ~f:(stage_expr ~on_evar ~params ~from)
+            | args -> List.map args ~f:(stage_expr ~on_evar ~params)
           in
           eapply ~loc f args
       | Func_method (scope, method_name) ->
           refer_to_scope ~loc scope method_name ~map:(fun e ->
               let staged_args =
-                List.map args ~f:(stage_expr ~on_evar ~params ~from)
+                List.map args ~f:(stage_expr ~on_evar ~params)
               in
               eapply ~loc e staged_args))
-  | Syntax.E_param var -> (
-      on_evar var;
-      let e = evar ~loc var.node in
-      match from with From_none -> e | From -> [%expr [%e e] __q])
+  | Syntax.E_param { param; param_has_scope } -> (
+      on_evar param;
+      let e = evar ~loc param.node in
+      match param_has_scope with true -> [%expr [%e e] __q] | false -> e)
   | Syntax.E_ocaml_expr ocaml_code -> parse_ocaml_expr ~loc ocaml_code
   | Syntax.E_in (expr, in_query) -> (
-      let expr = stage_expr ~on_evar ~params ~from expr in
+      let expr = stage_expr ~on_evar ~params expr in
       match in_query with
       | Syntax.In_query query ->
           let query = stage_query ~on_evar query in
           [%expr Ch_queries.in_ [%e expr] (Ch_queries.In_query [%e query])]
-      | Syntax.In_expr { node = E_param param; _ } ->
+      | Syntax.In_expr { node = E_param { param; param_has_scope }; _ } ->
           (* special for [E in $param], we don't treat it as expression *)
           let loc = to_location param in
+          if param_has_scope then
+            Location.raise_errorf ~loc
+              "$.%s: scope-accessing parameters are not allowed in IN clause"
+              param.node;
           on_evar param;
-          let param = param.node in
-          let param = evar ~loc param in
+          let param = evar ~loc param.node in
           [%expr Ch_queries.in_ [%e expr] [%e param]]
       | Syntax.In_expr
-          { node = E_ascribe ({ node = E_param param; loc; _ }, t); _ }
+          {
+            node =
+              E_ascribe
+                ({ node = E_param { param; param_has_scope }; loc; _ }, t);
+            _;
+          }
         when Syntax.is_scope_typ t ->
           (* special for [E in $param::T], we treat this according to T (is it a scope or not?) *)
-          let query = Syntax.make_query ~loc (Q_param param) in
+          (if param_has_scope then
+             let loc = to_location param in
+             Location.raise_errorf ~loc
+               "$.%s: scope-accessing parameters are not allowed in this \
+                context"
+               param.node);
+          let query =
+            Syntax.make_query ~loc (Q_param { param; param_has_scope = false })
+          in
           let loc = to_location param in
           let query = stage_query ~on_evar query in
           [%expr Ch_queries.in_ [%e expr] (Ch_queries.In_query [%e query])]
       | Syntax.In_expr expr' ->
-          let expr' = stage_expr ~on_evar ~params ~from expr' in
+          let expr' = stage_expr ~on_evar ~params expr' in
           [%expr Ch_queries.in_ [%e expr] (Ch_queries.In_array [%e expr'])])
   | Syntax.E_lambda (param, body) ->
       let param_name = param.node in
-      let body_expr =
-        stage_expr ~on_evar ~params:(param :: params) ~from body
-      in
+      let body_expr = stage_expr ~on_evar ~params:(param :: params) body in
       [%expr
         Ch_queries.lambda [%e estring ~loc param_name] (fun x -> [%e body_expr])]
 
-and stage_dimensions ~on_evar ~loc ~from dimensions =
+and stage_dimensions ~on_evar ~loc dimensions =
   let body =
     List.map dimensions ~f:(function
-      | Syntax.Dimension_splice id ->
-          let e = Syntax.make_expr ~loc:id.loc (E_param id) in
-          stage_expr ~on_evar ~params:[] ~from e
+      | Syntax.Dimension_splice p ->
+          let e = Syntax.make_expr ~loc:p.param.loc (E_param p) in
+          stage_expr ~on_evar ~params:[] e
       | Syntax.Dimension_expr expr ->
-          let expr = stage_expr ~on_evar ~params:[] ~from expr in
+          let expr = stage_expr ~on_evar ~params:[] expr in
           [%expr [ Ch_queries.A_expr [%e expr] ]])
   in
   [%expr List.concat [%e elist ~loc body]]
 
-and stage_fill ~on_evar ~loc ~from fill =
+and stage_fill ~on_evar ~loc fill =
   let fill_from =
     match fill.Syntax.fill_from with
     | None -> [%expr None]
     | Some e ->
-        let e = stage_expr ~on_evar ~params:[] ~from e in
+        let e = stage_expr ~on_evar ~params:[] e in
         [%expr Some (Ch_queries.A_expr [%e e])]
   in
   let fill_to =
     match fill.fill_to with
     | None -> [%expr None]
     | Some e ->
-        let e = stage_expr ~on_evar ~params:[] ~from e in
+        let e = stage_expr ~on_evar ~params:[] e in
         [%expr Some (Ch_queries.A_expr [%e e])]
   in
   let fill_step =
     match fill.fill_step with
     | None -> [%expr None]
     | Some e ->
-        let e = stage_expr ~on_evar ~params:[] ~from e in
+        let e = stage_expr ~on_evar ~params:[] e in
         [%expr Some (Ch_queries.A_expr [%e e])]
   in
   let fill_interpolate =
@@ -813,7 +834,7 @@ and stage_fill ~on_evar ~loc ~from fill =
             match interpolate_expr with
             | None -> [%expr None]
             | Some e ->
-                let e = stage_expr ~on_evar ~params:[] ~from e in
+                let e = stage_expr ~on_evar ~params:[] e in
                 [%expr Some (Ch_queries.A_expr [%e e])]
           in
           [%expr [%e col_str], [%e expr_opt]])
@@ -830,15 +851,15 @@ and stage_fill ~on_evar ~loc ~from fill =
 
 (** Generate order_by for window functions - uses simple (a_expr * dir) tuples
 *)
-and stage_window_order_by ~on_evar ~loc ~from order_by =
+and stage_window_order_by ~on_evar ~loc order_by =
   let xs =
     List.map order_by ~f:(function
-      | Syntax.Order_by_splice id ->
-          let e = Syntax.make_expr ~loc:id.loc (E_param id) in
-          stage_expr ~on_evar ~params:[] ~from e
+      | Syntax.Order_by_splice p ->
+          let e = Syntax.make_expr ~loc:p.param.loc (E_param p) in
+          stage_expr ~on_evar ~params:[] e
       | Syntax.Order_by_expr (expr, dir, _fill) ->
           (* fill is ignored for window functions *)
-          let expr = stage_expr ~on_evar ~params:[] ~from expr in
+          let expr = stage_expr ~on_evar ~params:[] expr in
           let dir =
             match dir with `ASC -> [%expr `ASC] | `DESC -> [%expr `DESC]
           in
@@ -846,21 +867,21 @@ and stage_window_order_by ~on_evar ~loc ~from order_by =
   in
   [%expr List.concat [%e elist ~loc xs]]
 
-and stage_order_by ~on_evar ~loc ~from order_by =
+and stage_order_by ~on_evar ~loc order_by =
   let xs =
     List.map order_by ~f:(function
-      | Syntax.Order_by_splice id ->
-          let e = Syntax.make_expr ~loc:id.loc (E_param id) in
-          stage_expr ~on_evar ~params:[] ~from e
+      | Syntax.Order_by_splice p ->
+          let e = Syntax.make_expr ~loc:p.param.loc (E_param p) in
+          stage_expr ~on_evar ~params:[] e
       | Syntax.Order_by_expr (expr, dir, fill) ->
-          let expr = stage_expr ~on_evar ~params:[] ~from expr in
+          let expr = stage_expr ~on_evar ~params:[] expr in
           let dir =
             match dir with `ASC -> [%expr `ASC] | `DESC -> [%expr `DESC]
           in
           let fill =
             match fill with
             | None -> [%expr None]
-            | Some fill -> [%expr Some [%e stage_fill ~on_evar ~loc ~from fill]]
+            | Some fill -> [%expr Some [%e stage_fill ~on_evar ~loc fill]]
           in
           [%expr [ (Ch_queries.A_expr [%e expr], [%e dir], [%e fill]) ]])
   in
@@ -884,18 +905,24 @@ and stage_settings ~on_evar ~loc settings =
             | Syntax.Setting_lit (L_interval (_, _)) ->
                 Location.raise_errorf ~loc
                   "INTERVAL is not supported in settings"
-            | Syntax.Setting_param param ->
-                let e = Syntax.make_expr ~loc:param.loc (E_param param) in
-                stage_expr ~on_evar ~params:[] ~from:From_none e
+            | Syntax.Setting_param { param; param_has_scope } ->
+                if param_has_scope then
+                  Location.raise_errorf ~loc
+                    "scope-accessing parameters are not allowed in settings";
+                let e =
+                  Syntax.make_expr ~loc:param.loc
+                    (E_param { param; param_has_scope = false })
+                in
+                stage_expr ~on_evar ~params:[] e
           in
           [%expr [ ([%e id_str], [%e value_expr]) ]]
-      | Syntax.Setting_splice id ->
-          let e = Syntax.make_expr ~loc:id.loc (E_param id) in
-          stage_expr ~on_evar ~params:[] ~from:From_none e)
+      | Syntax.Setting_splice p ->
+          let e = Syntax.make_expr ~loc:p.param.loc (E_param p) in
+          stage_expr ~on_evar ~params:[] e)
   in
   [%expr List.concat [%e elist ~loc body]]
 
-and stage_field ~on_evar ~from idx { Syntax.expr; alias } =
+and stage_field ~on_evar idx { Syntax.expr; alias } =
   let idx = idx + 1 in
   let loc = to_location expr in
   let name =
@@ -906,12 +933,12 @@ and stage_field ~on_evar ~from idx { Syntax.expr; alias } =
           match expr.node with
           | E_id id -> id
           | E_col (_, id) -> id
-          | E_param id -> id
+          | E_param { param; param_has_scope = _ } -> param
           | _ -> Syntax.make_id ~loc:expr.loc ("_" ^ string_of_int idx)
         in
         located_of_id name
   in
-  let expr = stage_expr ~on_evar ~params:[] ~from expr in
+  let expr = stage_expr ~on_evar ~params:[] expr in
   (pcf_method ~loc (name, Public, Cfk_concrete (Fresh, expr)), alias)
 
 and stage_query ~on_evar ({ node; _ } as q) =
@@ -926,10 +953,14 @@ and stage_query ~on_evar ({ node; _ } as q) =
       let q1 = stage_query ~on_evar q1 in
       let q2 = stage_query ~on_evar q2 in
       pexp_apply ~loc [%expr Ch_queries.union] [ (Nolabel, q1); (Nolabel, q2) ]
-  | Q_param id ->
-      on_evar id;
-      let loc = to_location id in
-      evar ~loc id.node
+  | Q_param { param; param_has_scope } ->
+      let loc = to_location param in
+      if param_has_scope then
+        Location.raise_errorf ~loc
+          "$.%s: scope-accessing parameters are not allowed for query params"
+          param.node;
+      on_evar param;
+      evar ~loc param.node
   | Q_select
       {
         with_fields;
@@ -949,7 +980,7 @@ and stage_query ~on_evar ({ node; _ } as q) =
       let scope_of_with, ctes =
         List.partition_filter_map with_fields ~f:(function
           | Syntax.With_expr ({ alias = Some id; _ } as field) ->
-              `Left (id, fst (stage_field ~on_evar ~from:From 0 field))
+              `Left (id, fst (stage_field ~on_evar 0 field))
           | Syntax.With_expr { alias = None; expr } ->
               let loc = to_location expr in
               Location.raise_errorf ~loc "WITH <expr> requires an alias"
@@ -962,9 +993,7 @@ and stage_query ~on_evar ({ node; _ } as q) =
       let select, scopes =
         match select with
         | Syntax.Select_fields fields ->
-            let fields =
-              List.mapi fields ~f:(stage_field ~on_evar ~from:From)
-            in
+            let fields = List.mapi fields ~f:(stage_field ~on_evar) in
             let pcstr_fields =
               List.map fields ~f:(function
                 | expr, None -> expr
@@ -982,10 +1011,15 @@ and stage_query ~on_evar ({ node; _ } as q) =
                 | _, None -> None)
             in
             (make_hole ~loc select_obj, [ scope_of_with; scope_of_select ])
-        | Syntax.Select_splice id ->
-            on_evar id;
-            let loc = to_location id in
-            (evar ~loc id.node, [ scope_of_with ])
+        | Syntax.Select_splice { param; param_has_scope } ->
+            on_evar param;
+            let loc = to_location param in
+            let scope =
+              match param_has_scope with
+              | true -> [%expr fun __q -> [%e evar ~loc param.node] __q]
+              | false -> [%expr fun __q -> [%e evar ~loc param.node]]
+            in
+            (scope, [ scope_of_with ])
       in
       let args =
         let from =
@@ -1035,8 +1069,7 @@ and stage_query_args ~on_evar args ({ Ch_queries_syntax.Syntax.node; _ } as q) =
         | Some prewhere ->
             let loc = to_location prewhere in
             let prewhere =
-              make_hole ~loc
-                (stage_expr ~on_evar ~params:[] ~from:From prewhere)
+              make_hole ~loc (stage_expr ~on_evar ~params:[] prewhere)
             in
             (Labelled "prewhere", prewhere) :: args
       in
@@ -1045,9 +1078,7 @@ and stage_query_args ~on_evar args ({ Ch_queries_syntax.Syntax.node; _ } as q) =
         | None -> args
         | Some where ->
             let loc = to_location where in
-            let where =
-              make_hole ~loc (stage_expr ~on_evar ~params:[] ~from:From where)
-            in
+            let where = make_hole ~loc (stage_expr ~on_evar ~params:[] where) in
             (Labelled "where", where) :: args
       in
       let args =
@@ -1056,7 +1087,7 @@ and stage_query_args ~on_evar args ({ Ch_queries_syntax.Syntax.node; _ } as q) =
         | Some qualify ->
             let loc = to_location qualify in
             let qualify =
-              make_hole ~loc (stage_expr ~on_evar ~params:[] ~from:From qualify)
+              make_hole ~loc (stage_expr ~on_evar ~params:[] qualify)
             in
             (Labelled "qualify", qualify) :: args
       in
@@ -1065,9 +1096,7 @@ and stage_query_args ~on_evar args ({ Ch_queries_syntax.Syntax.node; _ } as q) =
         | None -> args
         | Some dimensions ->
             let loc = to_location q in
-            let group_by =
-              stage_dimensions ~on_evar ~loc ~from:From dimensions
-            in
+            let group_by = stage_dimensions ~on_evar ~loc dimensions in
             let group_by = make_hole ~loc group_by in
             (Labelled "group_by", group_by) :: args
       in
@@ -1077,7 +1106,7 @@ and stage_query_args ~on_evar args ({ Ch_queries_syntax.Syntax.node; _ } as q) =
         | Some having ->
             let loc = to_location having in
             let having =
-              make_hole ~loc (stage_expr ~on_evar ~params:[] ~from:From having)
+              make_hole ~loc (stage_expr ~on_evar ~params:[] having)
             in
             (Labelled "having", having) :: args
       in
@@ -1086,9 +1115,7 @@ and stage_query_args ~on_evar args ({ Ch_queries_syntax.Syntax.node; _ } as q) =
         | None -> args
         | Some order_by_items ->
             let loc = to_location q in
-            let order_by =
-              stage_order_by ~on_evar ~loc ~from:From order_by_items
-            in
+            let order_by = stage_order_by ~on_evar ~loc order_by_items in
             let order_by = make_hole ~loc order_by in
             (Labelled "order_by", order_by) :: args
       in
@@ -1096,18 +1123,14 @@ and stage_query_args ~on_evar args ({ Ch_queries_syntax.Syntax.node; _ } as q) =
         match limit with
         | None -> args
         | Some expr ->
-            let limit =
-              make_hole ~loc (stage_expr ~on_evar ~params:[] ~from:From expr)
-            in
+            let limit = make_hole ~loc (stage_expr ~on_evar ~params:[] expr) in
             (Labelled "limit", limit) :: args
       in
       let args =
         match offset with
         | None -> args
         | Some expr ->
-            let offset =
-              make_hole ~loc (stage_expr ~on_evar ~params:[] ~from:From expr)
-            in
+            let offset = make_hole ~loc (stage_expr ~on_evar ~params:[] expr) in
             (Labelled "offset", offset) :: args
       in
       let args =
@@ -1121,7 +1144,7 @@ and stage_query_args ~on_evar args ({ Ch_queries_syntax.Syntax.node; _ } as q) =
       args
   | Q_union _ | Q_ascribe _ | Q_param _ -> failwith "invariant violation"
 
-and stage_field_syntax ~on_evar ~from:from_ctx { Syntax.expr; alias } =
+and stage_field_syntax ~on_evar { Syntax.expr; alias } =
   let loc = to_location expr in
   let alias =
     match alias with
@@ -1139,7 +1162,7 @@ and stage_field_syntax ~on_evar ~from:from_ctx { Syntax.expr; alias } =
         in
         alias expr
   in
-  let expr = stage_expr ~on_evar ~params:[] ~from:from_ctx expr in
+  let expr = stage_expr ~on_evar ~params:[] expr in
   (alias, [%expr Ch_queries.A_field ([%e expr], [%e estring ~loc alias])])
 
 and stage_query_syntax ~on_evar ({ Syntax.node; _ } as q) =
@@ -1171,9 +1194,7 @@ and stage_query_syntax ~on_evar ({ Syntax.node; _ } as q) =
             let seen = Hashtbl.create 16 in
             let fields =
               List.map fields ~f:(fun field ->
-                  let alias, expr =
-                    stage_field_syntax ~on_evar ~from:From field
-                  in
+                  let alias, expr = stage_field_syntax ~on_evar field in
                   if Hashtbl.mem seen alias then
                     Location.raise_errorf ~loc
                       "%%ch.query_syntax: duplicate field alias '%s'" alias
@@ -1218,7 +1239,7 @@ and stage_from ~on_evar from =
         [%expr
           fun [%p from_scope_pattern ~kind:`INNER_JOIN from] ->
             let __q = [%e from_scope_expr ~scopes:[] from] in
-            [%e stage_expr ~on_evar ~params:[] ~from:From on]]
+            [%e stage_expr ~on_evar ~params:[] on]]
       in
       [%expr
         [%e f] [%e stage_from ~on_evar base]
@@ -1244,23 +1265,32 @@ and stage_from_one ~on_evar from_one =
         | Some (Cluster_name id) ->
             let loc = to_location id in
             (Labelled "cluster_name", estring ~loc id.node) :: args
-        | Some (Cluster_name_param id) ->
-            on_evar id;
-            let loc = to_location id in
-            (Labelled "cluster_name", evar ~loc id.node) :: args
+        | Some (Cluster_name_param { param; param_has_scope }) ->
+            let loc = to_location param in
+            if param_has_scope then
+              Location.raise_errorf ~loc
+                "$.%s: scope-accessing parameters are not allowed for cluster \
+                 name"
+                param.node;
+            on_evar param;
+            (Labelled "cluster_name", evar ~loc param.node) :: args
       in
       pexp_apply ~loc [%expr Ch_queries.from_select] args
-  | F_param { id; alias; final } -> (
-      on_evar id;
-      let loc = to_location id in
+  | F_param { param = { param; param_has_scope }; alias; final } -> (
+      let loc = to_location param in
+      if param_has_scope then
+        Location.raise_errorf ~loc
+          "$.%s: scope-accessing parameters are not allowed for FROM clause"
+          param.node;
+      on_evar param;
       match final with
       | false ->
           [%expr
-            ([%e evar ~loc id.node] : alias:string -> _ Ch_queries.from_one)
+            ([%e evar ~loc param.node] : alias:string -> _ Ch_queries.from_one)
               ~alias:[%e estring ~loc alias.node]]
       | true ->
           [%expr
-            ([%e evar ~loc id.node]
+            ([%e evar ~loc param.node]
               : final:bool -> alias:string -> _ Ch_queries.from_one)
               ~final:true ~alias:[%e estring ~loc alias.node]])
   | F_ascribe (from_one, t) ->
@@ -1297,14 +1327,14 @@ let expand_expr ~ctxt:_ expr =
   match expr.pexp_desc with
   | Pexp_constant (Pconst_string (txt, loc, _)) ->
       let expr = parse_expr ~loc txt in
-      stage_expr ~on_evar:(Fun.const ()) ~params:[] ~from:From_none expr
+      stage_expr ~on_evar:(Fun.const ()) ~params:[] expr
   | _ -> Location.raise_errorf "expected a string literal for the '%%e"
 
 let expand_uexpr ~ctxt:_ expr =
   match expr.pexp_desc with
   | Pexp_constant (Pconst_string (txt, loc, _)) ->
       let expr = parse_uexpr ~loc txt in
-      stage_expr ~on_evar:(Fun.const ()) ~params:[] ~from:From_none expr
+      stage_expr ~on_evar:(Fun.const ()) ~params:[] expr
   | _ -> Location.raise_errorf "expected a string literal for the '%%eu"
 
 let expand_typ ~ctxt:_ expr =
@@ -1425,7 +1455,7 @@ let expand_select ~ctxt:_ vb =
           let make (name, typ) =
             let parser = stage_typ_to_parser typ in
             let query =
-              stage_expr ~on_evar:(Fun.const ()) ~params:[] ~from:From_none
+              stage_expr ~on_evar:(Fun.const ()) ~params:[]
                 Syntax.(make_expr (E_col (make_id "q", make_id name.txt)))
             in
             [%expr Ch_queries.Row.col [%e query] [%e parser]]

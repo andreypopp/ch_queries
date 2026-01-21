@@ -18,7 +18,7 @@ and exprsyn =
   | E_lit of lit
   | E_call of func * expr list
   | E_window of id * expr list * window_spec
-  | E_param of id
+  | E_param of param
   | E_ocaml_expr of string
   | E_in of expr * in_query
   | E_lambda of id * expr
@@ -26,6 +26,7 @@ and exprsyn =
   | E_unsafe_concat of expr list
   | E_ascribe of expr * typ
 
+and param = { param : id; param_has_scope : bool }
 and func = Func of id | Func_method of id * id
 
 and lit =
@@ -55,10 +56,10 @@ and with_fill = {
 
 and order_by =
   | Order_by_expr of expr * [ `ASC | `DESC ] * with_fill option
-  | Order_by_splice of id
+  | Order_by_splice of param
 
 (** used for GROUP BY *)
-and dimension = Dimension_expr of expr | Dimension_splice of id
+and dimension = Dimension_expr of expr | Dimension_splice of param
 
 and field = { expr : expr; alias : id option }
 (** used for SELECT *)
@@ -85,12 +86,12 @@ and querysyn =
       settings : setting_item list;
     }
   | Q_union of query * query
-  | Q_param of id
+  | Q_param of param
   | Q_ascribe of query * typ
 
-and setting = Setting_lit of lit | Setting_param of id
-and setting_item = Setting_item of id * setting | Setting_splice of id
-and select = Select_fields of field list | Select_splice of id
+and setting = Setting_lit of lit | Setting_param of param
+and setting_item = Setting_item of id * setting | Setting_splice of param
+and select = Select_fields of field list | Select_splice of param
 and from_one = from_onesyn node
 and from = fromsyn node
 
@@ -101,10 +102,10 @@ and from_onesyn =
       alias : id;
       cluster_name : cluster_name option;
     }
-  | F_param of { id : id; alias : id; final : bool }
+  | F_param of { param : param; alias : id; final : bool }
   | F_ascribe of from_one * typ
 
-and cluster_name = Cluster_name of id | Cluster_name_param of id
+and cluster_name = Cluster_name of id | Cluster_name_param of param
 
 and fromsyn =
   | F of from_one

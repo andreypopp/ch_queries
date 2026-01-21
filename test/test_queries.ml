@@ -66,7 +66,7 @@ let users ~condition =
   {%q|SELECT
         u.x AS x,
         u.id AS id
-      FROM public.users as u WHERE $condition|}
+      FROM public.users as u WHERE $.condition|}
 
 let x =
   let users =
@@ -81,7 +81,7 @@ let x =
       method p = __q#p
     end
   in
-  {%q|SELECT $select...
+  {%q|SELECT $.select...
       FROM users as u
       LEFT JOIN public.profiles as p
       ON u.id = p.user_id and p.name = 'Alice'
@@ -148,7 +148,7 @@ let users_stats =
           select_metric __q
       end
     in
-    {%q|SELECT $select... FROM public.users|} |> Ch_queries.from_select
+    {%q|SELECT $.select... FROM public.users|} |> Ch_queries.from_select
   in
   let select (__q : < stats : _ stats Ch_queries.scope >) : _ stats =
     object
@@ -163,7 +163,7 @@ let users_stats =
     let is_true = __q#stats#query @@ fun stats -> stats#metric Metric_true in
     {%e|$is_true|}
   in
-  {%q|SELECT $select... FROM stats HAVING $having|}
+  {%q|SELECT $.select... FROM stats HAVING $.having|}
 
 let sql, parse_row =
   Ch_queries.query users_stats (fun __q ->
@@ -186,5 +186,5 @@ let%ch.select stats =
 
 let _ : string * (Ch_queries.json list -> stats_row) =
   stats ()
-    ~name:(fun _ -> Ch_queries.string "hello")
+    ~name:(Ch_queries.string "hello")
     ~users_stats:(Ch_queries.from_select users_stats)
