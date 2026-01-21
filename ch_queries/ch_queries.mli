@@ -716,6 +716,13 @@ module Expr : sig
   (** [arrayRotateLeft arr n] rotates the array to the left by [n] elements.
       Negative values of [n] rotate to the right. *)
 
+  val arrayRotateRight :
+    ('n, ('m, 'a) array) expr ->
+    ('o, _ number) expr ->
+    ('n, ('m, 'a) array) expr
+  (** [arrayRotateRight arr n] rotates the array to the right by [n] elements.
+      Negative values of [n] rotate to the left. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
