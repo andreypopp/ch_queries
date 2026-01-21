@@ -1338,6 +1338,10 @@ module Expr : sig
   val bitAnd : ('n, 'a number) expr -> ('n, 'b number) expr -> ('n, 'c number) expr
   (** [bitAnd a b] performs bitwise AND operation between two values. *)
 
+  val bitCount : ('n, 'a number) expr -> (non_null, int number) expr
+  (** [bitCount x] calculates the number of bits set to one in the binary
+      representation of a number. *)
+
   val byteSwap : ('n, 'a number) expr -> ('n, 'a number) expr
   (** Reverses the bytes of an integer, i.e. changes its endianness. *)
 
