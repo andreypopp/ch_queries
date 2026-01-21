@@ -29,3 +29,7 @@ let <function_name> ?(opt_arg=default_value) arg1 arg2 = ...
 ```
 and then add a special case staging in ppx (see above) to handle that. Also add
 a test for the case with and without the optional argument.
+
+At the end:
+- `git add` all the files you modified/created
+- `git commit -m "Add <function_name> function"`

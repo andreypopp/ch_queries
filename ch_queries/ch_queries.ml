@@ -559,6 +559,11 @@ module Expr = struct
   let intDiv x y = def "intDiv" [ x; y ]
   let modulo x y = def "modulo" [ x; y ]
 
+  let divideDecimal ?result_scale x y =
+    match result_scale with
+    | None -> def "divideDecimal" [ x; y ]
+    | Some scale -> def "divideDecimal" [ x; y; scale ]
+
   (** {2 Arrays} *)
 
   let arrayElement arr i = def "arrayElement" [ arr; i ]

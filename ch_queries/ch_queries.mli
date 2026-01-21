@@ -251,6 +251,12 @@ module Expr : sig
   val modulo :
     ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
 
+  val divideDecimal :
+    ?result_scale:('n, int number) expr ->
+    ('n, 'a number) expr ->
+    ('n, 'b number) expr ->
+    ('n, 'c number) expr
+
   (** {2 Arrays} *)
 
   val arrayElement :
