@@ -29,7 +29,7 @@ Unary minus with parentheses:
 
 Double unary minus:
   $ ./compile_and_run '
-  > let x = [%e "--5"]
+  > let x = [%e "- -5"]
   > '
   >>> PREPROCESSING
   let x = Ch_queries.Expr.negate (Ch_queries.Expr.negate (Ch_queries.int 5))
