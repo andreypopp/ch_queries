@@ -1347,6 +1347,9 @@ module Expr : sig
       representations of two numbers. The smaller the distance, the more
       similar the values are. *)
 
+  val bitNot : ('n, 'a number) expr -> ('n, 'a number) expr
+  (** [bitNot x] performs the bitwise NOT operation, returning [x] with all bits flipped. *)
+
   val byteSwap : ('n, 'a number) expr -> ('n, 'a number) expr
   (** Reverses the bytes of an integer, i.e. changes its endianness. *)
 
