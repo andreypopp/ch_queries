@@ -391,6 +391,13 @@ module Expr : sig
   val arrayDistinct : ('n, ('m, 'a) array) expr -> ('n, ('m, 'a) array) expr
   (** [arrayDistinct arr] returns an array containing only the distinct elements. *)
 
+  val arrayDotProduct :
+    ('n, ('m, 'a number) array) expr ->
+    ('n, ('m, 'b number) array) expr ->
+    ('n, 'c number) expr
+  (** [arrayDotProduct v1 v2] returns the dot product of two arrays. The sizes
+      of the two vectors must be equal. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
