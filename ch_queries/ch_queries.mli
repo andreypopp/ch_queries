@@ -546,6 +546,13 @@ module Expr : sig
       The Jaccard index is the ratio of the size of the intersection to the size
       of the union of the two arrays. *)
 
+  val arrayLevenshteinDistance :
+    ('n, ('m, 'a) array) expr ->
+    ('n, ('m, 'a) array) expr ->
+    ('n, float number) expr
+  (** [arrayLevenshteinDistance arr_from arr_to] calculates the Levenshtein
+      distance between two arrays. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr

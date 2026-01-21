@@ -626,6 +626,7 @@ module Expr = struct
   let arrayFold f xs acc = def "arrayFold" (f :: xs @ [ acc ])
   let arrayIntersect arrs = def "arrayIntersect" arrs
   let arrayJaccardIndex arr_x arr_y = def "arrayJaccardIndex" [ arr_x; arr_y ]
+  let arrayLevenshteinDistance arr_from arr_to = def "arrayLevenshteinDistance" [ arr_from; arr_to ]
 
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]
