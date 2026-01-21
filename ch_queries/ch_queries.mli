@@ -354,6 +354,9 @@ module Expr : sig
       The order of values in the resulting array is determined by the order in
       the source array. *)
 
+  val arrayConcat : ('n, ('m, 'a) array) expr list -> ('n, ('m, 'a) array) expr
+  (** [arrayConcat arrays] combines arrays passed as arguments. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr

@@ -521,8 +521,13 @@ let rec stage_expr ~params expr =
           in
           let args = List.map args ~f:(stage_expr ~params) in
           eapply ~loc f [ pexp_tuple ~loc args ]
-      | Func { node = ("greatest" | "least" | "concat" | "midpoint") as name; _ }
-        ->
+      | Func
+          {
+            node =
+              ( "greatest" | "least" | "concat" | "midpoint" | "arrayConcat" )
+              as name;
+            _;
+          } ->
           let f = evar ~loc ("Ch_queries.Expr." ^ name) in
           let args = List.map args ~f:(stage_expr ~params) in
           eapply ~loc f [ elist ~loc args ]
