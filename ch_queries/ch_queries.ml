@@ -1008,6 +1008,7 @@ module Expr = struct
   let bitRotateLeft x n = def "bitRotateLeft" [ x; n ]
   let bitRotateRight x n = def "bitRotateRight" [ x; n ]
   let bitShiftLeft a n = def "bitShiftLeft" [ a; n ]
+  let bitShiftRight a n = def "bitShiftRight" [ a; n ]
   let byteSwap x = def "byteSwap" [ x ]
 
   (** {2 Machine learning functions} *)
