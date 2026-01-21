@@ -772,6 +772,16 @@ module Expr : sig
       the array element type. If [n] is negative, the array is shifted to the
       left. *)
 
+  val arrayShuffle :
+    ?seed:('o, _ number) expr ->
+    ('n, ('m, 'a) array) expr ->
+    ('n, ('m, 'a) array) expr
+  (** [arrayShuffle ?seed arr] returns an array of the same size as the original
+      array containing the elements in shuffled order. Elements are reordered in
+      such a way that each possible permutation of those elements has equal
+      probability of appearance. If [seed] is specified, it's used for random
+      number generation. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr

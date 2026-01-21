@@ -725,6 +725,11 @@ module Expr = struct
     | None -> def "arrayShiftRight" [ arr; n ]
     | Some d -> def "arrayShiftRight" [ arr; n; d ]
 
+  let arrayShuffle ?seed arr =
+    match seed with
+    | None -> def "arrayShuffle" [ arr ]
+    | Some s -> def "arrayShuffle" [ arr; s ]
+
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]
 
