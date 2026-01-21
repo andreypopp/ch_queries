@@ -590,6 +590,7 @@ module Expr = struct
   let arrayAll f xs = def "arrayAll" (f :: xs)
   let arrayAvg f xs = def "arrayAvg" (f :: xs)
   let arrayCount ?f xs = match f with None -> def "arrayCount" xs | Some f -> def "arrayCount" (f :: xs)
+  let arrayCumSum ?f xs = match f with None -> def "arrayCumSum" xs | Some f -> def "arrayCumSum" (f :: xs)
   let length x = def "length" [ x ]
   let arrayJoin arr = def "arrayJoin" [ arr ]
   let arrayCompact arr = def "arrayCompact" [ arr ]
