@@ -564,6 +564,12 @@ module Expr : sig
   (** [arrayIntersect arrays] returns an array with elements that are present in
       all source arrays. The result contains only unique values. *)
 
+  val arraySymmetricDifference :
+    ('n, ('m, 'a) array) expr list -> ('n, ('m, 'a) array) expr
+  (** [arraySymmetricDifference arrays] returns an array with elements that are
+      not present in all source arrays. The result contains only unique values.
+      Elements are included if they do not occur in all input sets. *)
+
   val arrayJaccardIndex :
     ('n, ('m, 'a) array) expr ->
     ('n, ('m, 'a) array) expr ->
