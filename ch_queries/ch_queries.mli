@@ -511,6 +511,14 @@ module Expr : sig
   (** [arrayIntersect arrays] returns an array with elements that are present in
       all source arrays. The result contains only unique values. *)
 
+  val arrayJaccardIndex :
+    ('n, ('m, 'a) array) expr ->
+    ('n, ('m, 'a) array) expr ->
+    ('n, float number) expr
+  (** [arrayJaccardIndex arr_x arr_y] returns the Jaccard index of two arrays.
+      The Jaccard index is the ratio of the size of the intersection to the size
+      of the union of the two arrays. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
