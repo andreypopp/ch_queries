@@ -10,7 +10,8 @@
       "WebFetch(domain:clickhouse.com)",
       "WebSearch",
       "Bash(cat:*)",
-      "Bash(xxd:*)"
+      "Bash(xxd:*)",
+      "Bash(./test/compile_and_run '\nlet sql, map = {%ch.query_and_map|\n  SELECT\n    1::Int32,\n    2::Int32\n  FROM public.users|};;\nprint_endline sql;;\n')"
     ],
     "deny": [],
     "ask": []

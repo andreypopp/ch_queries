@@ -874,11 +874,9 @@ and stage_field idx { Syntax.expr; alias } =
     | Some name -> located_of_id name
     | None ->
         let name =
-          match expr.node with
-          | E_id id -> id
-          | E_col (_, id) -> id
-          | E_param { param; param_has_scope = _ } -> param
-          | _ -> Syntax.make_id ~loc:expr.loc ("_" ^ string_of_int idx)
+          match extract_alias expr with
+          | Some id -> id
+          | None -> Syntax.make_id ~loc:expr.loc ("_" ^ string_of_int idx)
         in
         located_of_id name
   in
@@ -1296,13 +1294,11 @@ let expand_scope_type ~ctxt:_ expr =
 let rec extract_typed_fields query =
   match query.Syntax.node with
   | Syntax.Q_select { select = Select_fields fields; _ } ->
-      List.map fields ~f:(fun { Syntax.expr; alias } ->
-          let expr, typ =
+      List.mapi fields ~f:(fun idx { Syntax.expr; alias } ->
+          let typ =
             match expr.node with
-            | E_ascribe (expr, typ) -> (expr, typ)
-            | _ ->
-                Location.raise_errorf ~loc:(to_location expr)
-                  "missing type annotation: <expr>::<type>"
+            | E_ascribe (_, typ) -> typ
+            | _ -> Syntax.make_typ T_any
           in
           let name =
             match alias with
@@ -1311,8 +1307,10 @@ let rec extract_typed_fields query =
                 match extract_alias expr with
                 | Some id -> id_to_located id
                 | None ->
-                    Location.raise_errorf ~loc:(to_location expr)
-                      "missing query alias: <expr> AS <alias>")
+                    {
+                      txt = Printf.sprintf "_%d" (idx + 1);
+                      loc = to_location expr;
+                    })
           in
           (name, typ))
   | Q_union (x, _) -> extract_typed_fields x
@@ -1330,31 +1328,42 @@ let expand_query_and_map ~ctxt:_ expr =
       let query = parse_query ~loc query_str in
       let fields = extract_typed_fields query in
       let query_expr = stage_query query in
-      (* Build the Row expressions *)
-      let init, rest =
-        match List.rev fields with
-        | init :: fields -> (init, fields)
+      (* Build the Row expressions with let bindings to ensure evaluation order *)
+      let bindings =
+        List.map fields ~f:(fun (name, typ) ->
+            let parser = stage_typ_to_parser typ in
+            let col =
+              stage_expr ~params:[]
+                Syntax.(make_expr (E_col (make_id "q", make_id name.txt)))
+            in
+            ( { txt = Printf.sprintf "__col_%s" name.txt; loc = name.loc },
+              [%expr Ch_queries.Row.col [%e col] [%e parser]] ))
+      in
+      let parser =
+        match List.rev bindings with
         | [] ->
             Location.raise_errorf ~loc
               "%%ch.query_and_map requires at least one typed field"
+        | (init, _) :: rest ->
+            List.fold_left rest ~init:(evar ~loc:init.loc init.txt)
+              ~f:(fun acc (v, _) ->
+                [%expr
+                  Ch_queries.Row.( and+ ) [%e evar ~loc:v.loc v.txt] [%e acc]])
       in
-      let parse_fields =
-        let make (name, typ) =
-          let parser = stage_typ_to_parser typ in
-          let col_expr =
-            stage_expr ~params:[]
-              Syntax.(make_expr (E_col (make_id "q", make_id name.txt)))
-          in
-          [%expr Ch_queries.Row.col [%e col_expr] [%e parser]]
-        in
-        List.fold_left rest ~init:(make init) ~f:(fun acc field ->
-            [%expr Ch_queries.Row.( and+ ) [%e make field] [%e acc]])
+      let parser =
+        List.fold_right bindings ~init:parser ~f:(fun (v, expr) acc ->
+            [%expr
+              let [%p pvar ~loc:v.loc v.txt] = [%e expr] in
+              [%e acc]])
       in
       (* Pattern for destructuring the Row result: (field1, (field2, field3)) *)
-      let pat_tuple =
+      let destruct =
         let make (name, _) = pvar ~loc:name.loc name.txt in
-        List.fold_left rest ~init:(make init) ~f:(fun acc field ->
-            [%pat? [%p make field], [%p acc]])
+        match List.rev fields with
+        | [] -> failwith "impossible: checked above"
+        | init :: rest ->
+            List.fold_left rest ~init:(make init) ~f:(fun acc field ->
+                [%pat? [%p make field], [%p acc]])
       in
       (* Application of f with labeled arguments *)
       let apply_f =
@@ -1368,10 +1377,10 @@ let expand_query_and_map ~ctxt:_ expr =
         let __query = [%e query_expr] in
         let __sql, __base_parse =
           Ch_queries.query __query (fun (__q : < q : _ Ch_queries.scope >) ->
-              Ch_queries.Row.( let+ ) [%e parse_fields] Fun.id)
+              Ch_queries.Row.( let+ ) [%e parser] Fun.id)
         in
         let __map __row __f =
-          let [%p pat_tuple] = __base_parse __row in
+          let [%p destruct] = __base_parse __row in
           [%e apply_f]
         in
         (__sql, __map)]
