@@ -600,6 +600,7 @@ module Expr = struct
   let arrayDistinct arr = def "arrayDistinct" [ arr ]
   let arrayDotProduct v1 v2 = def "arrayDotProduct" [ v1; v2 ]
   let arrayEnumerate arr = def "arrayEnumerate" [ arr ]
+  let arrayEnumerateDense arr = def "arrayEnumerateDense" [ arr ]
 
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]

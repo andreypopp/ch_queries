@@ -401,6 +401,10 @@ module Expr : sig
   val arrayEnumerate : ('n, ('m, 'a) array) expr -> ('n, ('m, int number) array) expr
   (** [arrayEnumerate arr] returns the array [1, 2, 3, ..., length(arr)]. *)
 
+  val arrayEnumerateDense : ('n, ('m, 'a) array) expr -> ('n, ('m, int number) array) expr
+  (** [arrayEnumerateDense arr] returns an array of the same size as the source
+      array, indicating where each element first appears in the source array. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
