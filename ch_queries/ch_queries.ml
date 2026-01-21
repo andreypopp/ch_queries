@@ -720,6 +720,11 @@ module Expr = struct
     | None -> def "arrayShiftLeft" [ arr; n ]
     | Some d -> def "arrayShiftLeft" [ arr; n; d ]
 
+  let arrayShiftRight ?default arr n =
+    match default with
+    | None -> def "arrayShiftRight" [ arr; n ]
+    | Some d -> def "arrayShiftRight" [ arr; n; d ]
+
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]
 

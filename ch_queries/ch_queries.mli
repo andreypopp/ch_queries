@@ -762,6 +762,16 @@ module Expr : sig
       the array element type. If [n] is negative, the array is shifted to the
       right. *)
 
+  val arrayShiftRight :
+    ?default:('m, 'a) expr ->
+    ('n, ('m, 'a) array) expr ->
+    ('o, _ number) expr ->
+    ('n, ('m, 'a) array) expr
+  (** [arrayShiftRight ?default arr n] shifts the array to the right by [n]
+      elements. New elements are filled with [default] or the default value of
+      the array element type. If [n] is negative, the array is shifted to the
+      left. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
