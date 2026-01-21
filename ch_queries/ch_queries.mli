@@ -579,6 +579,14 @@ module Expr : sig
       the maximum of the lambda results if [f] is provided. When multiple arrays
       are passed, [f] operates on corresponding elements from all arrays. *)
 
+  val arrayMin :
+    ?f:(non_null, ('n, 'a) expr -> (_, 'b) expr) expr ->
+    ('m, ('n, 'a) array) expr list ->
+    ('n, 'a) expr
+  (** [arrayMin ?f arrays] returns the minimum element in the source array, or
+      the minimum of the lambda results if [f] is provided. When multiple arrays
+      are passed, [f] operates on corresponding elements from all arrays. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr

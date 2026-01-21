@@ -630,6 +630,7 @@ module Expr = struct
   let arrayLevenshteinDistance arr_from arr_to = def "arrayLevenshteinDistance" [ arr_from; arr_to ]
   let arrayLevenshteinDistanceWeighted arr_from arr_to from_weights to_weights = def "arrayLevenshteinDistanceWeighted" [ arr_from; arr_to; from_weights; to_weights ]
   let arrayMax ?f xs = match f with None -> def "arrayMax" xs | Some f -> def "arrayMax" (f :: xs)
+  let arrayMin ?f xs = match f with None -> def "arrayMin" xs | Some f -> def "arrayMin" (f :: xs)
 
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]
