@@ -570,6 +570,7 @@ module Expr = struct
   let gcd x y = def "gcd" [ x; y ]
   let lcm x y = def "lcm" [ x; y ]
   let max2 x y = def "max2" [ x; y ]
+  let midpoint xs = def "midpoint" xs
 
   (** {2 Arrays} *)
 
