@@ -597,6 +597,7 @@ module Expr = struct
   let arrayCompact arr = def "arrayCompact" [ arr ]
   let arrayConcat arrs = def "arrayConcat" arrs
   let arrayDifference arr = def "arrayDifference" [ arr ]
+  let arrayDistinct arr = def "arrayDistinct" [ arr ]
 
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]

@@ -388,6 +388,9 @@ module Expr : sig
       array elements. The first element will be 0, the second [arr\[1\] - arr\[0\]],
       the third [arr\[2\] - arr\[1\]], etc. *)
 
+  val arrayDistinct : ('n, ('m, 'a) array) expr -> ('n, ('m, 'a) array) expr
+  (** [arrayDistinct arr] returns an array containing only the distinct elements. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
