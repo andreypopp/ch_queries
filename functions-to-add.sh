@@ -10,7 +10,7 @@ where
   and not startsWith(name, '__')
   and description != ''
   and name not in existing
-  and name not in ['divide', 'minus', 'plus', 'multiply']
+  and name not in ['negate', 'divide', 'minus', 'plus', 'multiply', 'array']
 order by categories, name limit 1
 FORMAT Vertical
 "
