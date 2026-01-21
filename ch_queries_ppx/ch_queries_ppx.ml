@@ -351,6 +351,15 @@ let parse_ocaml_expr ~loc ocaml_code =
       Location.raise_errorf ~loc:adjusted_loc
         "Error parsing OCaml expression: %s" (Printexc.to_string exn)
 
+let rec extract_alias expr =
+  match expr.Syntax.node with
+  | Syntax.E_id id -> Some id
+  | E_param { param; _ } -> Some param
+  | E_col (_, id) -> Some id
+  | E_ascribe (expr, _) -> extract_alias expr
+  | E_query (_, expr) -> extract_alias expr
+  | _ -> None
+
 let rec stage_expr ~params expr =
   let loc = to_location expr in
   match expr.node with
@@ -1077,18 +1086,12 @@ and stage_field_syntax { Syntax.expr; alias } =
   let alias =
     match alias with
     | Some name -> name.node
-    | None ->
-        let rec alias expr =
-          match expr.Syntax.node with
-          | Syntax.E_id id -> id.node
-          | E_col (_, id) -> id.node
-          | E_ascribe (expr, _) -> alias expr
-          | E_query (_, expr) -> alias expr
-          | _ ->
-              Location.raise_errorf ~loc
-                "%%ch.query_syntax: field requires an explicit alias"
-        in
-        alias expr
+    | None -> (
+        match extract_alias expr with
+        | Some id -> id.node
+        | None ->
+            Location.raise_errorf ~loc
+              "%%ch.query_syntax: field requires an explicit alias")
   in
   let expr = stage_expr ~params:[] expr in
   (alias, [%expr Ch_queries.A_field ([%e expr], [%e estring ~loc alias])])
@@ -1304,9 +1307,12 @@ let rec extract_typed_fields query =
           let name =
             match alias with
             | Some alias -> id_to_located alias
-            | None ->
-                Location.raise_errorf ~loc:(to_location expr)
-                  "missing query alias: <expr> AS <alias>"
+            | None -> (
+                match extract_alias expr with
+                | Some id -> id_to_located id
+                | None ->
+                    Location.raise_errorf ~loc:(to_location expr)
+                      "missing query alias: <expr> AS <alias>")
           in
           (name, typ))
   | Q_union (x, _) -> extract_typed_fields x
@@ -1323,15 +1329,14 @@ let expand_query_and_map ~ctxt:_ expr =
   | Pexp_constant (Pconst_string (query_str, loc, _)) ->
       let query = parse_query ~loc query_str in
       let fields = extract_typed_fields query in
-      if List.is_empty fields then
-        Location.raise_errorf ~loc
-          "%%ch.query_and_map requires at least one typed field";
       let query_expr = stage_query query in
       (* Build the Row expressions *)
       let init, rest =
         match List.rev fields with
         | init :: fields -> (init, fields)
-        | [] -> assert false
+        | [] ->
+            Location.raise_errorf ~loc
+              "%%ch.query_and_map requires at least one typed field"
       in
       let parse_fields =
         let make (name, typ) =
