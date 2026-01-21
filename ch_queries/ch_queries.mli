@@ -273,6 +273,14 @@ module Expr : sig
     ('n, 'b number) expr ->
     ('n, 'c number) expr
 
+  val multiplyDecimal :
+    ?result_scale:('n, int number) expr ->
+    ('n, 'a number) expr ->
+    ('n, 'b number) expr ->
+    ('n, 'c number) expr
+  (** Performs multiplication on two decimals with optional result scale.
+      Result value will be of type Decimal256. *)
+
   val divideOrNull :
     ('n, 'a number) expr -> ('n, 'a number) expr -> (null, float number) expr
   (** Same as [divide] but returns NULL when dividing by zero. *)

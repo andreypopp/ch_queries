@@ -542,6 +542,22 @@ let rec stage_expr ~params expr =
           | _ ->
               Location.raise_errorf ~loc
                 "divideDecimal requires 2 or 3 arguments")
+      | Func { node = "multiplyDecimal"; _ } ->
+          let f = evar ~loc "Ch_queries.Expr.multiplyDecimal" in
+          (match args with
+          | [ x; y ] ->
+              let x = stage_expr ~params x in
+              let y = stage_expr ~params y in
+              eapply ~loc f [ x; y ]
+          | [ x; y; result_scale ] ->
+              let x = stage_expr ~params x in
+              let y = stage_expr ~params y in
+              let result_scale = stage_expr ~params result_scale in
+              pexp_apply ~loc f
+                [ (Labelled "result_scale", result_scale); (Nolabel, x); (Nolabel, y) ]
+          | _ ->
+              Location.raise_errorf ~loc
+                "multiplyDecimal requires 2 or 3 arguments")
       | Func { node = ("joinGet" | "joinGetOrNull") as fname; _ } ->
           (* joinGet(DICT, VALUE, KEYS...) stages as:
              Ch_queries.Expr.joinGet

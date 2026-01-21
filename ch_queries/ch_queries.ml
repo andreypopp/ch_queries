@@ -568,6 +568,11 @@ module Expr = struct
     | None -> def "divideDecimal" [ x; y ]
     | Some scale -> def "divideDecimal" [ x; y; scale ]
 
+  let multiplyDecimal ?result_scale x y =
+    match result_scale with
+    | None -> def "multiplyDecimal" [ x; y ]
+    | Some scale -> def "multiplyDecimal" [ x; y; scale ]
+
   let divideOrNull x y = def "divideOrNull" [ x; y ]
   let gcd x y = def "gcd" [ x; y ]
   let lcm x y = def "lcm" [ x; y ]
