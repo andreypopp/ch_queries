@@ -435,6 +435,13 @@ module Expr : sig
       enumeration of a multidimensional array with the ability to specify how
       deep to look inside the array. *)
 
+  val arrayExcept :
+    ('n, ('m, 'a) array) expr ->
+    ('n, ('m, 'a) array) expr ->
+    ('n, ('m, 'a) array) expr
+  (** [arrayExcept source except] returns an array containing elements from
+      [source] that are not present in [except], preserving the original order. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
