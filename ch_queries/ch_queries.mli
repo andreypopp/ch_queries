@@ -594,6 +594,9 @@ module Expr : sig
       the minimum of the lambda results if [f] is provided. When multiple arrays
       are passed, [f] operates on corresponding elements from all arrays. *)
 
+  val arrayPopBack : ('n, ('m, 'a) array) expr -> ('n, ('m, 'a) array) expr
+  (** [arrayPopBack arr] removes the last element from the array. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
