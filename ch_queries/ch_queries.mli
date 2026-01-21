@@ -263,6 +263,10 @@ module Expr : sig
     ('n, 'a number) expr -> ('n, 'a number) expr -> (null, 'a number) expr
   (** Same as [modulo] but returns NULL when the divisor is zero. *)
 
+  val moduloOrZero :
+    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
+  (** Same as [modulo] but returns zero when the divisor is zero. *)
+
   val divideDecimal :
     ?result_scale:('n, int number) expr ->
     ('n, 'a number) expr ->
