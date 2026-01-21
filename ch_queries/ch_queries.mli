@@ -256,11 +256,13 @@ module Expr : sig
 
   val intDivOrNull :
     ('n, _ number) expr -> ('n, _ number) expr -> (null, int number) expr
-  (** Same as [intDiv] but returns NULL when dividing by zero or when dividing a minimal negative number by minus one. *)
+  (** Same as [intDiv] but returns NULL when dividing by zero or when dividing a
+      minimal negative number by minus one. *)
 
   val intDivOrZero :
     ('n, _ number) expr -> ('n, _ number) expr -> ('n, int number) expr
-  (** Same as [intDiv] but returns zero when dividing by zero or when dividing a minimal negative number by minus one. *)
+  (** Same as [intDiv] but returns zero when dividing by zero or when dividing a
+      minimal negative number by minus one. *)
 
   val modulo :
     ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
@@ -294,19 +296,17 @@ module Expr : sig
     ('n, 'a number) expr ->
     ('n, 'a number) expr ->
     ('n, 'a number) expr
-  (** Performs multiplication on two decimals with optional result scale.
-      Result value will be of type Decimal256. *)
+  (** Performs multiplication on two decimals with optional result scale. Result
+      value will be of type Decimal256. *)
 
   val divideOrNull :
     ('n, 'a number) expr -> ('n, 'a number) expr -> (null, float number) expr
   (** Same as [divide] but returns NULL when dividing by zero. *)
 
-  val gcd :
-    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
+  val gcd : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
   (** Returns the greatest common divisor of two values. *)
 
-  val lcm :
-    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
+  val lcm : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
   (** Returns the least common multiple of two values. *)
 
   val max2 :
@@ -318,7 +318,8 @@ module Expr : sig
   (** Returns the smaller of two numeric values. *)
 
   val midpoint : ('n, 'a) expr list -> ('n, 'a) expr
-  (** Returns the average value of the provided arguments. Supports numerical and temporal types. *)
+  (** Returns the average value of the provided arguments. Supports numerical
+      and temporal types. *)
 
   (** {2 Arrays} *)
 
@@ -355,7 +356,8 @@ module Expr : sig
     ('m, ('n, 'a) array) expr list ->
     (non_null, float number) expr
   (** [arrayAvg func arrays] returns the average of elements of the lambda
-      results. The [func] is applied to corresponding elements from all arrays. *)
+      results. The [func] is applied to corresponding elements from all arrays.
+  *)
 
   val arrayCount :
     ?f:(non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
@@ -399,11 +401,12 @@ module Expr : sig
 
   val arrayDifference : ('n, ('m, 'a) array) expr -> ('n, ('m, 'a) array) expr
   (** [arrayDifference arr] calculates an array of differences between adjacent
-      array elements. The first element will be 0, the second [arr\[1\] - arr\[0\]],
-      the third [arr\[2\] - arr\[1\]], etc. *)
+      array elements. The first element will be 0, the second [arr[1] - arr[0]],
+      the third [arr[2] - arr[1]], etc. *)
 
   val arrayDistinct : ('n, ('m, 'a) array) expr -> ('n, ('m, 'a) array) expr
-  (** [arrayDistinct arr] returns an array containing only the distinct elements. *)
+  (** [arrayDistinct arr] returns an array containing only the distinct
+      elements. *)
 
   val arrayDotProduct :
     ('n, ('m, 'a number) array) expr ->
@@ -412,10 +415,12 @@ module Expr : sig
   (** [arrayDotProduct v1 v2] returns the dot product of two arrays. The sizes
       of the two vectors must be equal. *)
 
-  val arrayEnumerate : ('n, ('m, 'a) array) expr -> ('n, ('m, int number) array) expr
+  val arrayEnumerate :
+    ('n, ('m, 'a) array) expr -> ('n, ('m, int number) array) expr
   (** [arrayEnumerate arr] returns the array [1, 2, 3, ..., length(arr)]. *)
 
-  val arrayEnumerateDense : ('n, ('m, 'a) array) expr -> ('n, ('m, int number) array) expr
+  val arrayEnumerateDense :
+    ('n, ('m, 'a) array) expr -> ('n, ('m, int number) array) expr
   (** [arrayEnumerateDense arr] returns an array of the same size as the source
       array, indicating where each element first appears in the source array. *)
 
@@ -431,8 +436,7 @@ module Expr : sig
       the array. *)
 
   val arrayEnumerateUniq :
-    ('n, ('m, 'a) array) expr list ->
-    ('n, ('m, int number) array) expr
+    ('n, ('m, 'a) array) expr list -> ('n, ('m, int number) array) expr
   (** [arrayEnumerateUniq arrs] returns an array the same size as the source
       array, indicating for each element what its position is among elements
       with the same value. When multiple arrays are passed, uniqueness is
@@ -454,7 +458,8 @@ module Expr : sig
     ('n, ('m, 'a) array) expr ->
     ('n, ('m, 'a) array) expr
   (** [arrayExcept source except] returns an array containing elements from
-      [source] that are not present in [except], preserving the original order. *)
+      [source] that are not present in [except], preserving the original order.
+  *)
 
   val arrayExists :
     (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
@@ -480,10 +485,10 @@ module Expr : sig
     (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
     ('m, ('n, 'a) array) expr list ->
     ('n, 'a) expr
-  (** [arrayFirst func arrays] returns the first element in the source array
-      for which [func] returns true, otherwise it returns a default value.
-      When multiple arrays are passed, [func] operates on corresponding
-      elements from all arrays. *)
+  (** [arrayFirst func arrays] returns the first element in the source array for
+      which [func] returns true, otherwise it returns a default value. When
+      multiple arrays are passed, [func] operates on corresponding elements from
+      all arrays. *)
 
   val arrayFirstIndex :
     (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
@@ -499,20 +504,21 @@ module Expr : sig
     ('m, ('n, 'a) array) expr list ->
     (null, 'a) expr
   (** [arrayFirstOrNull func arrays] returns the first element in the source
-      array for which [func] returns true, otherwise returns NULL. When
-      multiple arrays are passed, [func] operates on corresponding elements
-      from all arrays. *)
+      array for which [func] returns true, otherwise returns NULL. When multiple
+      arrays are passed, [func] operates on corresponding elements from all
+      arrays. *)
 
-  val arrayFlatten : ('n, ('m, ('o, 'a) array) array) expr -> ('n, ('o, 'a) array) expr
+  val arrayFlatten :
+    ('n, ('m, ('o, 'a) array) array) expr -> ('n, ('o, 'a) array) expr
 
   val arrayLast :
     (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
     ('m, ('n, 'a) array) expr list ->
     ('n, 'a) expr
-  (** [arrayLast func arrays] returns the last element in the source array
-      for which [func] returns true, otherwise it returns a default value.
-      When multiple arrays are passed, [func] operates on corresponding
-      elements from all arrays. *)
+  (** [arrayLast func arrays] returns the last element in the source array for
+      which [func] returns true, otherwise it returns a default value. When
+      multiple arrays are passed, [func] operates on corresponding elements from
+      all arrays. *)
 
   val arrayLastIndex :
     (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
@@ -527,10 +533,10 @@ module Expr : sig
     (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
     ('m, ('n, 'a) array) expr list ->
     (null, 'a) expr
-  (** [arrayLastOrNull func arrays] returns the last element in the source
-      array for which [func] returns true, otherwise returns NULL. When
-      multiple arrays are passed, [func] operates on corresponding elements
-      from all arrays. *)
+  (** [arrayLastOrNull func arrays] returns the last element in the source array
+      for which [func] returns true, otherwise returns NULL. When multiple
+      arrays are passed, [func] operates on corresponding elements from all
+      arrays. *)
 
   val arrayFold :
     (non_null, ('na, 'acc) expr -> ('n, 'a) expr -> ('na, 'acc) expr) expr ->
@@ -542,7 +548,8 @@ module Expr : sig
       function that takes an accumulator and array values, returning the new
       accumulator value. [acc] is the initial accumulator value. *)
 
-  val arrayIntersect : ('n, ('m, 'a) array) expr list -> ('n, ('m, 'a) array) expr
+  val arrayIntersect :
+    ('n, ('m, 'a) array) expr list -> ('n, ('m, 'a) array) expr
   (** [arrayIntersect arrays] returns an array with elements that are present in
       all source arrays. The result contains only unique values. *)
 
@@ -901,14 +908,16 @@ module Expr : sig
       otherwise returns 0. *)
 
   val isInfinite : ('n, float number) expr -> ('n, bool) expr
-  (** Returns 1 if the Float32/Float64 argument is infinite, otherwise returns 0.
-      Note that 0 is returned for NaN. *)
+  (** Returns 1 if the Float32/Float64 argument is infinite, otherwise returns
+      0. Note that 0 is returned for NaN. *)
 
   val isNaN : ('n, float number) expr -> ('n, bool) expr
   (** Returns 1 if the Float32/Float64 argument is NaN, otherwise returns 0. *)
 
   val ifNotFinite :
-    ('n, float number) expr -> ('n, float number) expr -> ('n, float number) expr
+    ('n, float number) expr ->
+    ('n, float number) expr ->
+    ('n, float number) expr
   (** [ifNotFinite x y] returns [x] if [x] is finite, otherwise returns [y]. *)
 
   val isNull : ('n, _) expr -> (non_null, bool) expr

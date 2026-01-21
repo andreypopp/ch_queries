@@ -531,9 +531,9 @@ let rec stage_expr ~params expr =
           let f = evar ~loc ("Ch_queries.Expr." ^ name) in
           let args = List.map args ~f:(stage_expr ~params) in
           eapply ~loc f [ elist ~loc args ]
-      | Func { node = "arrayAll"; _ } ->
+      | Func { node = "arrayAll"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.arrayAll" in
-          (match args with
+          match args with
           | lambda :: arrays when List.length arrays >= 1 ->
               let lambda = stage_expr ~params lambda in
               let arrays = List.map arrays ~f:(stage_expr ~params) in
@@ -541,9 +541,9 @@ let rec stage_expr ~params expr =
           | _ ->
               Location.raise_errorf ~loc
                 "arrayAll requires a lambda and at least one array argument")
-      | Func { node = "arrayMap"; _ } ->
+      | Func { node = "arrayMap"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.arrayMap" in
-          (match args with
+          match args with
           | lambda :: arrays when List.length arrays >= 1 ->
               let lambda = stage_expr ~params lambda in
               let arrays = List.map arrays ~f:(stage_expr ~params) in
@@ -551,9 +551,9 @@ let rec stage_expr ~params expr =
           | _ ->
               Location.raise_errorf ~loc
                 "arrayMap requires a lambda and at least one array argument")
-      | Func { node = "arrayExists"; _ } ->
+      | Func { node = "arrayExists"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.arrayExists" in
-          (match args with
+          match args with
           | lambda :: arrays when List.length arrays >= 1 ->
               let lambda = stage_expr ~params lambda in
               let arrays = List.map arrays ~f:(stage_expr ~params) in
@@ -561,9 +561,9 @@ let rec stage_expr ~params expr =
           | _ ->
               Location.raise_errorf ~loc
                 "arrayExists requires a lambda and at least one array argument")
-      | Func { node = "arrayFill"; _ } ->
+      | Func { node = "arrayFill"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.arrayFill" in
-          (match args with
+          match args with
           | lambda :: arrays when List.length arrays >= 1 ->
               let lambda = stage_expr ~params lambda in
               let arrays = List.map arrays ~f:(stage_expr ~params) in
@@ -571,9 +571,9 @@ let rec stage_expr ~params expr =
           | _ ->
               Location.raise_errorf ~loc
                 "arrayFill requires a lambda and at least one array argument")
-      | Func { node = "arrayFirst"; _ } ->
+      | Func { node = "arrayFirst"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.arrayFirst" in
-          (match args with
+          match args with
           | lambda :: arrays when List.length arrays >= 1 ->
               let lambda = stage_expr ~params lambda in
               let arrays = List.map arrays ~f:(stage_expr ~params) in
@@ -581,9 +581,9 @@ let rec stage_expr ~params expr =
           | _ ->
               Location.raise_errorf ~loc
                 "arrayFirst requires a lambda and at least one array argument")
-      | Func { node = "arrayFirstIndex"; _ } ->
+      | Func { node = "arrayFirstIndex"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.arrayFirstIndex" in
-          (match args with
+          match args with
           | lambda :: arrays when List.length arrays >= 1 ->
               let lambda = stage_expr ~params lambda in
               let arrays = List.map arrays ~f:(stage_expr ~params) in
@@ -592,9 +592,9 @@ let rec stage_expr ~params expr =
               Location.raise_errorf ~loc
                 "arrayFirstIndex requires a lambda and at least one array \
                  argument")
-      | Func { node = "arrayFirstOrNull"; _ } ->
+      | Func { node = "arrayFirstOrNull"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.arrayFirstOrNull" in
-          (match args with
+          match args with
           | lambda :: arrays when List.length arrays >= 1 ->
               let lambda = stage_expr ~params lambda in
               let arrays = List.map arrays ~f:(stage_expr ~params) in
@@ -603,9 +603,9 @@ let rec stage_expr ~params expr =
               Location.raise_errorf ~loc
                 "arrayFirstOrNull requires a lambda and at least one array \
                  argument")
-      | Func { node = "arrayLast"; _ } ->
+      | Func { node = "arrayLast"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.arrayLast" in
-          (match args with
+          match args with
           | lambda :: arrays when List.length arrays >= 1 ->
               let lambda = stage_expr ~params lambda in
               let arrays = List.map arrays ~f:(stage_expr ~params) in
@@ -613,9 +613,9 @@ let rec stage_expr ~params expr =
           | _ ->
               Location.raise_errorf ~loc
                 "arrayLast requires a lambda and at least one array argument")
-      | Func { node = "arrayLastIndex"; _ } ->
+      | Func { node = "arrayLastIndex"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.arrayLastIndex" in
-          (match args with
+          match args with
           | lambda :: arrays when List.length arrays >= 1 ->
               let lambda = stage_expr ~params lambda in
               let arrays = List.map arrays ~f:(stage_expr ~params) in
@@ -624,9 +624,9 @@ let rec stage_expr ~params expr =
               Location.raise_errorf ~loc
                 "arrayLastIndex requires a lambda and at least one array \
                  argument")
-      | Func { node = "arrayLastOrNull"; _ } ->
+      | Func { node = "arrayLastOrNull"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.arrayLastOrNull" in
-          (match args with
+          match args with
           | lambda :: arrays when List.length arrays >= 1 ->
               let lambda = stage_expr ~params lambda in
               let arrays = List.map arrays ~f:(stage_expr ~params) in
@@ -635,9 +635,9 @@ let rec stage_expr ~params expr =
               Location.raise_errorf ~loc
                 "arrayLastOrNull requires a lambda and at least one array \
                  argument")
-      | Func { node = "arrayFold"; _ } ->
+      | Func { node = "arrayFold"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.arrayFold" in
-          (match args with
+          match args with
           | lambda :: rest when List.length rest >= 2 ->
               (* arrayFold(lambda, arr1, ..., arrN, acc) *)
               let arrays, acc =
@@ -654,9 +654,9 @@ let rec stage_expr ~params expr =
               Location.raise_errorf ~loc
                 "arrayFold requires a lambda, at least one array, and an \
                  accumulator argument")
-      | Func { node = "arrayAvg"; _ } ->
+      | Func { node = "arrayAvg"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.arrayAvg" in
-          (match args with
+          match args with
           | lambda :: arrays when List.length arrays >= 1 ->
               let lambda = stage_expr ~params lambda in
               let arrays = List.map arrays ~f:(stage_expr ~params) in
@@ -664,10 +664,11 @@ let rec stage_expr ~params expr =
           | _ ->
               Location.raise_errorf ~loc
                 "arrayAvg requires a lambda and at least one array argument")
-      | Func { node = "arrayCount"; _ } ->
+      | Func { node = "arrayCount"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.arrayCount" in
-          (match args with
-          | ({ node = E_lambda _; _ } as lambda) :: arrays when List.length arrays >= 1 ->
+          match args with
+          | ({ node = E_lambda _; _ } as lambda) :: arrays
+            when List.length arrays >= 1 ->
               (* arrayCount(lambda, arr1, ...) - with lambda *)
               let lambda = stage_expr ~params lambda in
               let arrays = List.map arrays ~f:(stage_expr ~params) in
@@ -680,10 +681,11 @@ let rec stage_expr ~params expr =
           | _ ->
               Location.raise_errorf ~loc
                 "arrayCount requires at least one array argument")
-      | Func { node = "arrayMax"; _ } ->
+      | Func { node = "arrayMax"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.arrayMax" in
-          (match args with
-          | ({ node = E_lambda _; _ } as lambda) :: arrays when List.length arrays >= 1 ->
+          match args with
+          | ({ node = E_lambda _; _ } as lambda) :: arrays
+            when List.length arrays >= 1 ->
               (* arrayMax(lambda, arr1, ...) - with lambda *)
               let lambda = stage_expr ~params lambda in
               let arrays = List.map arrays ~f:(stage_expr ~params) in
@@ -696,10 +698,11 @@ let rec stage_expr ~params expr =
           | _ ->
               Location.raise_errorf ~loc
                 "arrayMax requires at least one array argument")
-      | Func { node = "arrayMin"; _ } ->
+      | Func { node = "arrayMin"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.arrayMin" in
-          (match args with
-          | ({ node = E_lambda _; _ } as lambda) :: arrays when List.length arrays >= 1 ->
+          match args with
+          | ({ node = E_lambda _; _ } as lambda) :: arrays
+            when List.length arrays >= 1 ->
               (* arrayMin(lambda, arr1, ...) - with lambda *)
               let lambda = stage_expr ~params lambda in
               let arrays = List.map arrays ~f:(stage_expr ~params) in
@@ -712,10 +715,11 @@ let rec stage_expr ~params expr =
           | _ ->
               Location.raise_errorf ~loc
                 "arrayMin requires at least one array argument")
-      | Func { node = "arrayCumSum"; _ } ->
+      | Func { node = "arrayCumSum"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.arrayCumSum" in
-          (match args with
-          | ({ node = E_lambda _; _ } as lambda) :: arrays when List.length arrays >= 1 ->
+          match args with
+          | ({ node = E_lambda _; _ } as lambda) :: arrays
+            when List.length arrays >= 1 ->
               (* arrayCumSum(lambda, arr1, ...) - with lambda *)
               let lambda = stage_expr ~params lambda in
               let arrays = List.map arrays ~f:(stage_expr ~params) in
@@ -728,10 +732,11 @@ let rec stage_expr ~params expr =
           | _ ->
               Location.raise_errorf ~loc
                 "arrayCumSum requires at least one array argument")
-      | Func { node = "arrayCumSumNonNegative"; _ } ->
+      | Func { node = "arrayCumSumNonNegative"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.arrayCumSumNonNegative" in
-          (match args with
-          | ({ node = E_lambda _; _ } as lambda) :: arrays when List.length arrays >= 1 ->
+          match args with
+          | ({ node = E_lambda _; _ } as lambda) :: arrays
+            when List.length arrays >= 1 ->
               (* arrayCumSumNonNegative(lambda, arr1, ...) - with lambda *)
               let lambda = stage_expr ~params lambda in
               let arrays = List.map arrays ~f:(stage_expr ~params) in
@@ -744,9 +749,9 @@ let rec stage_expr ~params expr =
           | _ ->
               Location.raise_errorf ~loc
                 "arrayCumSumNonNegative requires at least one array argument")
-      | Func { node = "divideDecimal"; _ } ->
+      | Func { node = "divideDecimal"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.divideDecimal" in
-          (match args with
+          match args with
           | [ x; y ] ->
               let x = stage_expr ~params x in
               let y = stage_expr ~params y in
@@ -756,13 +761,17 @@ let rec stage_expr ~params expr =
               let y = stage_expr ~params y in
               let result_scale = stage_expr ~params result_scale in
               pexp_apply ~loc f
-                [ (Labelled "result_scale", result_scale); (Nolabel, x); (Nolabel, y) ]
+                [
+                  (Labelled "result_scale", result_scale);
+                  (Nolabel, x);
+                  (Nolabel, y);
+                ]
           | _ ->
               Location.raise_errorf ~loc
                 "divideDecimal requires 2 or 3 arguments")
-      | Func { node = "multiplyDecimal"; _ } ->
+      | Func { node = "multiplyDecimal"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.multiplyDecimal" in
-          (match args with
+          match args with
           | [ x; y ] ->
               let x = stage_expr ~params x in
               let y = stage_expr ~params y in
@@ -772,13 +781,17 @@ let rec stage_expr ~params expr =
               let y = stage_expr ~params y in
               let result_scale = stage_expr ~params result_scale in
               pexp_apply ~loc f
-                [ (Labelled "result_scale", result_scale); (Nolabel, x); (Nolabel, y) ]
+                [
+                  (Labelled "result_scale", result_scale);
+                  (Nolabel, x);
+                  (Nolabel, y);
+                ]
           | _ ->
               Location.raise_errorf ~loc
                 "multiplyDecimal requires 2 or 3 arguments")
-      | Func { node = "arrayAUCPR"; _ } ->
+      | Func { node = "arrayAUCPR"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.arrayAUCPR" in
-          (match args with
+          match args with
           | [ scores; labels ] ->
               let scores = stage_expr ~params scores in
               let labels = stage_expr ~params labels in
@@ -788,10 +801,13 @@ let rec stage_expr ~params expr =
               let labels = stage_expr ~params labels in
               let partial_offsets = stage_expr ~params partial_offsets in
               pexp_apply ~loc f
-                [ (Labelled "partial_offsets", partial_offsets); (Nolabel, scores); (Nolabel, labels) ]
+                [
+                  (Labelled "partial_offsets", partial_offsets);
+                  (Nolabel, scores);
+                  (Nolabel, labels);
+                ]
           | _ ->
-              Location.raise_errorf ~loc
-                "arrayAUCPR requires 2 or 3 arguments")
+              Location.raise_errorf ~loc "arrayAUCPR requires 2 or 3 arguments")
       | Func { node = ("joinGet" | "joinGetOrNull") as fname; _ } ->
           (* joinGet(DICT, VALUE, KEYS...) stages as:
              Ch_queries.Expr.joinGet
@@ -996,19 +1012,24 @@ let rec stage_expr ~params expr =
       | Syntax.In_expr expr' ->
           let expr' = stage_expr ~params expr' in
           [%expr Ch_queries.in_ [%e expr] (Ch_queries.In_array [%e expr'])])
-  | Syntax.E_lambda (lambda_params, body) ->
+  | Syntax.E_lambda (lambda_params, body) -> (
       let all_params = List.rev_append lambda_params params in
       let body_expr = stage_expr ~params:all_params body in
-      (match lambda_params with
-      | [param] ->
+      match lambda_params with
+      | [ param ] ->
           let param_name = param.node in
-          [%expr Ch_queries.lambda [%e estring ~loc param_name] (fun x -> [%e body_expr])]
-      | [param1; param2] ->
+          [%expr
+            Ch_queries.lambda [%e estring ~loc param_name] (fun x ->
+                [%e body_expr])]
+      | [ param1; param2 ] ->
           let param1_name = param1.node in
           let param2_name = param2.node in
-          [%expr Ch_queries.lambda2 [%e estring ~loc param1_name] [%e estring ~loc param2_name] (fun x y -> [%e body_expr])]
+          [%expr
+            Ch_queries.lambda2 [%e estring ~loc param1_name]
+              [%e estring ~loc param2_name] (fun x y -> [%e body_expr])]
       | _ ->
-          Location.raise_errorf ~loc "lambdas with more than 2 parameters are not supported")
+          Location.raise_errorf ~loc
+            "lambdas with more than 2 parameters are not supported")
 
 and stage_dimensions ~loc dimensions =
   let body =

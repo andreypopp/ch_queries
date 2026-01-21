@@ -245,7 +245,7 @@ let rec pp_expr opts ~parent_prec expr =
       (* we will always print lambdas with parentheses around them *)
       let pp_params =
         match params with
-        | [param] -> pp_id param
+        | [ param ] -> pp_id param
         | params -> parens (separate (string ", ") (List.map ~f:pp_id params))
       in
       group

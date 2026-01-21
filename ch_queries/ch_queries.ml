@@ -534,7 +534,7 @@ let lambda :
     (non_null, ('pn, 'pa) expr -> ('n, 'a) expr) expr =
  fun param f ->
   let body = f (unsafe param) in
-  Syntax.make_expr (E_lambda ([Syntax.make_id param], body))
+  Syntax.make_expr (E_lambda ([ Syntax.make_id param ], body))
 
 let lambda2 :
     string ->
@@ -543,7 +543,8 @@ let lambda2 :
     (non_null, ('pn1, 'pa1) expr -> ('pn2, 'pa2) expr -> ('n, 'a) expr) expr =
  fun param1 param2 f ->
   let body = f (unsafe param1) (unsafe param2) in
-  Syntax.make_expr (E_lambda ([Syntax.make_id param1; Syntax.make_id param2], body))
+  Syntax.make_expr
+    (E_lambda ([ Syntax.make_id param1; Syntax.make_id param2 ], body))
 
 let array xs = Syntax.make_expr (E_call (Syntax.Func (Syntax.make_id "["), xs))
 
@@ -599,9 +600,22 @@ module Expr = struct
   let arrayMap f xs = def "arrayMap" (f :: xs)
   let arrayAll f xs = def "arrayAll" (f :: xs)
   let arrayAvg f xs = def "arrayAvg" (f :: xs)
-  let arrayCount ?f xs = match f with None -> def "arrayCount" xs | Some f -> def "arrayCount" (f :: xs)
-  let arrayCumSum ?f xs = match f with None -> def "arrayCumSum" xs | Some f -> def "arrayCumSum" (f :: xs)
-  let arrayCumSumNonNegative ?f xs = match f with None -> def "arrayCumSumNonNegative" xs | Some f -> def "arrayCumSumNonNegative" (f :: xs)
+
+  let arrayCount ?f xs =
+    match f with
+    | None -> def "arrayCount" xs
+    | Some f -> def "arrayCount" (f :: xs)
+
+  let arrayCumSum ?f xs =
+    match f with
+    | None -> def "arrayCumSum" xs
+    | Some f -> def "arrayCumSum" (f :: xs)
+
+  let arrayCumSumNonNegative ?f xs =
+    match f with
+    | None -> def "arrayCumSumNonNegative" xs
+    | Some f -> def "arrayCumSumNonNegative" (f :: xs)
+
   let length x = def "length" [ x ]
   let arrayJoin arr = def "arrayJoin" [ arr ]
   let arrayCompact arr = def "arrayCompact" [ arr ]
@@ -611,9 +625,15 @@ module Expr = struct
   let arrayDotProduct v1 v2 = def "arrayDotProduct" [ v1; v2 ]
   let arrayEnumerate arr = def "arrayEnumerate" [ arr ]
   let arrayEnumerateDense arr = def "arrayEnumerateDense" [ arr ]
-  let arrayEnumerateDenseRanked clear_depth arr max_array_depth = def "arrayEnumerateDenseRanked" [ clear_depth; arr; max_array_depth ]
+
+  let arrayEnumerateDenseRanked clear_depth arr max_array_depth =
+    def "arrayEnumerateDenseRanked" [ clear_depth; arr; max_array_depth ]
+
   let arrayEnumerateUniq arrs = def "arrayEnumerateUniq" arrs
-  let arrayEnumerateUniqRanked clear_depth arr max_array_depth = def "arrayEnumerateUniqRanked" [ clear_depth; arr; max_array_depth ]
+
+  let arrayEnumerateUniqRanked clear_depth arr max_array_depth =
+    def "arrayEnumerateUniqRanked" [ clear_depth; arr; max_array_depth ]
+
   let arrayExcept source except = def "arrayExcept" [ source; except ]
   let arrayExists f xs = def "arrayExists" (f :: xs)
   let arrayFill f xs = def "arrayFill" (f :: xs)
@@ -624,13 +644,22 @@ module Expr = struct
   let arrayLast f xs = def "arrayLast" (f :: xs)
   let arrayLastIndex f xs = def "arrayLastIndex" (f :: xs)
   let arrayLastOrNull f xs = def "arrayLastOrNull" (f :: xs)
-  let arrayFold f xs acc = def "arrayFold" (f :: xs @ [ acc ])
+  let arrayFold f xs acc = def "arrayFold" ((f :: xs) @ [ acc ])
   let arrayIntersect arrs = def "arrayIntersect" arrs
   let arrayJaccardIndex arr_x arr_y = def "arrayJaccardIndex" [ arr_x; arr_y ]
-  let arrayLevenshteinDistance arr_from arr_to = def "arrayLevenshteinDistance" [ arr_from; arr_to ]
-  let arrayLevenshteinDistanceWeighted arr_from arr_to from_weights to_weights = def "arrayLevenshteinDistanceWeighted" [ arr_from; arr_to; from_weights; to_weights ]
-  let arrayMax ?f xs = match f with None -> def "arrayMax" xs | Some f -> def "arrayMax" (f :: xs)
-  let arrayMin ?f xs = match f with None -> def "arrayMin" xs | Some f -> def "arrayMin" (f :: xs)
+
+  let arrayLevenshteinDistance arr_from arr_to =
+    def "arrayLevenshteinDistance" [ arr_from; arr_to ]
+
+  let arrayLevenshteinDistanceWeighted arr_from arr_to from_weights to_weights =
+    def "arrayLevenshteinDistanceWeighted"
+      [ arr_from; arr_to; from_weights; to_weights ]
+
+  let arrayMax ?f xs =
+    match f with None -> def "arrayMax" xs | Some f -> def "arrayMax" (f :: xs)
+
+  let arrayMin ?f xs =
+    match f with None -> def "arrayMin" xs | Some f -> def "arrayMin" (f :: xs)
 
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]
