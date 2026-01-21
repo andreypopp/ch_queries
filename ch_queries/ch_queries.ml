@@ -637,6 +637,7 @@ module Expr = struct
   let arrayExcept source except = def "arrayExcept" [ source; except ]
   let arrayExists f xs = def "arrayExists" (f :: xs)
   let arrayFill f xs = def "arrayFill" (f :: xs)
+  let arrayReverseFill f xs = def "arrayReverseFill" (f :: xs)
   let arrayFirst f xs = def "arrayFirst" (f :: xs)
   let arrayFirstIndex f xs = def "arrayFirstIndex" (f :: xs)
   let arrayFirstOrNull f xs = def "arrayFirstOrNull" (f :: xs)

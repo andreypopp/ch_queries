@@ -481,6 +481,17 @@ module Expr : sig
       corresponding elements from all arrays, but only the first array is
       modified. *)
 
+  val arrayReverseFill :
+    (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
+    ('m, ('n, 'a) array) expr list ->
+    ('m, ('n, 'a) array) expr
+  (** [arrayReverseFill func arrays] scans through the source array from the
+      last to first element and replaces each position where the [func] returns
+      false with the value at the next position (last element is always
+      preserved). When multiple arrays are passed, [func] operates on
+      corresponding elements from all arrays, but only the first array is
+      modified. *)
+
   val arrayFirst :
     (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
     ('m, ('n, 'a) array) expr list ->

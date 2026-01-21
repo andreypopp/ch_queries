@@ -594,6 +594,17 @@ let rec stage_expr ~params expr =
           | _ ->
               Location.raise_errorf ~loc
                 "arrayFill requires a lambda and at least one array argument")
+      | Func { node = "arrayReverseFill"; _ } -> (
+          let f = evar ~loc "Ch_queries.Expr.arrayReverseFill" in
+          match args with
+          | lambda :: arrays when List.length arrays >= 1 ->
+              let lambda = stage_expr ~params lambda in
+              let arrays = List.map arrays ~f:(stage_expr ~params) in
+              eapply ~loc f [ lambda; elist ~loc arrays ]
+          | _ ->
+              Location.raise_errorf ~loc
+                "arrayReverseFill requires a lambda and at least one array \
+                 argument")
       | Func { node = "arrayFirst"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.arrayFirst" in
           match args with
