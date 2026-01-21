@@ -273,6 +273,10 @@ module Expr : sig
     ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
   (** Returns the greatest common divisor of two values. *)
 
+  val lcm :
+    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
+  (** Returns the least common multiple of two values. *)
+
   (** {2 Arrays} *)
 
   val arrayElement :
