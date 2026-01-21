@@ -515,6 +515,15 @@ module Expr : sig
       returns 0. When multiple arrays are passed, [func] operates on
       corresponding elements from all arrays. *)
 
+  val arrayLastOrNull :
+    (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
+    ('m, ('n, 'a) array) expr list ->
+    (null, 'a) expr
+  (** [arrayLastOrNull func arrays] returns the last element in the source
+      array for which [func] returns true, otherwise returns NULL. When
+      multiple arrays are passed, [func] operates on corresponding elements
+      from all arrays. *)
+
   val arrayFold :
     (non_null, ('na, 'acc) expr -> ('n, 'a) expr -> ('na, 'acc) expr) expr ->
     ('m, ('n, 'a) array) expr list ->
