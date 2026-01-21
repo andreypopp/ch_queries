@@ -694,6 +694,10 @@ module Expr : sig
       right. If [size] is larger, the array is extended with [extender] values
       or default values for the data type if [extender] is not provided. *)
 
+  val arrayReverse : ('n, ('m, 'a) array) expr -> ('n, ('m, 'a) array) expr
+  (** [arrayReverse arr] returns an array containing the elements of [arr] in
+      reverse order. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
