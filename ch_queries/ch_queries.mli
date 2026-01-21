@@ -600,6 +600,17 @@ module Expr : sig
   val arrayPopFront : ('n, ('m, 'a) array) expr -> ('n, ('m, 'a) array) expr
   (** [arrayPopFront arr] removes the first element from the array. *)
 
+  val arrayPartialReverseSort :
+    ?f:(non_null, ('n, 'a) expr -> (_, 'b) expr) expr ->
+    ('m, ('n, 'a) array) expr list ->
+    ('o, _ number) expr ->
+    ('m, ('n, 'a) array) expr
+  (** [arrayPartialReverseSort ?f arrs limit] sorts elements in range [1..limit]
+      in descending order. If [f] is provided, sorting is done by the result of
+      applying [f] to the elements. When multiple arrays are passed, [f] operates
+      on corresponding elements from all arrays. Remaining elements beyond limit
+      are in unspecified order. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr

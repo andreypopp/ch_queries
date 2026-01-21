@@ -749,6 +749,43 @@ let rec stage_expr ~params expr =
           | _ ->
               Location.raise_errorf ~loc
                 "arrayCumSumNonNegative requires at least one array argument")
+      | Func { node = "arrayPartialReverseSort"; _ } -> (
+          (* arrayPartialReverseSort([f,] arr [, arr1, ... ,arrN], limit) *)
+          let f = evar ~loc "Ch_queries.Expr.arrayPartialReverseSort" in
+          match args with
+          | ({ node = E_lambda _; _ } as lambda) :: rest
+            when List.length rest >= 2 ->
+              (* arrayPartialReverseSort(lambda, arr1, ..., limit) - with lambda *)
+              let arrays, limit =
+                let rev_rest = List.rev rest in
+                match rev_rest with
+                | limit :: rev_arrays -> (List.rev rev_arrays, limit)
+                | _ -> assert false (* checked by length condition *)
+              in
+              let lambda = stage_expr ~params lambda in
+              let arrays = List.map arrays ~f:(stage_expr ~params) in
+              let limit = stage_expr ~params limit in
+              pexp_apply ~loc f
+                [
+                  (Labelled "f", lambda);
+                  (Nolabel, elist ~loc arrays);
+                  (Nolabel, limit);
+                ]
+          | rest when List.length rest >= 2 ->
+              (* arrayPartialReverseSort(arr1, ..., limit) - without lambda *)
+              let arrays, limit =
+                let rev_rest = List.rev rest in
+                match rev_rest with
+                | limit :: rev_arrays -> (List.rev rev_arrays, limit)
+                | _ -> assert false (* checked by length condition *)
+              in
+              let arrays = List.map arrays ~f:(stage_expr ~params) in
+              let limit = stage_expr ~params limit in
+              eapply ~loc f [ elist ~loc arrays; limit ]
+          | _ ->
+              Location.raise_errorf ~loc
+                "arrayPartialReverseSort requires at least one array and a \
+                 limit argument")
       | Func { node = "divideDecimal"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.divideDecimal" in
           match args with
