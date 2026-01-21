@@ -693,6 +693,16 @@ module Expr : sig
   val byteSwap : ('n, 'a number) expr -> ('n, 'a number) expr
   (** Reverses the bytes of an integer, i.e. changes its endianness. *)
 
+  (** {2 Machine learning functions} *)
+
+  val arrayAUCPR :
+    ?partial_offsets:('n, ('m, 'b number) array) expr ->
+    ('n, ('m, 'a number) array) expr ->
+    ('n, ('m, 'c number) array) expr ->
+    ('n, float number) expr
+  (** [arrayAUCPR ?partial_offsets scores labels] calculates the area under the
+      precision-recall (PR) curve. Returns a value between 0 and 1. *)
+
   (** {1 Aggregate functions} *)
 
   val avg :

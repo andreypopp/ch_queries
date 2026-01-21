@@ -558,6 +558,22 @@ let rec stage_expr ~params expr =
           | _ ->
               Location.raise_errorf ~loc
                 "multiplyDecimal requires 2 or 3 arguments")
+      | Func { node = "arrayAUCPR"; _ } ->
+          let f = evar ~loc "Ch_queries.Expr.arrayAUCPR" in
+          (match args with
+          | [ scores; labels ] ->
+              let scores = stage_expr ~params scores in
+              let labels = stage_expr ~params labels in
+              eapply ~loc f [ scores; labels ]
+          | [ scores; labels; partial_offsets ] ->
+              let scores = stage_expr ~params scores in
+              let labels = stage_expr ~params labels in
+              let partial_offsets = stage_expr ~params partial_offsets in
+              pexp_apply ~loc f
+                [ (Labelled "partial_offsets", partial_offsets); (Nolabel, scores); (Nolabel, labels) ]
+          | _ ->
+              Location.raise_errorf ~loc
+                "arrayAUCPR requires 2 or 3 arguments")
       | Func { node = ("joinGet" | "joinGetOrNull") as fname; _ } ->
           (* joinGet(DICT, VALUE, KEYS...) stages as:
              Ch_queries.Expr.joinGet

@@ -799,6 +799,13 @@ module Expr = struct
 
   let byteSwap x = def "byteSwap" [ x ]
 
+  (** {2 Machine learning functions} *)
+
+  let arrayAUCPR ?partial_offsets scores labels =
+    match partial_offsets with
+    | None -> def "arrayAUCPR" [ scores; labels ]
+    | Some offsets -> def "arrayAUCPR" [ scores; labels; offsets ]
+
   (** {1 Aggregate functions} *)
 
   let make_window f ?partition_by ?order_by args =
