@@ -281,6 +281,10 @@ module Expr : sig
     ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
   (** Returns the bigger of two numeric values. *)
 
+  val min2 :
+    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
+  (** Returns the smaller of two numeric values. *)
+
   val midpoint : ('n, 'a) expr list -> ('n, 'a) expr
   (** Returns the average value of the provided arguments. Supports numerical and temporal types. *)
 
