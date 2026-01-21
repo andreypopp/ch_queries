@@ -336,6 +336,13 @@ module Expr : sig
     ('m, ('n, 'a) array) expr list ->
     (non_null, int number) expr
 
+  val arrayAvg :
+    (non_null, ('n, 'a) expr -> (_, _ number) expr) expr ->
+    ('m, ('n, 'a) array) expr list ->
+    (non_null, float number) expr
+  (** [arrayAvg func arrays] returns the average of elements of the lambda
+      results. The [func] is applied to corresponding elements from all arrays. *)
+
   val length : ('n, _ array) expr -> ('n, int number) expr
 
   val arrayJoin : ('n, ('m, 'a) array) expr -> ('m, 'a) expr
