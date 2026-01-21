@@ -731,6 +731,16 @@ module Expr : sig
       sub-arrays of length [l] from the input array. Similar to ngrams for
       strings. *)
 
+  val arrayReverseSort :
+    ?f:(non_null, ('n, 'a) expr -> (_, 'b) expr) expr ->
+    ('m, ('n, 'a) array) expr list ->
+    ('m, ('n, 'a) array) expr
+  (** [arrayReverseSort ?f arrs] sorts the elements of the array in descending
+      order. If [f] is provided, sorting is done by the result of applying [f]
+      to the elements, and then the sorted array is reversed. When multiple
+      arrays are passed, [f] operates on corresponding elements from all
+      arrays. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr

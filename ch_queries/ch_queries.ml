@@ -708,6 +708,11 @@ module Expr = struct
   let arrayRotateRight arr n = def "arrayRotateRight" [ arr; n ]
   let arrayShingles arr l = def "arrayShingles" [ arr; l ]
 
+  let arrayReverseSort ?f arrs =
+    match f with
+    | None -> def "arrayReverseSort" arrs
+    | Some f -> def "arrayReverseSort" (f :: arrs)
+
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]
 

@@ -800,6 +800,24 @@ let rec stage_expr ~params expr =
           | _ ->
               Location.raise_errorf ~loc
                 "arrayCumSumNonNegative requires at least one array argument")
+      | Func { node = "arrayReverseSort"; _ } -> (
+          (* arrayReverseSort([f,] arr [, arr1, ... ,arrN]) *)
+          let f = evar ~loc "Ch_queries.Expr.arrayReverseSort" in
+          match args with
+          | ({ node = E_lambda _; _ } as lambda) :: rest
+            when List.length rest >= 1 ->
+              (* arrayReverseSort(lambda, arr1, ...) - with lambda *)
+              let lambda = stage_expr ~params lambda in
+              let arrays = List.map rest ~f:(stage_expr ~params) in
+              pexp_apply ~loc f
+                [ (Labelled "f", lambda); (Nolabel, elist ~loc arrays) ]
+          | arrays when List.length arrays >= 1 ->
+              (* arrayReverseSort(arr1, ...) - without lambda *)
+              let arrays = List.map arrays ~f:(stage_expr ~params) in
+              eapply ~loc f [ elist ~loc arrays ]
+          | _ ->
+              Location.raise_errorf ~loc
+                "arrayReverseSort requires at least one array argument")
       | Func { node = "arrayPartialReverseSort"; _ } -> (
           (* arrayPartialReverseSort([f,] arr [, arr1, ... ,arrN], limit) *)
           let f = evar ~loc "Ch_queries.Expr.arrayPartialReverseSort" in
