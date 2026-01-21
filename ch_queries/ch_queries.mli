@@ -252,6 +252,10 @@ module Expr : sig
     ('n, _ number) expr -> ('n, _ number) expr -> (null, int number) expr
   (** Same as [intDiv] but returns NULL when dividing by zero or when dividing a minimal negative number by minus one. *)
 
+  val intDivOrZero :
+    ('n, _ number) expr -> ('n, _ number) expr -> ('n, int number) expr
+  (** Same as [intDiv] but returns zero when dividing by zero or when dividing a minimal negative number by minus one. *)
+
   val modulo :
     ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
 

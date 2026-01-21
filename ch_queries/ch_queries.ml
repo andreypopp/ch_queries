@@ -558,6 +558,7 @@ module Expr = struct
   let abs x = def "abs" [ x ]
   let intDiv x y = def "intDiv" [ x; y ]
   let intDivOrNull x y = def "intDivOrNull" [ x; y ]
+  let intDivOrZero x y = def "intDivOrZero" [ x; y ]
   let modulo x y = def "modulo" [ x; y ]
 
   let divideDecimal ?result_scale x y =
