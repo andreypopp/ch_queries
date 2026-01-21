@@ -398,6 +398,9 @@ module Expr : sig
   (** [arrayDotProduct v1 v2] returns the dot product of two arrays. The sizes
       of the two vectors must be equal. *)
 
+  val arrayEnumerate : ('n, ('m, 'a) array) expr -> ('n, ('m, int number) array) expr
+  (** [arrayEnumerate arr] returns the array [1, 2, 3, ..., length(arr)]. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
