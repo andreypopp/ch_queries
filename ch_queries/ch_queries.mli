@@ -261,6 +261,10 @@ module Expr : sig
     ('n, 'a number) expr -> ('n, 'a number) expr -> (null, float number) expr
   (** Same as [divide] but returns NULL when dividing by zero. *)
 
+  val gcd :
+    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
+  (** Returns the greatest common divisor of two values. *)
+
   (** {2 Arrays} *)
 
   val arrayElement :
