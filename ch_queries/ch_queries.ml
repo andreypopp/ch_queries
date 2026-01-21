@@ -689,6 +689,8 @@ module Expr = struct
     | None, Some _ ->
         failwith "arrayPartialShuffle: seed requires limit to be specified"
 
+  let arrayRandomSample arr samples = def "arrayRandomSample" [ arr; samples ]
+
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]
 

@@ -648,6 +648,14 @@ module Expr : sig
       undefined order. If [limit] is not specified, performs a full shuffle.
       If [seed] is specified, it's used for random number generation. *)
 
+  val arrayRandomSample :
+    ('n, ('m, 'a) array) expr ->
+    ('o, _ number) expr ->
+    ('n, ('m, 'a) array) expr
+  (** [arrayRandomSample arr samples] returns a subset with [samples]-many
+      random elements of an input array. If [samples] exceeds the size of the
+      input array, the sample size is limited to the size of the array. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
