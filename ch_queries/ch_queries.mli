@@ -752,6 +752,16 @@ module Expr : sig
       corresponding elements from all arrays, but only the first array is
       split. *)
 
+  val arrayShiftLeft :
+    ?default:('m, 'a) expr ->
+    ('n, ('m, 'a) array) expr ->
+    ('o, _ number) expr ->
+    ('n, ('m, 'a) array) expr
+  (** [arrayShiftLeft ?default arr n] shifts the array to the left by [n]
+      elements. New elements are filled with [default] or the default value of
+      the array element type. If [n] is negative, the array is shifted to the
+      right. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr

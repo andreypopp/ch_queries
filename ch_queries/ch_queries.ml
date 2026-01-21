@@ -715,6 +715,11 @@ module Expr = struct
 
   let arrayReverseSplit f xs = def "arrayReverseSplit" (f :: xs)
 
+  let arrayShiftLeft ?default arr n =
+    match default with
+    | None -> def "arrayShiftLeft" [ arr; n ]
+    | Some d -> def "arrayShiftLeft" [ arr; n; d ]
+
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]
 

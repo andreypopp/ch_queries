@@ -1039,6 +1039,27 @@ let rec stage_expr ~params expr =
           | _ ->
               Location.raise_errorf ~loc
                 "arrayResize requires 2 or 3 arguments")
+      | Func { node = "arrayShiftLeft"; _ } -> (
+          (* arrayShiftLeft(arr, n[, default]) *)
+          let f = evar ~loc "Ch_queries.Expr.arrayShiftLeft" in
+          match args with
+          | [ arr; n ] ->
+              let arr = stage_expr ~params arr in
+              let n = stage_expr ~params n in
+              eapply ~loc f [ arr; n ]
+          | [ arr; n; default ] ->
+              let arr = stage_expr ~params arr in
+              let n = stage_expr ~params n in
+              let default = stage_expr ~params default in
+              pexp_apply ~loc f
+                [
+                  (Labelled "default", default);
+                  (Nolabel, arr);
+                  (Nolabel, n);
+                ]
+          | _ ->
+              Location.raise_errorf ~loc
+                "arrayShiftLeft requires 2 or 3 arguments")
       | Func { node = ("joinGet" | "joinGetOrNull") as fname; _ } ->
           (* joinGet(DICT, VALUE, KEYS...) stages as:
              Ch_queries.Expr.joinGet
