@@ -663,6 +663,8 @@ module Expr = struct
 
   let arrayPopBack arr = def "arrayPopBack" [ arr ]
   let arrayPopFront arr = def "arrayPopFront" [ arr ]
+  let arrayPushBack arr x = def "arrayPushBack" [ arr; x ]
+  let arrayPushFront arr x = def "arrayPushFront" [ arr; x ]
 
   let arrayProduct ?f xs =
     match f with

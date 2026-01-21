@@ -600,6 +600,12 @@ module Expr : sig
   val arrayPopFront : ('n, ('m, 'a) array) expr -> ('n, ('m, 'a) array) expr
   (** [arrayPopFront arr] removes the first element from the array. *)
 
+  val arrayPushBack : ('n, ('m, 'a) array) expr -> ('m, 'a) expr -> ('n, ('m, 'a) array) expr
+  (** [arrayPushBack arr x] adds one item [x] to the end of the array. *)
+
+  val arrayPushFront : ('n, ('m, 'a) array) expr -> ('m, 'a) expr -> ('n, ('m, 'a) array) expr
+  (** [arrayPushFront arr x] adds one element [x] to the beginning of the array. *)
+
   val arrayProduct :
     ?f:(non_null, ('n, 'a) expr -> (_, _ number) expr) expr ->
     ('m, ('n, 'a) array) expr list ->
