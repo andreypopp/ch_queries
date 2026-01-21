@@ -480,6 +480,15 @@ module Expr : sig
       returns 0. When multiple arrays are passed, [func] operates on
       corresponding elements from all arrays. *)
 
+  val arrayFirstOrNull :
+    (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
+    ('m, ('n, 'a) array) expr list ->
+    (null, 'a) expr
+  (** [arrayFirstOrNull func arrays] returns the first element in the source
+      array for which [func] returns true, otherwise returns NULL. When
+      multiple arrays are passed, [func] operates on corresponding elements
+      from all arrays. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
