@@ -600,6 +600,15 @@ module Expr : sig
   val arrayPopFront : ('n, ('m, 'a) array) expr -> ('n, ('m, 'a) array) expr
   (** [arrayPopFront arr] removes the first element from the array. *)
 
+  val arrayProduct :
+    ?f:(non_null, ('n, 'a) expr -> (_, _ number) expr) expr ->
+    ('m, ('n, 'a) array) expr list ->
+    (non_null, float number) expr
+  (** [arrayProduct ?f arrays] returns the product of elements in the source
+      array, or the product of the lambda results if [f] is provided. When
+      multiple arrays are passed, [f] operates on corresponding elements from
+      all arrays. *)
+
   val arrayPartialReverseSort :
     ?f:(non_null, ('n, 'a) expr -> (_, 'b) expr) expr ->
     ('m, ('n, 'a) array) expr list ->

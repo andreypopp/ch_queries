@@ -664,6 +664,11 @@ module Expr = struct
   let arrayPopBack arr = def "arrayPopBack" [ arr ]
   let arrayPopFront arr = def "arrayPopFront" [ arr ]
 
+  let arrayProduct ?f xs =
+    match f with
+    | None -> def "arrayProduct" xs
+    | Some f -> def "arrayProduct" (f :: xs)
+
   let arrayPartialReverseSort ?f arrs limit =
     match f with
     | None -> def "arrayPartialReverseSort" (arrs @ [ limit ])
