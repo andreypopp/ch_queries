@@ -405,6 +405,17 @@ module Expr : sig
   (** [arrayEnumerateDense arr] returns an array of the same size as the source
       array, indicating where each element first appears in the source array. *)
 
+  val arrayEnumerateDenseRanked :
+    ('n, _ number) expr ->
+    ('n, ('m, 'a) array) expr ->
+    ('n, _ number) expr ->
+    ('n, ('m, int number) array) expr
+  (** [arrayEnumerateDenseRanked clear_depth arr max_array_depth] returns an
+      array the same size as the source array, indicating where each element
+      first appears in the source array. It allows for enumeration of a
+      multidimensional array with the ability to specify how deep to look inside
+      the array. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr

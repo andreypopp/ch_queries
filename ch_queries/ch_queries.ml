@@ -601,6 +601,7 @@ module Expr = struct
   let arrayDotProduct v1 v2 = def "arrayDotProduct" [ v1; v2 ]
   let arrayEnumerate arr = def "arrayEnumerate" [ arr ]
   let arrayEnumerateDense arr = def "arrayEnumerateDense" [ arr ]
+  let arrayEnumerateDenseRanked clear_depth arr max_array_depth = def "arrayEnumerateDenseRanked" [ clear_depth; arr; max_array_depth ]
 
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]
