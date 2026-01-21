@@ -1095,6 +1095,26 @@ let rec stage_expr ~params expr =
           | _ ->
               Location.raise_errorf ~loc
                 "arrayShiftRight requires 2 or 3 arguments")
+      | Func { node = "arraySlice"; _ } -> (
+          (* arraySlice(arr, offset[, length]) *)
+          let f = evar ~loc "Ch_queries.Expr.arraySlice" in
+          match args with
+          | [ arr; offset ] ->
+              let arr = stage_expr ~params arr in
+              let offset = stage_expr ~params offset in
+              eapply ~loc f [ arr; offset ]
+          | [ arr; offset; length ] ->
+              let arr = stage_expr ~params arr in
+              let offset = stage_expr ~params offset in
+              let length = stage_expr ~params length in
+              pexp_apply ~loc f
+                [
+                  (Labelled "length", length);
+                  (Nolabel, arr);
+                  (Nolabel, offset);
+                ]
+          | _ ->
+              Location.raise_errorf ~loc "arraySlice requires 2 or 3 arguments")
       | Func { node = ("joinGet" | "joinGetOrNull") as fname; _ } ->
           (* joinGet(DICT, VALUE, KEYS...) stages as:
              Ch_queries.Expr.joinGet

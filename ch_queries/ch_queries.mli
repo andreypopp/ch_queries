@@ -792,6 +792,17 @@ module Expr : sig
       similarity of two arrays from 0 to 1 based on weighted Levenshtein
       distance. *)
 
+  val arraySlice :
+    ?length:('o, _ number) expr ->
+    ('n, ('m, 'a) array) expr ->
+    ('o, _ number) expr ->
+    ('n, ('m, 'a) array) expr
+  (** [arraySlice ?length arr offset] returns a slice of the array starting at
+      [offset]. A positive [offset] indicates an offset from the left, a
+      negative value indicates an offset from the right. Numbering starts at 1.
+      If [length] is provided, returns at most that many elements. A negative
+      [length] returns an open slice [offset, array_length - length]. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr

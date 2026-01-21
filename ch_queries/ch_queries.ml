@@ -733,6 +733,11 @@ module Expr = struct
   let arraySimilarity arr_from arr_to from_weights to_weights =
     def "arraySimilarity" [ arr_from; arr_to; from_weights; to_weights ]
 
+  let arraySlice ?length arr offset =
+    match length with
+    | None -> def "arraySlice" [ arr; offset ]
+    | Some len -> def "arraySlice" [ arr; offset; len ]
+
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]
 
