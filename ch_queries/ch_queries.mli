@@ -277,6 +277,10 @@ module Expr : sig
     ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
   (** Returns the least common multiple of two values. *)
 
+  val max2 :
+    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
+  (** Returns the bigger of two numeric values. *)
+
   (** {2 Arrays} *)
 
   val arrayElement :
