@@ -788,6 +788,11 @@ module Expr = struct
   let replicate x arr = def "replicate" [ x; arr ]
   let reverse arr = def "reverse" [ arr ]
 
+  let arrayStringConcat ?separator arr =
+    match separator with
+    | None -> def "arrayStringConcat" [ arr ]
+    | Some sep -> def "arrayStringConcat" [ arr; sep ]
+
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]
 

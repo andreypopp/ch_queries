@@ -1185,6 +1185,21 @@ let rec stage_expr ~params expr =
                 ]
           | _ ->
               Location.raise_errorf ~loc "range requires 1, 2, or 3 arguments")
+      | Func { node = "arrayStringConcat"; _ } -> (
+          (* arrayStringConcat(arr[, separator]) *)
+          let f = evar ~loc "Ch_queries.Expr.arrayStringConcat" in
+          match args with
+          | [ arr ] ->
+              let arr = stage_expr ~params arr in
+              eapply ~loc f [ arr ]
+          | [ arr; separator ] ->
+              let arr = stage_expr ~params arr in
+              let separator = stage_expr ~params separator in
+              pexp_apply ~loc f
+                [ (Labelled "separator", separator); (Nolabel, arr) ]
+          | _ ->
+              Location.raise_errorf ~loc
+                "arrayStringConcat requires 1 or 2 arguments")
       | Func { node = ("joinGet" | "joinGetOrNull") as fname; _ } ->
           (* joinGet(DICT, VALUE, KEYS...) stages as:
              Ch_queries.Expr.joinGet

@@ -974,6 +974,12 @@ module Expr : sig
   val reverse : ('n, ('m, 'a) array) expr -> ('n, ('m, 'a) array) expr
   (** [reverse arr] reverses the order of the elements in the input array. *)
 
+  val arrayStringConcat :
+    ?separator:('n, string) expr -> ('n, ('m, 'a) array) expr -> ('n, string) expr
+  (** [arrayStringConcat ?separator arr] concatenates string representations of
+      values in the array with the provided separator. The separator is optional
+      and defaults to an empty string. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
