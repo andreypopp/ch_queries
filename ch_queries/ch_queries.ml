@@ -759,6 +759,7 @@ module Expr = struct
 
   let greatest xs = def "greatest" xs
   let least xs = def "least" xs
+  let avg2 x y = def "avg2" [ x; y ]
 
   (** {2 Hash functions} *)
 
@@ -767,6 +768,10 @@ module Expr = struct
   (** {2 Rounding functions} *)
 
   let round x = def "round" [ x ]
+
+  (** {2 Bit functions} *)
+
+  let byteSwap x = def "byteSwap" [ x ]
 
   (** {1 Aggregate functions} *)
 
@@ -789,25 +794,25 @@ module Expr = struct
         Syntax.make_expr (E_window (Syntax.make_id f, args, window))
 
   let avg ?partition_by ?order_by x =
-    make_window ?partition_by ?order_by "avg" [ x ]
+    make_window "avg" ?partition_by ?order_by [ x ]
 
   let count ?partition_by ?order_by x =
-    make_window ?partition_by ?order_by "count" [ x ]
+    make_window "count" ?partition_by ?order_by [ x ]
 
   let sum ?partition_by ?order_by x =
-    make_window ?partition_by ?order_by "sum" [ x ]
+    make_window "sum" ?partition_by ?order_by [ x ]
 
   let uniq ?partition_by ?order_by x =
-    make_window ?partition_by ?order_by "uniq" [ x ]
+    make_window "uniq" ?partition_by ?order_by [ x ]
 
   let uniqExact ?partition_by ?order_by x =
-    make_window ?partition_by ?order_by "uniqExact" [ x ]
+    make_window "uniqExact" ?partition_by ?order_by [ x ]
 
   let min ?partition_by ?order_by x =
-    make_window ?partition_by ?order_by "min" [ x ]
+    make_window "min" ?partition_by ?order_by [ x ]
 
   let max ?partition_by ?order_by x =
-    make_window ?partition_by ?order_by "max" [ x ]
+    make_window "max" ?partition_by ?order_by [ x ]
 
   let any x = def "any" [ x ]
   let anyLast x = def "anyLast" [ x ]

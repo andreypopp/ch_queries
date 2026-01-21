@@ -601,6 +601,9 @@ module Expr : sig
   val least : ('n, 'a) expr list -> ('n, 'a) expr
   (** Returns the least value from the arguments. *)
 
+  val avg2 : ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
+  (** Returns the average value of two arguments. *)
+
   (** {2 Hash functions} *)
 
   val farmFingerprint64 : ('n, _) expr -> ('n, uint64 number) expr
@@ -610,6 +613,11 @@ module Expr : sig
 
   val round : ('n, 'a number) expr -> ('n, 'a number) expr
   (** Rounds a value to the nearest integer. *)
+
+  (** {2 Bit functions} *)
+
+  val byteSwap : ('n, 'a number) expr -> ('n, 'a number) expr
+  (** Reverses the bytes of an integer, i.e. changes its endianness. *)
 
   (** {1 Aggregate functions} *)
 
