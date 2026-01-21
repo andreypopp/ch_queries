@@ -337,6 +337,14 @@ module Expr : sig
     ('m, ('n, 'a) array) expr ->
     ('m, ('n, 'a) array) expr
 
+  val arrayMap :
+    (non_null, ('n, 'a) expr -> ('nr, 'r) expr) expr ->
+    ('m, ('n, 'a) array) expr list ->
+    ('m, ('nr, 'r) array) expr
+  (** [arrayMap func arrays] applies [func] to each element in the source arrays
+      and returns an array of the results. When multiple arrays are passed,
+      [func] operates on corresponding elements from all arrays. *)
+
   val arrayAll :
     (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
     ('m, ('n, 'a) array) expr list ->

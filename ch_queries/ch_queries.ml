@@ -596,6 +596,7 @@ module Expr = struct
   let arrayElement arr i = def "arrayElement" [ arr; i ]
   let arrayElementOrNull arr i = def "arrayElementOrNull" [ arr; i ]
   let arrayFilter f x = def "arrayFilter" [ f; x ]
+  let arrayMap f xs = def "arrayMap" (f :: xs)
   let arrayAll f xs = def "arrayAll" (f :: xs)
   let arrayAvg f xs = def "arrayAvg" (f :: xs)
   let arrayCount ?f xs = match f with None -> def "arrayCount" xs | Some f -> def "arrayCount" (f :: xs)
