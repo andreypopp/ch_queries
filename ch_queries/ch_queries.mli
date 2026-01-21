@@ -968,6 +968,20 @@ module Expr : sig
   (** [arrayAUCPR ?partial_offsets scores labels] calculates the area under the
       precision-recall (PR) curve. Returns a value between 0 and 1. *)
 
+  val arrayNormalizedGini :
+    ('n, ('m, 'a number) array) expr ->
+    ('n, ('m, 'b number) array) expr ->
+    ( 'n,
+      ( (non_null, float number) expr,
+        (non_null, float number) expr,
+        (non_null, float number) expr )
+      tuple3 )
+    expr
+  (** [arrayNormalizedGini predicted label] calculates the normalized Gini
+      coefficient. Returns a tuple of three Float64 values: the Gini coefficient
+      of the predicted values, the Gini coefficient of the normalized values,
+      and the normalized Gini coefficient (the ratio of the former two). *)
+
   (** {1 Aggregate functions} *)
 
   val avg :

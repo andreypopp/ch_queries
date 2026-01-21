@@ -880,6 +880,9 @@ module Expr = struct
     | None -> def "arrayAUCPR" [ scores; labels ]
     | Some offsets -> def "arrayAUCPR" [ scores; labels; offsets ]
 
+  let arrayNormalizedGini predicted label =
+    def "arrayNormalizedGini" [ predicted; label ]
+
   (** {1 Aggregate functions} *)
 
   let make_window f ?partition_by ?order_by args =
