@@ -286,14 +286,14 @@ module Expr : sig
   val divideDecimal :
     ?result_scale:('n, int number) expr ->
     ('n, 'a number) expr ->
-    ('n, 'b number) expr ->
-    ('n, 'c number) expr
+    ('n, 'a number) expr ->
+    ('n, 'a number) expr
 
   val multiplyDecimal :
     ?result_scale:('n, int number) expr ->
     ('n, 'a number) expr ->
-    ('n, 'b number) expr ->
-    ('n, 'c number) expr
+    ('n, 'a number) expr ->
+    ('n, 'a number) expr
   (** Performs multiplication on two decimals with optional result scale.
       Result value will be of type Decimal256. *)
 
@@ -330,7 +330,7 @@ module Expr : sig
   val arrayElementOrNull :
     (non_null, ('n, 'a) array) expr ->
     (non_null, int number) expr ->
-    ('m, 'a) expr
+    (null, 'a) expr
 
   val arrayFilter :
     (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->

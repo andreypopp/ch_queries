@@ -6,7 +6,7 @@ Testing multiplyDecimal:
   > print_endline (Ch_queries.expr_to_string e);;
   > " --run-only
   >>> RUNNING
-  val e : (Ch_queries.non_null, '_weak1 Ch_queries.number) Ch_queries.expr
+  val e : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr
   multiplyDecimal(1, 2)
 
 Testing multiplyDecimal with result_scale:
@@ -17,5 +17,5 @@ Testing multiplyDecimal with result_scale:
   > print_endline (Ch_queries.expr_to_string e);;
   > " --run-only
   >>> RUNNING
-  val e : (Ch_queries.non_null, '_weak1 Ch_queries.number) Ch_queries.expr
+  val e : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr
   multiplyDecimal(1, 2, 4)
