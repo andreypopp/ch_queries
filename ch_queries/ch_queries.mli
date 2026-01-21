@@ -497,6 +497,15 @@ module Expr : sig
 
   val arrayFlatten : ('n, ('m, ('o, 'a) array) array) expr -> ('n, ('o, 'a) array) expr
 
+  val arrayLast :
+    (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
+    ('m, ('n, 'a) array) expr list ->
+    ('n, 'a) expr
+  (** [arrayLast func arrays] returns the last element in the source array
+      for which [func] returns true, otherwise it returns a default value.
+      When multiple arrays are passed, [func] operates on corresponding
+      elements from all arrays. *)
+
   val arrayFold :
     (non_null, ('na, 'acc) expr -> ('n, 'a) expr -> ('na, 'acc) expr) expr ->
     ('m, ('n, 'a) array) expr list ->
