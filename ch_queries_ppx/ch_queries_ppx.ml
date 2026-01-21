@@ -845,6 +845,30 @@ let rec stage_expr ~params expr =
                 ]
           | _ ->
               Location.raise_errorf ~loc "arrayAUCPR requires 2 or 3 arguments")
+      | Func { node = "arrayPartialShuffle"; _ } -> (
+          (* arrayPartialShuffle(arr [, limit[, seed]]) *)
+          let f = evar ~loc "Ch_queries.Expr.arrayPartialShuffle" in
+          match args with
+          | [ arr ] ->
+              let arr = stage_expr ~params arr in
+              eapply ~loc f [ arr ]
+          | [ arr; limit ] ->
+              let arr = stage_expr ~params arr in
+              let limit = stage_expr ~params limit in
+              pexp_apply ~loc f [ (Labelled "limit", limit); (Nolabel, arr) ]
+          | [ arr; limit; seed ] ->
+              let arr = stage_expr ~params arr in
+              let limit = stage_expr ~params limit in
+              let seed = stage_expr ~params seed in
+              pexp_apply ~loc f
+                [
+                  (Labelled "limit", limit);
+                  (Labelled "seed", seed);
+                  (Nolabel, arr);
+                ]
+          | _ ->
+              Location.raise_errorf ~loc
+                "arrayPartialShuffle requires 1, 2, or 3 arguments")
       | Func { node = ("joinGet" | "joinGetOrNull") as fname; _ } ->
           (* joinGet(DICT, VALUE, KEYS...) stages as:
              Ch_queries.Expr.joinGet

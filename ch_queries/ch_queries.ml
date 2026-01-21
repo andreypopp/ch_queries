@@ -669,6 +669,14 @@ module Expr = struct
     | None -> def "arrayPartialReverseSort" (arrs @ [ limit ])
     | Some f -> def "arrayPartialReverseSort" ((f :: arrs) @ [ limit ])
 
+  let arrayPartialShuffle ?limit ?seed arr =
+    match (limit, seed) with
+    | None, None -> def "arrayPartialShuffle" [ arr ]
+    | Some limit, None -> def "arrayPartialShuffle" [ arr; limit ]
+    | Some limit, Some seed -> def "arrayPartialShuffle" [ arr; limit; seed ]
+    | None, Some _ ->
+        failwith "arrayPartialShuffle: seed requires limit to be specified"
+
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]
 

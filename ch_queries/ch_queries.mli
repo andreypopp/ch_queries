@@ -611,6 +611,17 @@ module Expr : sig
       on corresponding elements from all arrays. Remaining elements beyond limit
       are in unspecified order. *)
 
+  val arrayPartialShuffle :
+    ?limit:('o, _ number) expr ->
+    ?seed:('o, _ number) expr ->
+    ('n, ('m, 'a) array) expr ->
+    ('n, ('m, 'a) array) expr
+  (** [arrayPartialShuffle ?limit ?seed arr] returns an array of the same size
+      as the original array where elements in range [1..limit] are a random
+      subset of the original array. Remaining elements beyond limit are in
+      undefined order. If [limit] is not specified, performs a full shuffle.
+      If [seed] is specified, it's used for random number generation. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
