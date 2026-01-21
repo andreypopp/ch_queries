@@ -723,6 +723,14 @@ module Expr : sig
   (** [arrayRotateRight arr n] rotates the array to the right by [n] elements.
       Negative values of [n] rotate to the left. *)
 
+  val arrayShingles :
+    ('n, ('m, 'a) array) expr ->
+    ('o, _ number) expr ->
+    ('n, ('m, ('m, 'a) array) array) expr
+  (** [arrayShingles arr l] generates an array of shingles, i.e., consecutive
+      sub-arrays of length [l] from the input array. Similar to ngrams for
+      strings. *)
+
   (** {2 Conditional} *)
 
   val if_ : (_, bool) expr -> ('n, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr

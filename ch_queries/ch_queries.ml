@@ -706,6 +706,7 @@ module Expr = struct
   let arrayReverse arr = def "arrayReverse" [ arr ]
   let arrayRotateLeft arr n = def "arrayRotateLeft" [ arr; n ]
   let arrayRotateRight arr n = def "arrayRotateRight" [ arr; n ]
+  let arrayShingles arr l = def "arrayShingles" [ arr; l ]
 
   (** {2 Conditional} *)
   let if_ c x y = def "if" [ c; x; y ]
