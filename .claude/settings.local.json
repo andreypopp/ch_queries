@@ -11,7 +11,9 @@
       "WebSearch",
       "Bash(cat:*)",
       "Bash(xxd:*)",
-      "Bash(./functions-to-add.sh)"
+      "Bash(./functions-to-add.sh)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
