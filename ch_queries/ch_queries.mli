@@ -1142,6 +1142,7 @@ module Expr : sig
     ('n, 'a timestamp) expr -> ('n, int number) expr -> ('n, 'a timestamp) expr
 
   val toMonth : ('n, _ timestamp) expr -> ('n, int number) expr
+  val toYear : ('n, _ timestamp) expr -> ('n, int number) expr
   val toRelativeMonthNum : ('n, _ timestamp) expr -> ('n, int number) expr
   val toYYYYMM : ('n, _ timestamp) expr -> ('n, int number) expr
   val toYYYYMMDD : ('n, _ timestamp) expr -> ('n, int number) expr
@@ -1153,6 +1154,7 @@ module Expr : sig
   val toStartOfHour : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
   val toStartOfMinute : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
   val toStartOfFifteenMinutes : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
+  val toStartOfSecond : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
 
   val toStartOfInterval :
     ('n, 'a timestamp) expr ->
@@ -1160,6 +1162,7 @@ module Expr : sig
     ('n, 'a timestamp) expr
 
   val fromUnixTimestamp : ('n, int number) expr -> ('n, datetime) expr
+  val toUnixTimestamp : ('n, _ timestamp) expr -> ('n, int number) expr
   val toIntervalMinute : ('n, int number) expr -> ('n, interval) expr
   val toIntervalHour : ('n, int number) expr -> ('n, interval) expr
   val toIntervalDay : ('n, int number) expr -> ('n, interval) expr
