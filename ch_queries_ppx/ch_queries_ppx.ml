@@ -1023,9 +1023,7 @@ let rec stage_expr ~params expr =
               let scale = stage_expr ~params scale in
               pexp_apply ~loc f
                 [
-                  (Labelled "scale", scale);
-                  (Nolabel, scores);
-                  (Nolabel, labels);
+                  (Labelled "scale", scale); (Nolabel, scores); (Nolabel, labels);
                 ]
           | [ scores; labels; scale; partial_offsets ] ->
               let scores = stage_expr ~params scores in
@@ -1099,8 +1097,8 @@ let rec stage_expr ~params expr =
                   (Nolabel, size);
                 ]
           | _ ->
-              Location.raise_errorf ~loc
-                "arrayResize requires 2 or 3 arguments")
+              Location.raise_errorf ~loc "arrayResize requires 2 or 3 arguments"
+          )
       | Func { node = "arrayShiftLeft"; _ } -> (
           (* arrayShiftLeft(arr, n[, default]) *)
           let f = evar ~loc "Ch_queries.Expr.arrayShiftLeft" in
@@ -1114,11 +1112,7 @@ let rec stage_expr ~params expr =
               let n = stage_expr ~params n in
               let default = stage_expr ~params default in
               pexp_apply ~loc f
-                [
-                  (Labelled "default", default);
-                  (Nolabel, arr);
-                  (Nolabel, n);
-                ]
+                [ (Labelled "default", default); (Nolabel, arr); (Nolabel, n) ]
           | _ ->
               Location.raise_errorf ~loc
                 "arrayShiftLeft requires 2 or 3 arguments")
@@ -1135,11 +1129,7 @@ let rec stage_expr ~params expr =
               let n = stage_expr ~params n in
               let default = stage_expr ~params default in
               pexp_apply ~loc f
-                [
-                  (Labelled "default", default);
-                  (Nolabel, arr);
-                  (Nolabel, n);
-                ]
+                [ (Labelled "default", default); (Nolabel, arr); (Nolabel, n) ]
           | _ ->
               Location.raise_errorf ~loc
                 "arrayShiftRight requires 2 or 3 arguments")
@@ -1157,9 +1147,7 @@ let rec stage_expr ~params expr =
               let length = stage_expr ~params length in
               pexp_apply ~loc f
                 [
-                  (Labelled "length", length);
-                  (Nolabel, arr);
-                  (Nolabel, offset);
+                  (Labelled "length", length); (Nolabel, arr); (Nolabel, offset);
                 ]
           | _ ->
               Location.raise_errorf ~loc "arraySlice requires 2 or 3 arguments")

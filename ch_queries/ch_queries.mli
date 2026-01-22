@@ -370,9 +370,10 @@ module Expr : sig
       returns true. When multiple arrays are passed, [f] operates on
       corresponding elements from all arrays. *)
 
-  val arrayCumSum : ('m, ('n, 'a number) array) expr -> ('m, ('n, 'a number) array) expr
-  (** [arrayCumSum arr] returns an array of the partial (running) sums of
-      the elements in the source array. *)
+  val arrayCumSum :
+    ('m, ('n, 'a number) array) expr -> ('m, ('n, 'a number) array) expr
+  (** [arrayCumSum arr] returns an array of the partial (running) sums of the
+      elements in the source array. *)
 
   val arrayCumSumF :
     (non_null, ('n, 'a) expr -> ('nn, 'b number) expr) expr ->
@@ -383,8 +384,7 @@ module Expr : sig
       multiple arrays are passed, [f] operates on corresponding elements. *)
 
   val arrayCumSumNonNegative :
-    ('m, ('n, 'a number) array) expr ->
-    ('m, ('n, 'a number) array) expr
+    ('m, ('n, 'a number) array) expr -> ('m, ('n, 'a number) array) expr
   (** [arrayCumSumNonNegative arr] returns an array of the partial (running)
       sums of the elements in the source array, replacing any negative running
       sum with zero. *)
@@ -649,9 +649,9 @@ module Expr : sig
     (non_null, ('n, 'a) expr -> ('nn, 'b) expr) expr ->
     ('m, ('n, 'a) array) expr list ->
     ('nn, 'b) expr
-  (** [arrayMaxF f arrays] applies lambda [f] to array elements and returns
-      the maximum of the results. When multiple arrays are passed, [f] operates
-      on corresponding elements from all arrays. *)
+  (** [arrayMaxF f arrays] applies lambda [f] to array elements and returns the
+      maximum of the results. When multiple arrays are passed, [f] operates on
+      corresponding elements from all arrays. *)
 
   val arrayMin : ('m, ('n, 'a) array) expr -> ('n, 'a) expr
   (** [arrayMin arr] returns the minimum element in the array. *)
@@ -660,9 +660,9 @@ module Expr : sig
     (non_null, ('n, 'a) expr -> ('nn, 'b) expr) expr ->
     ('m, ('n, 'a) array) expr list ->
     ('nn, 'b) expr
-  (** [arrayMinF f arrays] applies lambda [f] to array elements and returns
-      the minimum of the results. When multiple arrays are passed, [f] operates
-      on corresponding elements from all arrays. *)
+  (** [arrayMinF f arrays] applies lambda [f] to array elements and returns the
+      minimum of the results. When multiple arrays are passed, [f] operates on
+      corresponding elements from all arrays. *)
 
   val arraySum : ('m, ('n, 'a number) array) expr -> (non_null, 'a number) expr
   (** [arraySum arr] returns the sum of elements in the array. *)
@@ -671,9 +671,9 @@ module Expr : sig
     (non_null, ('n, 'a) expr -> ('nn, 'aa number) expr) expr ->
     (non_null, ('n, 'a) array) expr list ->
     ('nn, 'aa number) expr
-  (** [arraySumF f arrays] applies lambda [f] to array elements and returns
-      the sum of the results. When multiple arrays are passed, [f] operates
-      on corresponding elements from all arrays. *)
+  (** [arraySumF f arrays] applies lambda [f] to array elements and returns the
+      sum of the results. When multiple arrays are passed, [f] operates on
+      corresponding elements from all arrays. *)
 
   val arrayPopBack : ('n, ('m, 'a) array) expr -> ('n, ('m, 'a) array) expr
   (** [arrayPopBack arr] removes the last element from the array. *)
@@ -681,13 +681,17 @@ module Expr : sig
   val arrayPopFront : ('n, ('m, 'a) array) expr -> ('n, ('m, 'a) array) expr
   (** [arrayPopFront arr] removes the first element from the array. *)
 
-  val arrayPushBack : ('n, ('m, 'a) array) expr -> ('m, 'a) expr -> ('n, ('m, 'a) array) expr
+  val arrayPushBack :
+    ('n, ('m, 'a) array) expr -> ('m, 'a) expr -> ('n, ('m, 'a) array) expr
   (** [arrayPushBack arr x] adds one item [x] to the end of the array. *)
 
-  val arrayPushFront : ('n, ('m, 'a) array) expr -> ('m, 'a) expr -> ('n, ('m, 'a) array) expr
-  (** [arrayPushFront arr x] adds one element [x] to the beginning of the array. *)
+  val arrayPushFront :
+    ('n, ('m, 'a) array) expr -> ('m, 'a) expr -> ('n, ('m, 'a) array) expr
+  (** [arrayPushFront arr x] adds one element [x] to the beginning of the array.
+  *)
 
-  val arrayProduct : ('m, ('n, 'a number) array) expr -> (non_null, float number) expr
+  val arrayProduct :
+    ('m, ('n, 'a number) array) expr -> (non_null, float number) expr
   (** [arrayProduct arr] returns the product of elements in the array. *)
 
   val arrayProductF :
@@ -702,8 +706,9 @@ module Expr : sig
     ('m, ('n, 'a) array) expr ->
     ('o, 'c number) expr ->
     ('m, ('n, 'a) array) expr
-  (** [arrayPartialReverseSort arr limit] sorts elements in range [1..limit]
-      in descending order. Remaining elements beyond limit are in unspecified order. *)
+  (** [arrayPartialReverseSort arr limit] sorts elements in range [1..limit] in
+      descending order. Remaining elements beyond limit are in unspecified
+      order. *)
 
   val arrayPartialReverseSortF :
     (non_null, ('n, 'a) expr -> ('nn, 'b) expr) expr ->
@@ -712,25 +717,26 @@ module Expr : sig
     ('m, ('n, 'a) array) expr
   (** [arrayPartialReverseSortF f arrs limit] sorts elements in range [1..limit]
       in descending order by the result of applying [f] to the elements. When
-      multiple arrays are passed, [f] operates on corresponding elements from all
-      arrays. Remaining elements beyond limit are in unspecified order. *)
+      multiple arrays are passed, [f] operates on corresponding elements from
+      all arrays. Remaining elements beyond limit are in unspecified order. *)
 
   val arrayPartialSort :
     ('m, ('n, 'a) array) expr ->
     ('o, 'c number) expr ->
     ('m, ('n, 'a) array) expr
-  (** [arrayPartialSort arr limit] sorts elements in range [1..limit]
-      in ascending order. Remaining elements beyond limit are in unspecified order. *)
+  (** [arrayPartialSort arr limit] sorts elements in range [1..limit] in
+      ascending order. Remaining elements beyond limit are in unspecified order.
+  *)
 
   val arrayPartialSortF :
     (non_null, ('n, 'a) expr -> ('nn, 'b) expr) expr ->
     ('m, ('n, 'a) array) expr list ->
     ('o, 'c number) expr ->
     ('m, ('n, 'a) array) expr
-  (** [arrayPartialSortF f arrs limit] sorts elements in range [1..limit]
-      in ascending order by the result of applying [f] to the elements. When
-      multiple arrays are passed, [f] operates on corresponding elements from all
-      arrays. Remaining elements beyond limit are in unspecified order. *)
+  (** [arrayPartialSortF f arrs limit] sorts elements in range [1..limit] in
+      ascending order by the result of applying [f] to the elements. When
+      multiple arrays are passed, [f] operates on corresponding elements from
+      all arrays. Remaining elements beyond limit are in unspecified order. *)
 
   val arrayPartialShuffle :
     ?limit:('o, 'l number) expr ->
@@ -740,8 +746,8 @@ module Expr : sig
   (** [arrayPartialShuffle ?limit ?seed arr] returns an array of the same size
       as the original array where elements in range [1..limit] are a random
       subset of the original array. Remaining elements beyond limit are in
-      undefined order. If [limit] is not specified, performs a full shuffle.
-      If [seed] is specified, it's used for random number generation. *)
+      undefined order. If [limit] is not specified, performs a full shuffle. If
+      [seed] is specified, it's used for random number generation. *)
 
   val arrayRandomSample :
     ('n, ('m, 'a) array) expr ->
@@ -752,12 +758,10 @@ module Expr : sig
       input array, the sample size is limited to the size of the array. *)
 
   val arrayReduce :
-    ('n, string) expr ->
-    ('m, ('o, 'a) array) expr list ->
-    ('p, 'r) expr
+    ('n, string) expr -> ('m, ('o, 'a) array) expr list -> ('p, 'r) expr
   (** [arrayReduce agg_func arrs] applies an aggregate function to array
-      elements and returns its result. The name of the aggregation function
-      is passed as a string in single quotes e.g. ['max'], ['sum']. When using
+      elements and returns its result. The name of the aggregation function is
+      passed as a string in single quotes e.g. ['max'], ['sum']. When using
       parametric aggregate functions, the parameter is indicated after the
       function name in parentheses e.g. ['uniqUpTo(6)']. *)
 
@@ -769,13 +773,11 @@ module Expr : sig
   (** [arrayReduceInRanges agg_func ranges arrs] applies an aggregate function
       to array elements in the given ranges and returns an array containing the
       result corresponding to each range. The [ranges] argument is an array of
-      tuples [(i, r)] containing the index [i] from which to begin and the
-      range [r] over which to aggregate. *)
+      tuples [(i, r)] containing the index [i] from which to begin and the range
+      [r] over which to aggregate. *)
 
   val arrayRemove :
-    ('n, ('m, 'a) array) expr ->
-    ('m, 'a) expr ->
-    ('n, ('m, 'a) array) expr
+    ('n, ('m, 'a) array) expr -> ('m, 'a) expr -> ('n, ('m, 'a) array) expr
   (** [arrayRemove arr elem] removes all elements equal to [elem] from the
       array. NULLs are treated as equal. *)
 
@@ -816,7 +818,8 @@ module Expr : sig
       strings. *)
 
   val arrayReverseSort : ('m, ('n, 'a) array) expr -> ('m, ('n, 'a) array) expr
-  (** [arrayReverseSort arr] sorts the elements of the array in descending order. *)
+  (** [arrayReverseSort arr] sorts the elements of the array in descending
+      order. *)
 
   val arrayReverseSortF :
     (non_null, ('n, 'a) expr -> ('nn, 'b) expr) expr ->
@@ -833,9 +836,9 @@ module Expr : sig
     (non_null, ('n, 'a) expr -> ('nn, 'b) expr) expr ->
     ('m, ('n, 'a) array) expr list ->
     ('m, ('n, 'a) array) expr
-  (** [arraySortF f arrs] sorts the elements of the array in ascending order
-      by the result of applying [f] to the elements. When multiple arrays
-      are passed, [f] operates on corresponding elements from all arrays. *)
+  (** [arraySortF f arrs] sorts the elements of the array in ascending order by
+      the result of applying [f] to the elements. When multiple arrays are
+      passed, [f] operates on corresponding elements from all arrays. *)
 
   val arrayReverseSplit :
     (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
@@ -845,8 +848,8 @@ module Expr : sig
       arrays. When [func] returns something other than zero, the array will be
       split to the right of the element. The array will not be split after the
       last element. When multiple arrays are passed, [func] operates on
-      corresponding elements from all arrays, but only the first array is
-      split. *)
+      corresponding elements from all arrays, but only the first array is split.
+  *)
 
   val arraySplit :
     (non_null, ('n, 'a) expr -> (_, bool) expr) expr ->
@@ -855,9 +858,8 @@ module Expr : sig
   (** [arraySplit func arrays] splits the source array into multiple arrays.
       When [func] returns something other than zero, the array will be split to
       the left of the element. The array will not be split before the first
-      element. When multiple arrays are passed, [func] operates on
-      corresponding elements from all arrays, but only the first array is
-      split. *)
+      element. When multiple arrays are passed, [func] operates on corresponding
+      elements from all arrays, but only the first array is split. *)
 
   val arrayShiftLeft :
     ?default:('m, 'a) expr ->
@@ -922,10 +924,12 @@ module Expr : sig
   val emptyArrayDateTime : unit -> (non_null, (non_null, datetime) array) expr
   (** Returns an empty DateTime array. *)
 
-  val emptyArrayFloat32 : unit -> (non_null, (non_null, float number) array) expr
+  val emptyArrayFloat32 :
+    unit -> (non_null, (non_null, float number) array) expr
   (** Returns an empty Float32 array. *)
 
-  val emptyArrayFloat64 : unit -> (non_null, (non_null, float number) array) expr
+  val emptyArrayFloat64 :
+    unit -> (non_null, (non_null, float number) array) expr
   (** Returns an empty Float64 array. *)
 
   val emptyArrayInt16 : unit -> (non_null, (non_null, int number) array) expr
@@ -954,14 +958,14 @@ module Expr : sig
   val emptyArrayUInt32 : unit -> (non_null, (non_null, int number) array) expr
   (** Returns an empty UInt32 array. *)
 
-  val emptyArrayUInt64 : unit -> (non_null, (non_null, uint64 number) array) expr
+  val emptyArrayUInt64 :
+    unit -> (non_null, (non_null, uint64 number) array) expr
   (** Returns an empty UInt64 array. *)
 
   val emptyArrayUInt8 : unit -> (non_null, (non_null, int number) array) expr
   (** Returns an empty UInt8 array. *)
 
-  val has :
-    ('n, ('m, 'a) array) expr -> ('m, 'a) expr -> (non_null, bool) expr
+  val has : ('n, ('m, 'a) array) expr -> ('m, 'a) expr -> (non_null, bool) expr
   (** [has arr x] returns whether the array contains the specified element. *)
 
   val hasAll :
@@ -969,8 +973,8 @@ module Expr : sig
     ('n, ('m, 'a) array) expr ->
     (non_null, bool) expr
   (** [hasAll set subset] checks whether one array is a subset of another. An
-      empty array is a subset of any array. [Null] is processed as a value.
-      The order of values in both the arrays does not matter. *)
+      empty array is a subset of any array. [Null] is processed as a value. The
+      order of values in both the arrays does not matter. *)
 
   val hasAny :
     ('n, ('m, 'a) array) expr ->
@@ -991,16 +995,17 @@ module Expr : sig
   val indexOf :
     ('n, ('m, 'a) array) expr -> ('m, 'a) expr -> (non_null, int64 number) expr
   (** [indexOf arr x] returns the index of the first element with value [x]
-      (starting from 1) if it is in the array. If the array does not contain
-      the searched-for value, the function returns [0]. Elements set to [NULL]
-      are handled as normal values. *)
+      (starting from 1) if it is in the array. If the array does not contain the
+      searched-for value, the function returns [0]. Elements set to [NULL] are
+      handled as normal values. *)
 
   val indexOfAssumeSorted :
     ('n, ('m, 'a) array) expr -> ('m, 'a) expr -> (non_null, int64 number) expr
   (** [indexOfAssumeSorted arr x] returns the index of the first element with
       value [x] (starting from 1) if it is in the array. If the array does not
-      contain the searched-for value, the function returns [0]. Unlike [indexOf],
-      this function assumes that the array is sorted in ascending order. *)
+      contain the searched-for value, the function returns [0]. Unlike
+      [indexOf], this function assumes that the array is sorted in ascending
+      order. *)
 
   val range :
     ?start:('n, 'a number) expr ->
@@ -1008,19 +1013,21 @@ module Expr : sig
     ('n, 'a number) expr ->
     ('n, (non_null, 'a number) array) expr
   (** [range ?start ?step end_] returns an array of numbers from [start] to
-      [end_ - 1] by [step]. If [start] is not specified, defaults to 0.
-      If [step] is not specified, defaults to 1. *)
+      [end_ - 1] by [step]. If [start] is not specified, defaults to 0. If
+      [step] is not specified, defaults to 1. *)
 
   val replicate :
     ('n, 'a) expr -> ('m, ('o, 'b) array) expr -> ('m, ('n, 'a) array) expr
-  (** [replicate x arr] creates an array of the same length as [arr] filled
-      with value [x]. *)
+  (** [replicate x arr] creates an array of the same length as [arr] filled with
+      value [x]. *)
 
   val reverse : ('n, ('m, 'a) array) expr -> ('n, ('m, 'a) array) expr
   (** [reverse arr] reverses the order of the elements in the input array. *)
 
   val arrayStringConcat :
-    ?separator:('n, string) expr -> ('n, ('m, 'a) array) expr -> ('n, string) expr
+    ?separator:('n, string) expr ->
+    ('n, ('m, 'a) array) expr ->
+    ('n, string) expr
   (** [arrayStringConcat ?separator arr] concatenates string representations of
       values in the array with the provided separator. The separator is optional
       and defaults to an empty string. *)
@@ -1380,39 +1387,47 @@ module Expr : sig
 
   (** {2 Bit functions} *)
 
-  val bitAnd : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
+  val bitAnd :
+    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
   (** [bitAnd a b] performs bitwise AND operation between two values. *)
 
   val bitCount : ('n, 'a number) expr -> (non_null, int number) expr
   (** [bitCount x] calculates the number of bits set to one in the binary
       representation of a number. *)
 
-  val bitOr : ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
+  val bitOr :
+    ('n, 'a number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
   (** [bitOr a b] performs bitwise OR operation between two values. *)
 
-  val bitHammingDistance : ('n, 'a number) expr -> ('n, 'b number) expr -> (non_null, int number) expr
+  val bitHammingDistance :
+    ('n, 'a number) expr -> ('n, 'b number) expr -> (non_null, int number) expr
   (** [bitHammingDistance x y] returns the Hamming distance between the bit
-      representations of two numbers. The smaller the distance, the more
-      similar the values are. *)
+      representations of two numbers. The smaller the distance, the more similar
+      the values are. *)
 
   val bitNot : ('n, 'a number) expr -> ('n, 'a number) expr
-  (** [bitNot x] performs the bitwise NOT operation, returning [x] with all bits flipped. *)
+  (** [bitNot x] performs the bitwise NOT operation, returning [x] with all bits
+      flipped. *)
 
-  val bitRotateLeft : ('n, 'a number) expr -> ('m, _ number) expr -> ('n, 'a number) expr
+  val bitRotateLeft :
+    ('n, 'a number) expr -> ('m, _ number) expr -> ('n, 'a number) expr
   (** [bitRotateLeft a n] rotates bits of [a] left by [n] positions. Bits that
       fall off wrap around to the right. *)
 
-  val bitRotateRight : ('n, 'a number) expr -> ('m, _ number) expr -> ('n, 'a number) expr
+  val bitRotateRight :
+    ('n, 'a number) expr -> ('m, _ number) expr -> ('n, 'a number) expr
   (** [bitRotateRight a n] rotates bits of [a] right by [n] positions. Bits that
       fall off wrap around to the left. *)
 
-  val bitShiftLeft : ('n, 'a number) expr -> ('m, 'b number) expr -> ('n, 'a number) expr
+  val bitShiftLeft :
+    ('n, 'a number) expr -> ('m, 'b number) expr -> ('n, 'a number) expr
   (** [bitShiftLeft a n] shifts the binary representation of [a] to the left by
       [n] bit positions. *)
 
-  val bitShiftRight : ('n, 'a number) expr -> ('m, 'b number) expr -> ('n, 'a number) expr
-  (** [bitShiftRight a n] shifts the binary representation of [a] to the right by
-      [n] bit positions. *)
+  val bitShiftRight :
+    ('n, 'a number) expr -> ('m, 'b number) expr -> ('n, 'a number) expr
+  (** [bitShiftRight a n] shifts the binary representation of [a] to the right
+      by [n] bit positions. *)
 
   val byteSwap : ('n, 'a number) expr -> ('n, 'a number) expr
   (** Reverses the bytes of an integer, i.e. changes its endianness. *)

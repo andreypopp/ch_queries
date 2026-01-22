@@ -600,16 +600,12 @@ module Expr = struct
   let arrayMap f xs = def "arrayMap" (f :: xs)
   let arrayAll f xs = def "arrayAll" (f :: xs)
   let arrayAvg f xs = def "arrayAvg" (f :: xs)
-
   let arrayCount arr = def "arrayCount" [ arr ]
   let arrayCountF f xs = def "arrayCount" (f :: xs)
-
   let arrayCumSum arr = def "arrayCumSum" [ arr ]
   let arrayCumSumF f xs = def "arrayCumSum" (f :: xs)
-
   let arrayCumSumNonNegative arr = def "arrayCumSumNonNegative" [ arr ]
   let arrayCumSumNonNegativeF f xs = def "arrayCumSumNonNegative" (f :: xs)
-
   let length x = def "length" [ x ]
   let arrayJoin arr = def "arrayJoin" [ arr ]
   let arrayCompact arr = def "arrayCompact" [ arr ]
@@ -658,26 +654,27 @@ module Expr = struct
 
   let arrayMax arr = def "arrayMax" [ arr ]
   let arrayMaxF f xs = def "arrayMax" (f :: xs)
-
   let arrayMin arr = def "arrayMin" [ arr ]
   let arrayMinF f xs = def "arrayMin" (f :: xs)
-
   let arraySum arr = def "arraySum" [ arr ]
   let arraySumF f xs = def "arraySum" (f :: xs)
-
   let arrayPopBack arr = def "arrayPopBack" [ arr ]
   let arrayPopFront arr = def "arrayPopFront" [ arr ]
   let arrayPushBack arr x = def "arrayPushBack" [ arr; x ]
   let arrayPushFront arr x = def "arrayPushFront" [ arr; x ]
-
   let arrayProduct arr = def "arrayProduct" [ arr ]
   let arrayProductF f xs = def "arrayProduct" (f :: xs)
 
-  let arrayPartialReverseSort arr limit = def "arrayPartialReverseSort" [ arr; limit ]
-  let arrayPartialReverseSortF f arrs limit = def "arrayPartialReverseSort" ((f :: arrs) @ [ limit ])
+  let arrayPartialReverseSort arr limit =
+    def "arrayPartialReverseSort" [ arr; limit ]
+
+  let arrayPartialReverseSortF f arrs limit =
+    def "arrayPartialReverseSort" ((f :: arrs) @ [ limit ])
 
   let arrayPartialSort arr limit = def "arrayPartialSort" [ arr; limit ]
-  let arrayPartialSortF f arrs limit = def "arrayPartialSort" ((f :: arrs) @ [ limit ])
+
+  let arrayPartialSortF f arrs limit =
+    def "arrayPartialSort" ((f :: arrs) @ [ limit ])
 
   let arrayPartialShuffle ?limit ?seed arr =
     match (limit, seed) with
@@ -704,13 +701,10 @@ module Expr = struct
   let arrayRotateLeft arr n = def "arrayRotateLeft" [ arr; n ]
   let arrayRotateRight arr n = def "arrayRotateRight" [ arr; n ]
   let arrayShingles arr l = def "arrayShingles" [ arr; l ]
-
   let arrayReverseSort arr = def "arrayReverseSort" [ arr ]
   let arrayReverseSortF f arrs = def "arrayReverseSort" (f :: arrs)
-
   let arraySort arr = def "arraySort" [ arr ]
   let arraySortF f arrs = def "arraySort" (f :: arrs)
-
   let arrayReverseSplit f xs = def "arrayReverseSplit" (f :: xs)
   let arraySplit f xs = def "arraySplit" (f :: xs)
 
@@ -738,7 +732,6 @@ module Expr = struct
     | Some len -> def "arraySlice" [ arr; offset; len ]
 
   let countEqual arr x = def "countEqual" [ arr; x ]
-
   let emptyArrayDate () = def "emptyArrayDate" []
   let emptyArrayDateTime () = def "emptyArrayDateTime" []
   let emptyArrayFloat32 () = def "emptyArrayFloat32" []
@@ -753,12 +746,10 @@ module Expr = struct
   let emptyArrayUInt32 () = def "emptyArrayUInt32" []
   let emptyArrayUInt64 () = def "emptyArrayUInt64" []
   let emptyArrayUInt8 () = def "emptyArrayUInt8" []
-
   let has arr x = def "has" [ arr; x ]
   let hasAll set subset = def "hasAll" [ set; subset ]
   let hasAny arr_x arr_y = def "hasAny" [ arr_x; arr_y ]
   let hasSubstr arr1 arr2 = def "hasSubstr" [ arr1; arr2 ]
-
   let indexOf arr x = def "indexOf" [ arr; x ]
   let indexOfAssumeSorted arr x = def "indexOfAssumeSorted" [ arr; x ]
 
