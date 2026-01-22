@@ -1013,6 +1013,8 @@ module Expr = struct
   let sipHash64_multi xs = def "sipHash64" xs
   let cityHash64 x = def "cityHash64" [ x ]
   let cityHash64_multi xs = def "cityHash64" xs
+  let xxHash64 x = def "xxHash64" [ x ]
+  let xxHash64_multi xs = def "xxHash64" xs
 
   let wordShingleMinHashCaseInsensitiveUTF8 ?shinglesize ?hashnum str =
     match (shinglesize, hashnum) with
@@ -1023,6 +1025,11 @@ module Expr = struct
         failwith
           "wordShingleMinHashCaseInsensitiveUTF8: hashnum requires shinglesize \
            to be specified"
+
+  (** {2 IP address functions} *)
+
+  let iPv4NumToString x = def "IPv4NumToString" [ x ]
+  let iPv4NumToStringClassC x = def "IPv4NumToStringClassC" [ x ]
 
   (** {2 Rounding functions} *)
 

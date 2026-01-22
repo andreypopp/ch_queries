@@ -568,6 +568,16 @@ let rec stage_expr ~params expr =
               let f = evar ~loc "Ch_queries.Expr.sipHash64_multi" in
               let args = List.map args ~f:(stage_expr ~params) in
               eapply ~loc f [ elist ~loc args ])
+      | Func { node = "xxHash64"; _ } -> (
+          match args with
+          | [ arg ] ->
+              let f = evar ~loc "Ch_queries.Expr.xxHash64" in
+              let arg = stage_expr ~params arg in
+              eapply ~loc f [ arg ]
+          | _ ->
+              let f = evar ~loc "Ch_queries.Expr.xxHash64_multi" in
+              let args = List.map args ~f:(stage_expr ~params) in
+              eapply ~loc f [ elist ~loc args ])
       | Func { node = "wordShingleMinHashCaseInsensitiveUTF8"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.wordShingleMinHashCaseInsensitiveUTF8" in
           match args with

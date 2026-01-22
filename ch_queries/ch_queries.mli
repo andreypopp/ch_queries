@@ -1475,6 +1475,13 @@ module Expr : sig
   (** [cityHash64_multi args] produces a 64-bit CityHash hash value from
       multiple arguments. All arguments must have the same nullability. *)
 
+  val xxHash64 : ('n, _) expr -> (non_null, uint64 number) expr
+  (** [xxHash64 arg] produces a 64-bit xxHash hash value. *)
+
+  val xxHash64_multi : ('n, _) expr list -> (non_null, uint64 number) expr
+  (** [xxHash64_multi args] produces a 64-bit xxHash hash value from multiple
+      arguments. *)
+
   val wordShingleMinHashCaseInsensitiveUTF8 :
     ?shinglesize:(non_null, int number) expr ->
     ?hashnum:(non_null, int number) expr ->
@@ -1485,6 +1492,16 @@ module Expr : sig
       the shingles with minimum and maximum word hashes. It is case insensitive.
       [shinglesize] defaults to 3 (range 1-25), [hashnum] defaults to 6 (range
       1-25). *)
+
+  (** {2 IP address functions} *)
+
+  val iPv4NumToString : ('n, _ number) expr -> ('n, string) expr
+  (** [iPv4NumToString x] converts an IPv4 address represented as a UInt32
+      number to a string in dotted decimal notation (e.g., "192.168.0.1"). *)
+
+  val iPv4NumToStringClassC : ('n, _ number) expr -> ('n, string) expr
+  (** [iPv4NumToStringClassC x] similar to [iPv4NumToString], but replaces the
+      last octet with "xxx" (e.g., "192.168.0.xxx"). *)
 
   (** {2 Rounding functions} *)
 
