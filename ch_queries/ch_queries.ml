@@ -917,8 +917,12 @@ module Expr = struct
 
   (** {2 String} *)
 
+  let appendTrailingCharIfAbsent str c =
+    def "appendTrailingCharIfAbsent" [ str; c ]
+
   let empty str = def "empty" [ str ]
   let notEmpty str = def "notEmpty" [ str ]
+  let isValidUTF8 str = def "isValidUTF8" [ str ]
   let lowerUTF8 str = def "lowerUTF8" [ str ]
   let concat strs = def "concat" strs
   let substring str offset length = def "substring" [ str; offset; length ]
@@ -962,6 +966,11 @@ module Expr = struct
 
   let extractURLParameter url name = def "extractURLParameter" [ url; name ]
   let decodeURLComponent url = def "decodeURLComponent" [ url ]
+  let decodeXMLComponent str = def "decodeXMLComponent" [ str ]
+
+  (** {2 HTML functions} *)
+
+  let extractTextFromHTML str = def "extractTextFromHTML" [ str ]
 
   (** {2 JSON functions} *)
 
@@ -1059,6 +1068,11 @@ module Expr = struct
 
   let round x = def "round" [ x ]
   let floor x = def "floor" [ x ]
+
+  let trunc ?n x =
+    match n with
+    | None -> def "trunc" [ x ]
+    | Some n -> def "trunc" [ x; n ]
 
   (** {2 Random functions} *)
 

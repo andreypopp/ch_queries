@@ -1280,6 +1280,18 @@ let rec stage_expr ~params expr =
                 ]
           | _ ->
               Location.raise_errorf ~loc "range requires 1, 2, or 3 arguments")
+      | Func { node = "trunc"; _ } -> (
+          (* trunc(x[, n]) *)
+          let f = evar ~loc "Ch_queries.Expr.trunc" in
+          match args with
+          | [ x ] ->
+              let x = stage_expr ~params x in
+              eapply ~loc f [ x ]
+          | [ x; n ] ->
+              let x = stage_expr ~params x in
+              let n = stage_expr ~params n in
+              pexp_apply ~loc f [ (Labelled "n", n); (Nolabel, x) ]
+          | _ -> Location.raise_errorf ~loc "trunc requires 1 or 2 arguments")
       | Func { node = "arrayStringConcat"; _ } -> (
           (* arrayStringConcat(arr[, separator]) *)
           let f = evar ~loc "Ch_queries.Expr.arrayStringConcat" in

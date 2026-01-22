@@ -1301,8 +1301,18 @@ module Expr : sig
 
   (** {2 String} *)
 
+  val appendTrailingCharIfAbsent :
+    ('n, string) expr -> (non_null, string) expr -> ('n, string) expr
+  (** [appendTrailingCharIfAbsent str c] appends the character [c] to the end of
+      [str] if [str] is non-empty and does not end with that character. *)
+
   val empty : ('n, string) expr -> ('n, bool) expr
   val notEmpty : ('n, string) expr -> ('n, bool) expr
+
+  val isValidUTF8 : ('n, string) expr -> (non_null, bool) expr
+  (** [isValidUTF8 str] returns 1 if [str] contains a set of bytes that form
+      valid UTF-8 encoded text, otherwise 0. *)
+
   val lowerUTF8 : ('n, string) expr -> ('n, string) expr
 
   val concat : ('n, string) expr list -> ('n, string) expr
@@ -1391,6 +1401,20 @@ module Expr : sig
 
   val decodeURLComponent : ('n, string) expr -> ('n, string) expr
   (** Decodes a URL-encoded string. *)
+
+  val decodeXMLComponent : ('n, string) expr -> ('n, string) expr
+  (** [decodeXMLComponent str] replaces XML predefined entities with characters.
+      These entities are: [&quot;] [&amp;] [&apos;] [&gt;] [&lt;]. Also supports
+      numeric character references in decimal ([&#N;]) and hexadecimal
+      ([&#xN;]) forms. *)
+
+  (** {2 HTML functions} *)
+
+  val extractTextFromHTML : ('n, string) expr -> ('n, string) expr
+  (** [extractTextFromHTML str] extracts text from HTML or XHTML. The function
+      attempts to conform to the HTML5 spec, using common browser behavior as
+      a guide. It handles comments, CDATA, DTD, script/style tags, and extracts
+      text from all other tags. *)
 
   (** {2 JSON functions} *)
 
@@ -1611,6 +1635,11 @@ module Expr : sig
 
   val floor : ('n, 'a number) expr -> ('n, 'a number) expr
   (** [floor x] returns the largest round number less than or equal to [x]. *)
+
+  val trunc :
+    ?n:('m, _ number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
+  (** [trunc ?n x] truncates [x] towards zero. If [n] is specified, truncates to
+      [n] decimal places. *)
 
   (** {2 Random functions} *)
 
