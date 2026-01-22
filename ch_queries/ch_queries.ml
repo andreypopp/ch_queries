@@ -1082,6 +1082,9 @@ module Expr = struct
   let initializeAggregation agg_func args = def "initializeAggregation" (agg_func :: args)
   let rowNumberInAllBlocks () = def "rowNumberInAllBlocks" []
   let shardNum () = def "shardNum" []
+  let toTypeName x = def "toTypeName" [ x ]
+  let uptime () = def "uptime" []
+  let version () = def "version" []
 
   (** {2 Machine learning functions} *)
 

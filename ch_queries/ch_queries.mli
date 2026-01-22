@@ -1694,6 +1694,17 @@ module Expr : sig
   (** [shardNum ()] returns the shard number (1-indexed) of the current shard
       in distributed queries. *)
 
+  val toTypeName : ('n, 'a) expr -> (non_null, string) expr
+  (** [toTypeName x] returns a string containing the type name of the passed
+      argument. For NULL values, it returns "Nullable(Nothing)". *)
+
+  val uptime : unit -> (non_null, int number) expr
+  (** [uptime ()] returns the server's uptime in seconds. In distributed
+      contexts, it returns shard-specific values. *)
+
+  val version : unit -> (non_null, string) expr
+  (** [version ()] returns the current ClickHouse server version as a string. *)
+
   (** {2 Machine learning functions} *)
 
   val arrayAUCPR :
