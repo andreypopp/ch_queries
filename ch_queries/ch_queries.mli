@@ -1143,6 +1143,17 @@ module Expr : sig
 
   val toMonth : ('n, _ timestamp) expr -> ('n, int number) expr
   val toYear : ('n, _ timestamp) expr -> ('n, int number) expr
+
+  val toYearWeek :
+    ?mode:('n, int number) expr ->
+    ?timezone:('n, string) expr ->
+    ('n, _ timestamp) expr ->
+    ('n, int number) expr
+  (** [toYearWeek ?mode ?timezone date] returns the year and week number as a
+      combined integer (e.g., 201652 for year 2016, week 52). The [mode]
+      parameter (0-9) determines the first day of the week and week numbering.
+      Default mode is 0. *)
+
   val toRelativeMonthNum : ('n, _ timestamp) expr -> ('n, int number) expr
   val toYYYYMM : ('n, _ timestamp) expr -> ('n, int number) expr
   val toYYYYMMDD : ('n, _ timestamp) expr -> ('n, int number) expr
@@ -1420,6 +1431,13 @@ module Expr : sig
   val isNotNull : ('n, _) expr -> (non_null, bool) expr
   (** Returns 1 if the argument is not NULL, 0 otherwise. *)
 
+  (** {2 Encoding functions} *)
+
+  val unhex : ('n, string) expr -> ('n, string) expr
+  (** [unhex arg] converts a hexadecimal string to a binary string. This is the
+      inverse of the [hex] function. Accepts both uppercase and lowercase
+      letters A-F. *)
+
   (** {2 Conditional} *)
 
   val greatest : ('n, 'a) expr list -> ('n, 'a) expr
@@ -1435,6 +1453,13 @@ module Expr : sig
 
   val farmFingerprint64 : ('n, _) expr -> ('n, uint64 number) expr
   (** Produces a 64-bit FarmHash fingerprint. *)
+
+  val cityHash64 : ('n, _) expr -> ('n, uint64 number) expr
+  (** [cityHash64 arg] produces a 64-bit CityHash hash value. *)
+
+  val cityHash64_multi : ('n, _) expr list -> ('n, uint64 number) expr
+  (** [cityHash64_multi args] produces a 64-bit CityHash hash value from
+      multiple arguments. All arguments must have the same nullability. *)
 
   (** {2 Rounding functions} *)
 

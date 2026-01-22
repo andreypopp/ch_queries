@@ -826,6 +826,13 @@ module Expr = struct
   let subtractYears date num = def "subtractYears" [ date; num ]
   let toMonth date = def "toMonth" [ date ]
   let toYear date = def "toYear" [ date ]
+
+  let toYearWeek ?mode ?timezone date =
+    match (mode, timezone) with
+    | None, None -> def "toYearWeek" [ date ]
+    | Some m, None -> def "toYearWeek" [ date; m ]
+    | Some m, Some tz -> def "toYearWeek" [ date; m; tz ]
+    | None, Some _ -> failwith "toYearWeek: timezone requires mode to be specified"
   let toRelativeMonthNum date = def "toRelativeMonthNum" [ date ]
   let toYYYYMM date = def "toYYYYMM" [ date ]
   let toYYYYMMDD date = def "toYYYYMMDD" [ date ]
@@ -987,6 +994,10 @@ module Expr = struct
   let isNull x = def "isNull" [ x ]
   let isNotNull x = def "isNotNull" [ x ]
 
+  (** {2 Encoding functions} *)
+
+  let unhex x = def "unhex" [ x ]
+
   (** {2 Conditional} *)
 
   let greatest xs = def "greatest" xs
@@ -996,6 +1007,8 @@ module Expr = struct
   (** {2 Hash functions} *)
 
   let farmFingerprint64 x = def "farmFingerprint64" [ x ]
+  let cityHash64 x = def "cityHash64" [ x ]
+  let cityHash64_multi xs = def "cityHash64" xs
 
   (** {2 Rounding functions} *)
 

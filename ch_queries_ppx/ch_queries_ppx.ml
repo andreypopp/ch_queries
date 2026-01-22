@@ -538,6 +538,16 @@ let rec stage_expr ~params expr =
           let f = evar ~loc ("Ch_queries.Expr." ^ name) in
           let args = List.map args ~f:(stage_expr ~params) in
           eapply ~loc f [ elist ~loc args ]
+      | Func { node = "cityHash64"; _ } -> (
+          match args with
+          | [ arg ] ->
+              let f = evar ~loc "Ch_queries.Expr.cityHash64" in
+              let arg = stage_expr ~params arg in
+              eapply ~loc f [ arg ]
+          | _ ->
+              let f = evar ~loc "Ch_queries.Expr.cityHash64_multi" in
+              let args = List.map args ~f:(stage_expr ~params) in
+              eapply ~loc f [ elist ~loc args ])
       | Func { node = ("arrayZip" | "arrayZipUnaligned") as name; _ } -> (
           match args with
           | [ arr1; arr2 ] ->
@@ -1424,6 +1434,30 @@ let rec stage_expr ~params expr =
                 ]
           | _ ->
               Location.raise_errorf ~loc "timeSlots requires 2 or 3 arguments")
+      | Func { node = "toYearWeek"; _ } -> (
+          (* toYearWeek(date[, mode[, timezone]]) *)
+          let f = evar ~loc "Ch_queries.Expr.toYearWeek" in
+          match args with
+          | [ date ] ->
+              let date = stage_expr ~params date in
+              eapply ~loc f [ date ]
+          | [ date; mode ] ->
+              let date = stage_expr ~params date in
+              let mode = stage_expr ~params mode in
+              pexp_apply ~loc f [ (Labelled "mode", mode); (Nolabel, date) ]
+          | [ date; mode; timezone ] ->
+              let date = stage_expr ~params date in
+              let mode = stage_expr ~params mode in
+              let timezone = stage_expr ~params timezone in
+              pexp_apply ~loc f
+                [
+                  (Labelled "mode", mode);
+                  (Labelled "timezone", timezone);
+                  (Nolabel, date);
+                ]
+          | _ ->
+              Location.raise_errorf ~loc
+                "toYearWeek requires 1, 2, or 3 arguments")
       | Func name ->
           let f =
             let loc = to_location name in
