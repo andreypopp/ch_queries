@@ -1317,6 +1317,14 @@ module Expr = struct
   let tuple2 (x, y) = def "tuple" [ x; y ]
   let tuple3 (x, y, z) = def "tuple" [ x; y; z ]
   let tuple4 (a, b, c, d) = def "tuple" [ a; b; c; d ]
+  let tupleElement tup index = def "tupleElement" [ tup; index ]
+  let tupleHammingDistance t1 t2 = def "tupleHammingDistance" [ t1; t2 ]
+
+  (** {2 Type conversions - additional} *)
+
+  let accurateCastOrNull x type_name = def "accurateCastOrNull" [ x; type_name ]
+  let parseDateTimeBestEffort x = def "parseDateTimeBestEffort" [ x ]
+  let toBool x = def "toBool" [ x ]
 end
 
 let in_ x xs =

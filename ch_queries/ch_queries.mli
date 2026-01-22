@@ -2224,6 +2224,32 @@ module Expr : sig
       (('na, 'a) expr, ('nb, 'b) expr, ('nc, 'c) expr, ('nd, 'd) expr) tuple4
     )
     expr
+
+  val tupleElement :
+    ('n, 'tup) expr -> (non_null, int number) expr -> ('m, 'a) expr
+  (** [tupleElement tup index] returns the element at [index] from the tuple
+      [tup]. Index is 1-based. This function implements the tuple.N syntax. *)
+
+  val tupleHammingDistance :
+    ('n, 'tup) expr -> ('n, 'tup) expr -> ('n, int number) expr
+  (** [tupleHammingDistance t1 t2] returns the Hamming distance between two
+      tuples of the same size. Can be used with MinHash functions for detection
+      of semi-duplicate strings. *)
+
+  (** {2 Type conversions - additional} *)
+
+  val accurateCastOrNull :
+    ('n, 'a) expr -> (non_null, string) expr -> (null, 'b) expr
+  (** [accurateCastOrNull x type_name] converts [x] to [type_name]. Returns NULL
+      if the conversion cannot be performed accurately (e.g., overflow). *)
+
+  val parseDateTimeBestEffort : ('n, string) expr -> ('n, datetime) expr
+  (** [parseDateTimeBestEffort x] parses a date/time string in various formats
+      including ISO 8601, RFC 1123, and many other common formats. *)
+
+  val toBool : ('n, 'a) expr -> ('n, bool) expr
+  (** [toBool x] converts a value to Boolean. Non-zero numbers become true,
+      strings 'true'/'false' are converted appropriately. *)
 end
 
 type json =
