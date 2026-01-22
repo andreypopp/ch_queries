@@ -254,6 +254,13 @@ module Expr : sig
   val exp : ('n, _ number) expr -> ('n, float number) expr
   (** [exp x] returns e^x. *)
 
+  val log : ('n, _ number) expr -> ('n, float number) expr
+  (** [log x] returns the natural logarithm of [x]. *)
+
+  val pow :
+    ('n, _ number) expr -> ('n, _ number) expr -> ('n, float number) expr
+  (** [pow x y] returns [x] raised to the power of [y]. *)
+
   val intExp2 : ('n, _ number) expr -> ('n, int number) expr
   (** [intExp2 x] returns 2^x. The result type is UInt64. *)
 
@@ -1286,6 +1293,11 @@ module Expr : sig
 
   val ifNull : (null, 'a) expr -> ('n, 'a) expr -> ('n, 'a) expr
   (** [ifNull x alt] returns [alt] if [x] is NULL, otherwise returns [x]. *)
+
+  val firstNonDefault : ('n, 'a) expr list -> ('n, 'a) expr
+  (** [firstNonDefault args] returns the first non-default value from the
+      arguments. A "default" value is 0 for numbers, empty string for strings,
+      or NULL for nullable types. *)
 
   (** {2 String} *)
 

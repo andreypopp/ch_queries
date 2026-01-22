@@ -567,6 +567,8 @@ module Expr = struct
   let negate x = def "-" [ x ]
   let abs x = def "abs" [ x ]
   let exp x = def "exp" [ x ]
+  let log x = def "log" [ x ]
+  let pow x y = def "pow" [ x; y ]
   let intExp2 x = def "intExp2" [ x ]
   let intDiv x y = def "intDiv" [ x; y ]
   let intDivOrNull x y = def "intDivOrNull" [ x; y ]
@@ -911,6 +913,7 @@ module Expr = struct
   let coalesce xs ~else_ = def "coalesce" (xs @ [ else_ ])
   let nullIf x y = def "nullIf" [ x; y ]
   let ifNull x alt = def "ifNull" [ x; alt ]
+  let firstNonDefault xs = def "firstNonDefault" xs
 
   (** {2 String} *)
 

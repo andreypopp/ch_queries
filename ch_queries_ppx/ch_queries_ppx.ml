@@ -531,7 +531,8 @@ let rec stage_expr ~params expr =
             node =
               ( "greatest" | "least" | "concat" | "midpoint" | "arrayConcat"
               | "arrayEnumerateUniq" | "arrayIntersect"
-              | "arraySymmetricDifference" | "arrayUnion" | "arrayUniq" ) as
+              | "arraySymmetricDifference" | "arrayUnion" | "arrayUniq"
+              | "firstNonDefault" ) as
               name;
             _;
           } ->
