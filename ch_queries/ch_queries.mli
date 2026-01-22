@@ -1385,6 +1385,14 @@ module Expr : sig
   (** [jsonExtractKeys json] extracts keys from a JSON object. Returns array of
       key names. *)
 
+  val jSONExtract : ('n, string) expr list -> ('m, 'a) expr
+  (** [jSONExtract args] extracts a value from a JSON string. The [args] list
+      should contain the JSON string, followed by zero or more path components
+      (keys or indices), followed by the type name as the last argument.
+      Example: [jSONExtract [json; string "name"; string "String"]] extracts
+      the string field "name" from the JSON.
+      Note: The return type is polymorphic and must be annotated appropriately. *)
+
   (** {2 Splitting functions} *)
 
   val splitByChar :
@@ -1502,6 +1510,15 @@ module Expr : sig
   val iPv4NumToStringClassC : ('n, _ number) expr -> ('n, string) expr
   (** [iPv4NumToStringClassC x] similar to [iPv4NumToString], but replaces the
       last octet with "xxx" (e.g., "192.168.0.xxx"). *)
+
+  val iPv4StringToNumOrDefault :
+    ('n, string) expr -> (non_null, _ number) expr -> (non_null, int number) expr
+  (** [iPv4StringToNumOrDefault x default] converts an IPv4 address in string
+      format to a UInt32 number. If the string is not a valid IPv4 address,
+      returns the default value. *)
+
+  val toIPv4 : ('n, _) expr -> ('n, int number) expr
+  (** [toIPv4 x] converts a string or UInt32 to IPv4 type. *)
 
   (** {2 Rounding functions} *)
 

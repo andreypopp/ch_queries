@@ -972,6 +972,7 @@ module Expr = struct
     def "simpleJSONExtractRaw" [ json; field ]
 
   let jsonExtractKeys json = def "JSONExtractKeys" [ json ]
+  let jSONExtract args = def "JSONExtract" args
 
   (** {2 Splitting functions} *)
 
@@ -1030,6 +1031,8 @@ module Expr = struct
 
   let iPv4NumToString x = def "IPv4NumToString" [ x ]
   let iPv4NumToStringClassC x = def "IPv4NumToStringClassC" [ x ]
+  let iPv4StringToNumOrDefault x default = def "IPv4StringToNumOrDefault" [ x; default ]
+  let toIPv4 x = def "toIPv4" [ x ]
 
   (** {2 Rounding functions} *)
 

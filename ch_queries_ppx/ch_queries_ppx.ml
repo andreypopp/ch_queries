@@ -538,6 +538,10 @@ let rec stage_expr ~params expr =
           let f = evar ~loc ("Ch_queries.Expr." ^ name) in
           let args = List.map args ~f:(stage_expr ~params) in
           eapply ~loc f [ elist ~loc args ]
+      | Func { node = "JSONExtract"; _ } ->
+          let f = evar ~loc "Ch_queries.Expr.jSONExtract" in
+          let args = List.map args ~f:(stage_expr ~params) in
+          eapply ~loc f [ elist ~loc args ]
       | Func { node = "cityHash64"; _ } -> (
           match args with
           | [ arg ] ->
