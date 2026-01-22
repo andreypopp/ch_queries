@@ -897,6 +897,9 @@ module Expr = struct
            List.concat_map xs ~f:(fun (k, v) -> [ k; v ]) ))
 
   let map_get m k = def "map_get" [ m; k ]
+  let mapContainsKey m k = def "mapContainsKey" [ m; k ]
+  let mapFromArrays keys values = def "mapFromArrays" [ keys; values ]
+  let mapKeys m = def "mapKeys" [ m ]
 
   (** {2 Nullable} *)
 

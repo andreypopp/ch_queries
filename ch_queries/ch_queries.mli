@@ -1248,6 +1248,23 @@ module Expr : sig
   (** compiles to clickhouse function {!arrayElement}, but is named differently
       to allow its use on maps. *)
 
+  val mapContainsKey :
+    ('n, ('nk, 'k, 'nv, 'v) map) expr -> ('nk, 'k) expr -> (non_null, bool) expr
+  (** [mapContainsKey m k] returns 1 if the map [m] contains the key [k],
+      0 otherwise. *)
+
+  val mapFromArrays :
+    ('n, ('nk, 'k) array) expr ->
+    ('n, ('nv, 'v) array) expr ->
+    ('n, ('nk, 'k, 'nv, 'v) map) expr
+  (** [mapFromArrays keys values] creates a map from two arrays. The [keys]
+      array provides the keys and [values] array provides the values. Both
+      arrays must have the same length. *)
+
+  val mapKeys :
+    ('n, ('nk, 'k, 'nv, 'v) map) expr -> ('n, ('nk, 'k) array) expr
+  (** [mapKeys m] returns all keys of the map [m] as an array. *)
+
   (** {2 Nullable} *)
 
   val assumeNotNull : ([< null ] nullable, 'b) expr -> (non_null, 'a) expr
