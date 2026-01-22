@@ -1339,6 +1339,50 @@ let rec stage_expr ~params expr =
           let key_expr = stage_expr ~params key_arg in
           eapply ~loc [%expr Ch_queries.Expr.dictGet]
             [ dict; value_expr; key_expr ]
+      | Func { node = "age"; _ } -> (
+          (* age(unit, startdate, enddate[, timezone]) *)
+          let f = evar ~loc "Ch_queries.Expr.age" in
+          match args with
+          | [ unit; startdate; enddate ] ->
+              let unit = stage_expr ~params unit in
+              let startdate = stage_expr ~params startdate in
+              let enddate = stage_expr ~params enddate in
+              eapply ~loc f [ unit; startdate; enddate ]
+          | [ unit; startdate; enddate; timezone ] ->
+              let unit = stage_expr ~params unit in
+              let startdate = stage_expr ~params startdate in
+              let enddate = stage_expr ~params enddate in
+              let timezone = stage_expr ~params timezone in
+              pexp_apply ~loc f
+                [
+                  (Labelled "timezone", timezone);
+                  (Nolabel, unit);
+                  (Nolabel, startdate);
+                  (Nolabel, enddate);
+                ]
+          | _ -> Location.raise_errorf ~loc "age requires 3 or 4 arguments")
+      | Func { node = "dateDiff"; _ } -> (
+          (* dateDiff(unit, startdate, enddate[, timezone]) *)
+          let f = evar ~loc "Ch_queries.Expr.dateDiff" in
+          match args with
+          | [ unit; startdate; enddate ] ->
+              let unit = stage_expr ~params unit in
+              let startdate = stage_expr ~params startdate in
+              let enddate = stage_expr ~params enddate in
+              eapply ~loc f [ unit; startdate; enddate ]
+          | [ unit; startdate; enddate; timezone ] ->
+              let unit = stage_expr ~params unit in
+              let startdate = stage_expr ~params startdate in
+              let enddate = stage_expr ~params enddate in
+              let timezone = stage_expr ~params timezone in
+              pexp_apply ~loc f
+                [
+                  (Labelled "timezone", timezone);
+                  (Nolabel, unit);
+                  (Nolabel, startdate);
+                  (Nolabel, enddate);
+                ]
+          | _ -> Location.raise_errorf ~loc "dateDiff requires 3 or 4 arguments")
       | Func name ->
           let f =
             let loc = to_location name in

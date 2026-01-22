@@ -842,6 +842,16 @@ module Expr = struct
   let toIntervalYear x = def "toIntervalYear" [ x ]
   let toStartOfInterval x interval = def "toStartOfInterval" [ x; interval ]
 
+  let age ?timezone unit startdate enddate =
+    match timezone with
+    | None -> def "age" [ unit; startdate; enddate ]
+    | Some tz -> def "age" [ unit; startdate; enddate; tz ]
+
+  let dateDiff ?timezone unit startdate enddate =
+    match timezone with
+    | None -> def "dateDiff" [ unit; startdate; enddate ]
+    | Some tz -> def "dateDiff" [ unit; startdate; enddate; tz ]
+
   (** {2 Logical} *)
 
   let ( && ) x y = def "AND" [ x; y ]

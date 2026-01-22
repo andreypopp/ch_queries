@@ -1164,6 +1164,32 @@ module Expr : sig
   val toIntervalMonth : ('n, int number) expr -> ('n, interval) expr
   val toIntervalYear : ('n, int number) expr -> ('n, interval) expr
 
+  val age :
+    ?timezone:('n, string) expr ->
+    ('n, string) expr ->
+    ('n, _ timestamp) expr ->
+    ('n, _ timestamp) expr ->
+    ('n, int number) expr
+  (** [age ?timezone unit startdate enddate] returns the [unit] component of the
+      difference between [startdate] and [enddate]. The difference is calculated
+      using a precision of 1 nanosecond. Returns Int32.
+
+      [unit] is one of: 'nanosecond', 'microsecond', 'millisecond', 'second',
+      'minute', 'hour', 'day', 'week', 'month', 'quarter', 'year'. *)
+
+  val dateDiff :
+    ?timezone:('n, string) expr ->
+    ('n, string) expr ->
+    ('n, _ timestamp) expr ->
+    ('n, _ timestamp) expr ->
+    ('n, int64 number) expr
+  (** [dateDiff ?timezone unit startdate enddate] returns the count of the
+      specified [unit] boundaries crossed between [startdate] and [enddate].
+      Returns Int64.
+
+      [unit] is one of: 'nanosecond', 'microsecond', 'millisecond', 'second',
+      'minute', 'hour', 'day', 'week', 'month', 'quarter', 'year'. *)
+
   (** {2 Logical} *)
 
   val ( && ) : ('n, bool) expr -> ('n, bool) expr -> ('n, bool) expr
