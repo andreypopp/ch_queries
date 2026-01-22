@@ -422,9 +422,9 @@ module Expr : sig
       elements. *)
 
   val arrayDotProduct :
-    ('n, ('m, 'a number) array) expr ->
-    ('n, ('m, 'b number) array) expr ->
-    ('n, 'c number) expr
+    (non_null, ('m, 'a number) array) expr ->
+    (non_null, ('m, 'a number) array) expr ->
+    ('m, 'a number) expr
   (** [arrayDotProduct v1 v2] returns the dot product of two arrays. The sizes
       of the two vectors must be equal. *)
 
