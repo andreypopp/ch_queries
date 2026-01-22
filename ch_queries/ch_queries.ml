@@ -1007,8 +1007,22 @@ module Expr = struct
   (** {2 Hash functions} *)
 
   let farmFingerprint64 x = def "farmFingerprint64" [ x ]
+  let farmHash64 x = def "farmHash64" [ x ]
+  let farmHash64_multi xs = def "farmHash64" xs
+  let sipHash64 x = def "sipHash64" [ x ]
+  let sipHash64_multi xs = def "sipHash64" xs
   let cityHash64 x = def "cityHash64" [ x ]
   let cityHash64_multi xs = def "cityHash64" xs
+
+  let wordShingleMinHashCaseInsensitiveUTF8 ?shinglesize ?hashnum str =
+    match (shinglesize, hashnum) with
+    | None, None -> def "wordShingleMinHashCaseInsensitiveUTF8" [ str ]
+    | Some s, None -> def "wordShingleMinHashCaseInsensitiveUTF8" [ str; s ]
+    | Some s, Some h -> def "wordShingleMinHashCaseInsensitiveUTF8" [ str; s; h ]
+    | None, Some _ ->
+        failwith
+          "wordShingleMinHashCaseInsensitiveUTF8: hashnum requires shinglesize \
+           to be specified"
 
   (** {2 Rounding functions} *)
 

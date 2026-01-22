@@ -548,6 +548,51 @@ let rec stage_expr ~params expr =
               let f = evar ~loc "Ch_queries.Expr.cityHash64_multi" in
               let args = List.map args ~f:(stage_expr ~params) in
               eapply ~loc f [ elist ~loc args ])
+      | Func { node = "farmHash64"; _ } -> (
+          match args with
+          | [ arg ] ->
+              let f = evar ~loc "Ch_queries.Expr.farmHash64" in
+              let arg = stage_expr ~params arg in
+              eapply ~loc f [ arg ]
+          | _ ->
+              let f = evar ~loc "Ch_queries.Expr.farmHash64_multi" in
+              let args = List.map args ~f:(stage_expr ~params) in
+              eapply ~loc f [ elist ~loc args ])
+      | Func { node = "sipHash64"; _ } -> (
+          match args with
+          | [ arg ] ->
+              let f = evar ~loc "Ch_queries.Expr.sipHash64" in
+              let arg = stage_expr ~params arg in
+              eapply ~loc f [ arg ]
+          | _ ->
+              let f = evar ~loc "Ch_queries.Expr.sipHash64_multi" in
+              let args = List.map args ~f:(stage_expr ~params) in
+              eapply ~loc f [ elist ~loc args ])
+      | Func { node = "wordShingleMinHashCaseInsensitiveUTF8"; _ } -> (
+          let f = evar ~loc "Ch_queries.Expr.wordShingleMinHashCaseInsensitiveUTF8" in
+          match args with
+          | [ str ] ->
+              let str = stage_expr ~params str in
+              eapply ~loc f [ str ]
+          | [ str; shinglesize ] ->
+              let str = stage_expr ~params str in
+              let shinglesize = stage_expr ~params shinglesize in
+              pexp_apply ~loc f
+                [ (Labelled "shinglesize", shinglesize); (Nolabel, str) ]
+          | [ str; shinglesize; hashnum ] ->
+              let str = stage_expr ~params str in
+              let shinglesize = stage_expr ~params shinglesize in
+              let hashnum = stage_expr ~params hashnum in
+              pexp_apply ~loc f
+                [
+                  (Labelled "shinglesize", shinglesize);
+                  (Labelled "hashnum", hashnum);
+                  (Nolabel, str);
+                ]
+          | _ ->
+              Location.raise_errorf ~loc
+                "wordShingleMinHashCaseInsensitiveUTF8 requires 1, 2, or 3 \
+                 arguments")
       | Func { node = ("arrayZip" | "arrayZipUnaligned") as name; _ } -> (
           match args with
           | [ arr1; arr2 ] ->

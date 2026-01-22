@@ -1454,12 +1454,37 @@ module Expr : sig
   val farmFingerprint64 : ('n, _) expr -> ('n, uint64 number) expr
   (** Produces a 64-bit FarmHash fingerprint. *)
 
+  val farmHash64 : ('n, _) expr -> (non_null, uint64 number) expr
+  (** [farmHash64 arg] produces a 64-bit FarmHash hash value. *)
+
+  val farmHash64_multi : ('n, _) expr list -> (non_null, uint64 number) expr
+  (** [farmHash64_multi args] produces a 64-bit FarmHash hash value from
+      multiple arguments. *)
+
+  val sipHash64 : ('n, _) expr -> (non_null, uint64 number) expr
+  (** [sipHash64 arg] produces a 64-bit SipHash hash value. *)
+
+  val sipHash64_multi : ('n, _) expr list -> (non_null, uint64 number) expr
+  (** [sipHash64_multi args] produces a 64-bit SipHash hash value from multiple
+      arguments. *)
+
   val cityHash64 : ('n, _) expr -> ('n, uint64 number) expr
   (** [cityHash64 arg] produces a 64-bit CityHash hash value. *)
 
   val cityHash64_multi : ('n, _) expr list -> ('n, uint64 number) expr
   (** [cityHash64_multi args] produces a 64-bit CityHash hash value from
       multiple arguments. All arguments must have the same nullability. *)
+
+  val wordShingleMinHashCaseInsensitiveUTF8 :
+    ?shinglesize:(non_null, int number) expr ->
+    ?hashnum:(non_null, int number) expr ->
+    ('n, string) expr ->
+    ('n, ((non_null, uint64 number) tuple2, (non_null, uint64 number) tuple2) tuple2) expr
+  (** [wordShingleMinHashCaseInsensitiveUTF8 ?shinglesize ?hashnum str] splits a
+      UTF-8 string into parts (shingles) of [shinglesize] words each and returns
+      the shingles with minimum and maximum word hashes. It is case insensitive.
+      [shinglesize] defaults to 3 (range 1-25), [hashnum] defaults to 6 (range
+      1-25). *)
 
   (** {2 Rounding functions} *)
 
