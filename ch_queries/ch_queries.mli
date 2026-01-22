@@ -1190,6 +1190,26 @@ module Expr : sig
       [unit] is one of: 'nanosecond', 'microsecond', 'millisecond', 'second',
       'minute', 'hour', 'day', 'week', 'month', 'quarter', 'year'. *)
 
+  val formatDateTime :
+    ?timezone:('n, string) expr ->
+    ('n, _ timestamp) expr ->
+    ('n, string) expr ->
+    ('n, string) expr
+  (** [formatDateTime ?timezone datetime format] formats a date or date with
+      time according to the given format string. The format string uses MySQL
+      datetime format placeholders like [%Y] for year, [%m] for month, [%d] for
+      day, etc. *)
+
+  val timeSlots :
+    ?size:('n, _ number) expr ->
+    ('n, 'a timestamp) expr ->
+    ('n, _ number) expr ->
+    ('n, (non_null, 'a timestamp) array) expr
+  (** [timeSlots ?size start_time duration] returns an array of DateTime values
+      for a time interval starting at [start_time] and lasting [duration]
+      seconds. Each value is rounded down to the [size] interval (defaults to
+      1800 seconds / 30 minutes). *)
+
   (** {2 Logical} *)
 
   val ( && ) : ('n, bool) expr -> ('n, bool) expr -> ('n, bool) expr

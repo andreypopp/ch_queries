@@ -1383,6 +1383,47 @@ let rec stage_expr ~params expr =
                   (Nolabel, enddate);
                 ]
           | _ -> Location.raise_errorf ~loc "dateDiff requires 3 or 4 arguments")
+      | Func { node = "formatDateTime"; _ } -> (
+          (* formatDateTime(datetime, format[, timezone]) *)
+          let f = evar ~loc "Ch_queries.Expr.formatDateTime" in
+          match args with
+          | [ datetime; format ] ->
+              let datetime = stage_expr ~params datetime in
+              let format = stage_expr ~params format in
+              eapply ~loc f [ datetime; format ]
+          | [ datetime; format; timezone ] ->
+              let datetime = stage_expr ~params datetime in
+              let format = stage_expr ~params format in
+              let timezone = stage_expr ~params timezone in
+              pexp_apply ~loc f
+                [
+                  (Labelled "timezone", timezone);
+                  (Nolabel, datetime);
+                  (Nolabel, format);
+                ]
+          | _ ->
+              Location.raise_errorf ~loc
+                "formatDateTime requires 2 or 3 arguments")
+      | Func { node = "timeSlots"; _ } -> (
+          (* timeSlots(start_time, duration[, size]) *)
+          let f = evar ~loc "Ch_queries.Expr.timeSlots" in
+          match args with
+          | [ start_time; duration ] ->
+              let start_time = stage_expr ~params start_time in
+              let duration = stage_expr ~params duration in
+              eapply ~loc f [ start_time; duration ]
+          | [ start_time; duration; size ] ->
+              let start_time = stage_expr ~params start_time in
+              let duration = stage_expr ~params duration in
+              let size = stage_expr ~params size in
+              pexp_apply ~loc f
+                [
+                  (Labelled "size", size);
+                  (Nolabel, start_time);
+                  (Nolabel, duration);
+                ]
+          | _ ->
+              Location.raise_errorf ~loc "timeSlots requires 2 or 3 arguments")
       | Func name ->
           let f =
             let loc = to_location name in

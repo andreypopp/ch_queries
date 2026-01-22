@@ -852,6 +852,16 @@ module Expr = struct
     | None -> def "dateDiff" [ unit; startdate; enddate ]
     | Some tz -> def "dateDiff" [ unit; startdate; enddate; tz ]
 
+  let formatDateTime ?timezone datetime format =
+    match timezone with
+    | None -> def "formatDateTime" [ datetime; format ]
+    | Some tz -> def "formatDateTime" [ datetime; format; tz ]
+
+  let timeSlots ?size start_time duration =
+    match size with
+    | None -> def "timeSlots" [ start_time; duration ]
+    | Some s -> def "timeSlots" [ start_time; duration; s ]
+
   (** {2 Logical} *)
 
   let ( && ) x y = def "AND" [ x; y ]
