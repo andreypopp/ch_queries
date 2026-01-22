@@ -1141,6 +1141,8 @@ module Expr : sig
   val subtractYears :
     ('n, 'a timestamp) expr -> ('n, int number) expr -> ('n, 'a timestamp) expr
 
+  val toMonth : ('n, _ timestamp) expr -> ('n, int number) expr
+  val toRelativeMonthNum : ('n, _ timestamp) expr -> ('n, int number) expr
   val toYYYYMM : ('n, _ timestamp) expr -> ('n, int number) expr
   val toYYYYMMDD : ('n, _ timestamp) expr -> ('n, int number) expr
   val yYYYMMDDToDate : ('n, _ number) expr -> ('n, date) expr
@@ -1150,6 +1152,7 @@ module Expr : sig
   val toStartOfDay : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
   val toStartOfHour : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
   val toStartOfMinute : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
+  val toStartOfFifteenMinutes : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
 
   val toStartOfInterval :
     ('n, 'a timestamp) expr ->
