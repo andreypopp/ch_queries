@@ -976,6 +976,8 @@ module Expr = struct
   let jSONExtractBool args = def "JSONExtractBool" args
   let jSONExtractInt args = def "JSONExtractInt" args
   let jSONExtractString args = def "JSONExtractString" args
+  let jSONExtractUInt args = def "JSONExtractUInt" args
+  let jSONHas args = def "JSONHas" args
 
   (** {2 Splitting functions} *)
 
@@ -991,6 +993,7 @@ module Expr = struct
   let toFloat32 x = def "toFloat32" [ x ]
   let toFloat64 x = def "toFloat64" [ x ]
   let toString x = def "toString" [ x ]
+  let toJSONString x = def "toJSONString" [ x ]
   let isFinite x = def "isFinite" [ x ]
   let isInfinite x = def "isInfinite" [ x ]
   let isNaN x = def "isNaN" [ x ]

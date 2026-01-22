@@ -1411,6 +1411,17 @@ module Expr : sig
       components (keys or indices). Returns empty string if the value doesn't
       exist or isn't a string. *)
 
+  val jSONExtractUInt : ('n, string) expr list -> ('m, uint64 number) expr
+  (** [jSONExtractUInt args] extracts an unsigned integer value from a JSON
+      string. The [args] list should contain the JSON string, followed by zero
+      or more path components (keys or indices). Returns 0 if the value doesn't
+      exist or isn't numeric. *)
+
+  val jSONHas : ('n, string) expr list -> ('m, bool) expr
+  (** [jSONHas args] checks if a path exists in a JSON string. The [args] list
+      should contain the JSON string, followed by zero or more path components
+      (keys or indices). Returns 1 if the path exists, 0 otherwise. *)
+
   (** {2 Splitting functions} *)
 
   val splitByChar :
@@ -1433,6 +1444,8 @@ module Expr : sig
   val toFloat32 : ('n, _) expr -> ('n, float number) expr
   val toFloat64 : ('n, _) expr -> ('n, float number) expr
   val toString : ('n, _) expr -> ('n, string) expr
+  val toJSONString : ('n, _) expr -> ('n, string) expr
+  (** [toJSONString x] converts a value to a JSON string representation. *)
 
   val isFinite : ('n, float number) expr -> ('n, bool) expr
   (** Returns 1 if the Float32/Float64 argument is not infinite and not NaN,
