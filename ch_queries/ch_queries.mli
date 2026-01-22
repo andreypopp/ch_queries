@@ -1194,6 +1194,7 @@ module Expr : sig
   val toIntervalMonth : ('n, int number) expr -> ('n, interval) expr
   val toIntervalYear : ('n, int number) expr -> ('n, interval) expr
   val toIntervalNanosecond : ('n, int number) expr -> ('n, interval) expr
+  val toIntervalSecond : ('n, int number) expr -> ('n, interval) expr
 
   val age :
     ?timezone:('n, string) expr ->
@@ -1683,7 +1684,12 @@ module Expr : sig
       closest representation. *)
 
   val toUInt64 : ('n, _) expr -> ('n, uint64 number) expr
+  val toUInt64OrNull : ('n, _) expr -> (null, uint64 number) expr
+  (** [toUInt64OrNull x] converts [x] to UInt64 or returns NULL if conversion fails. *)
+
   val toUInt32 : ('n, _) expr -> ('n, int number) expr
+  val toUInt16 : ('n, _) expr -> ('n, int number) expr
+  val toUInt8 : ('n, _) expr -> ('n, int number) expr
 
   val toUInt32OrDefault :
     ('n, _) expr -> (non_null, int number) expr -> (non_null, int number) expr
@@ -1691,6 +1697,12 @@ module Expr : sig
   val toFloat32 : ('n, _) expr -> ('n, float number) expr
   val toFloat64 : ('n, _) expr -> ('n, float number) expr
   val toString : ('n, _) expr -> ('n, string) expr
+
+  val toStringCutToZero : ('n, _) expr -> ('n, string) expr
+  (** [toStringCutToZero x] converts [x] to a string and cuts the result at the
+      first zero byte (if present). Useful for processing fixed-size strings
+      with null terminators. *)
+
   val toJSONString : ('n, _) expr -> ('n, string) expr
   (** [toJSONString x] converts a value to a JSON string representation. *)
 
