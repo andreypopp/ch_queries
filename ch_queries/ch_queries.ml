@@ -1077,6 +1077,9 @@ module Expr = struct
   let getMacro name = def "getMacro" [ name ]
   let getSubcolumn expr subcolumn_name = def "getSubcolumn" [ expr; subcolumn_name ]
   let hostName () = def "hostName" []
+  let identity x = def "identity" [ x ]
+  let ignore x = def "ignore" [ x ]
+  let initializeAggregation agg_func args = def "initializeAggregation" (agg_func :: args)
 
   (** {2 Machine learning functions} *)
 

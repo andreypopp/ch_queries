@@ -539,6 +539,17 @@ let rec stage_expr ~params expr =
           let f = evar ~loc ("Ch_queries.Expr." ^ name) in
           let args = List.map args ~f:(stage_expr ~params) in
           eapply ~loc f [ elist ~loc args ]
+      | Func { node = "initializeAggregation"; _ } -> (
+          match args with
+          | agg_func :: rest ->
+              let f = evar ~loc "Ch_queries.Expr.initializeAggregation" in
+              let agg_func = stage_expr ~params agg_func in
+              let rest = List.map rest ~f:(stage_expr ~params) in
+              eapply ~loc f [ agg_func; elist ~loc rest ]
+          | [] ->
+              Location.raise_errorf ~loc
+                "initializeAggregation requires an aggregate function name and \
+                 at least one argument")
       | Func { node = "JSONExtract"; _ } ->
           let f = evar ~loc "Ch_queries.Expr.jSONExtract" in
           let args = List.map args ~f:(stage_expr ~params) in

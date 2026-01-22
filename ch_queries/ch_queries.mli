@@ -1671,6 +1671,21 @@ module Expr : sig
   (** [hostName ()] returns the name of the host on which this function was
       executed. In distributed contexts, it returns the remote server name. *)
 
+  val identity : ('n, 'a) expr -> ('n, 'a) expr
+  (** [identity x] returns the argument you pass to it unchanged. Useful for
+      debugging and testing. *)
+
+  val ignore : ('n, 'a) expr -> (non_null, int number) expr
+  (** [ignore x] accepts any argument and unconditionally returns zero (UInt8).
+      The argument is not used and passed only to avoid syntax errors. *)
+
+  val initializeAggregation :
+    (non_null, string) expr -> ('n, 'a) expr list -> ('m, 'b) expr
+  (** [initializeAggregation agg_func args] calculates the result of an
+      aggregate function based on the provided arguments. Useful for initializing
+      aggregate functions with the State combinator. The [agg_func] parameter
+      is the name of the aggregation function as a string. *)
+
   (** {2 Machine learning functions} *)
 
   val arrayAUCPR :
