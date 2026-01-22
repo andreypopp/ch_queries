@@ -7,5 +7,11 @@ Testing arrayZipUnaligned:
   > " --run-only
   >>> RUNNING
   val e :
-    (Ch_queries.non_null, ('_weak1, '_weak2) Ch_queries.array) Ch_queries.expr
+    (Ch_queries.non_null,
+     (Ch_queries.non_null,
+      ((Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr,
+       (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr)
+      Ch_queries.tuple2)
+     Ch_queries.array)
+    Ch_queries.expr
   arrayZipUnaligned([1, 2, 3], [4, 5])

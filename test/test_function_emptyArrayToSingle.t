@@ -1,11 +1,13 @@
 Testing emptyArrayToSingle:
 
   $ ./compile_and_run "
-  > let e = {%e|emptyArrayToSingle([])|};;
+  > let e = {%e|emptyArrayToSingle([]::Array(Int32))|};;
   > #show e;;
   > print_endline (Ch_queries.expr_to_string e);;
   > " --run-only
   >>> RUNNING
   val e :
-    (Ch_queries.non_null, ('_weak1, '_weak2) Ch_queries.array) Ch_queries.expr
+    (Ch_queries.non_null,
+     (Ch_queries.non_null, int Ch_queries.number) Ch_queries.array)
+    Ch_queries.expr
   emptyArrayToSingle([])

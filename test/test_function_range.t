@@ -8,7 +8,7 @@ Testing range with one argument:
   >>> RUNNING
   val e :
     (Ch_queries.non_null,
-     (Ch_queries.non_null, '_weak1 Ch_queries.number) Ch_queries.array)
+     (Ch_queries.non_null, int Ch_queries.number) Ch_queries.array)
     Ch_queries.expr
   range(10)
 
@@ -22,7 +22,7 @@ Testing range with two arguments:
   >>> RUNNING
   val e :
     (Ch_queries.non_null,
-     (Ch_queries.non_null, '_weak1 Ch_queries.number) Ch_queries.array)
+     (Ch_queries.non_null, int Ch_queries.number) Ch_queries.array)
     Ch_queries.expr
   range(5, 10)
 
@@ -36,6 +36,6 @@ Testing range with three arguments:
   >>> RUNNING
   val e :
     (Ch_queries.non_null,
-     (Ch_queries.non_null, '_weak1 Ch_queries.number) Ch_queries.array)
+     (Ch_queries.non_null, int Ch_queries.number) Ch_queries.array)
     Ch_queries.expr
   range(0, 10, 2)

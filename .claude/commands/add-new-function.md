@@ -30,6 +30,20 @@ let <function_name> ?(opt_arg=default_value) arg1 arg2 = ...
 and then add a special case staging in ppx (see above) to handle that. Also add
 a test for the case with and without the optional argument.
 
+But if because of this optional argument the function type differs:
+```sql
+arraySum(array<'a>) -> 'a
+arraySum('a -> 'b, array<'a>) -> 'b
+```
+then we need to define two OCaml functions:
+```ocaml
+val arraySum : ('m, (non_null, 'a number) expr) array) expr -> ('m, 'a number) expr
+val arraySumF : (non_null, ('n, 'a) expr -> ('m, 'b number) expr) expr -> ('m, ('n, 'a) array) expr list -> (non_null, 'b number) expr
+```
+and stage the function dependening on arity in ppx (see above) to either of them.
+
+Don't leave types with `_` in it, always make sure we connect input and output types properly.
+
 Don't run all tests! Only the new test you created for the function.
 
 At the end:

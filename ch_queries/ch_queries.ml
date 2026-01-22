@@ -601,20 +601,14 @@ module Expr = struct
   let arrayAll f xs = def "arrayAll" (f :: xs)
   let arrayAvg f xs = def "arrayAvg" (f :: xs)
 
-  let arrayCount ?f xs =
-    match f with
-    | None -> def "arrayCount" xs
-    | Some f -> def "arrayCount" (f :: xs)
+  let arrayCount arr = def "arrayCount" [ arr ]
+  let arrayCountF f xs = def "arrayCount" (f :: xs)
 
-  let arrayCumSum ?f xs =
-    match f with
-    | None -> def "arrayCumSum" xs
-    | Some f -> def "arrayCumSum" (f :: xs)
+  let arrayCumSum arr = def "arrayCumSum" [ arr ]
+  let arrayCumSumF f xs = def "arrayCumSum" (f :: xs)
 
-  let arrayCumSumNonNegative ?f xs =
-    match f with
-    | None -> def "arrayCumSumNonNegative" xs
-    | Some f -> def "arrayCumSumNonNegative" (f :: xs)
+  let arrayCumSumNonNegative arr = def "arrayCumSumNonNegative" [ arr ]
+  let arrayCumSumNonNegativeF f xs = def "arrayCumSumNonNegative" (f :: xs)
 
   let length x = def "length" [ x ]
   let arrayJoin arr = def "arrayJoin" [ arr ]
@@ -651,8 +645,8 @@ module Expr = struct
   let arrayUnion arrs = def "arrayUnion" arrs
   let arrayUniq arrs = def "arrayUniq" arrs
   let arrayWithConstant length x = def "arrayWithConstant" [ length; x ]
-  let arrayZip arrs = def "arrayZip" arrs
-  let arrayZipUnaligned arrs = def "arrayZipUnaligned" arrs
+  let arrayZip arr1 arr2 = def "arrayZip" [ arr1; arr2 ]
+  let arrayZipUnaligned arr1 arr2 = def "arrayZipUnaligned" [ arr1; arr2 ]
   let arrayJaccardIndex arr_x arr_y = def "arrayJaccardIndex" [ arr_x; arr_y ]
 
   let arrayLevenshteinDistance arr_from arr_to =
@@ -662,34 +656,28 @@ module Expr = struct
     def "arrayLevenshteinDistanceWeighted"
       [ arr_from; arr_to; from_weights; to_weights ]
 
-  let arrayMax ?f xs =
-    match f with None -> def "arrayMax" xs | Some f -> def "arrayMax" (f :: xs)
+  let arrayMax arr = def "arrayMax" [ arr ]
+  let arrayMaxF f xs = def "arrayMax" (f :: xs)
 
-  let arrayMin ?f xs =
-    match f with None -> def "arrayMin" xs | Some f -> def "arrayMin" (f :: xs)
+  let arrayMin arr = def "arrayMin" [ arr ]
+  let arrayMinF f xs = def "arrayMin" (f :: xs)
 
-  let arraySum ?f xs =
-    match f with None -> def "arraySum" xs | Some f -> def "arraySum" (f :: xs)
+  let arraySum arr = def "arraySum" [ arr ]
+  let arraySumF f xs = def "arraySum" (f :: xs)
 
   let arrayPopBack arr = def "arrayPopBack" [ arr ]
   let arrayPopFront arr = def "arrayPopFront" [ arr ]
   let arrayPushBack arr x = def "arrayPushBack" [ arr; x ]
   let arrayPushFront arr x = def "arrayPushFront" [ arr; x ]
 
-  let arrayProduct ?f xs =
-    match f with
-    | None -> def "arrayProduct" xs
-    | Some f -> def "arrayProduct" (f :: xs)
+  let arrayProduct arr = def "arrayProduct" [ arr ]
+  let arrayProductF f xs = def "arrayProduct" (f :: xs)
 
-  let arrayPartialReverseSort ?f arrs limit =
-    match f with
-    | None -> def "arrayPartialReverseSort" (arrs @ [ limit ])
-    | Some f -> def "arrayPartialReverseSort" ((f :: arrs) @ [ limit ])
+  let arrayPartialReverseSort arr limit = def "arrayPartialReverseSort" [ arr; limit ]
+  let arrayPartialReverseSortF f arrs limit = def "arrayPartialReverseSort" ((f :: arrs) @ [ limit ])
 
-  let arrayPartialSort ?f arrs limit =
-    match f with
-    | None -> def "arrayPartialSort" (arrs @ [ limit ])
-    | Some f -> def "arrayPartialSort" ((f :: arrs) @ [ limit ])
+  let arrayPartialSort arr limit = def "arrayPartialSort" [ arr; limit ]
+  let arrayPartialSortF f arrs limit = def "arrayPartialSort" ((f :: arrs) @ [ limit ])
 
   let arrayPartialShuffle ?limit ?seed arr =
     match (limit, seed) with
@@ -717,15 +705,11 @@ module Expr = struct
   let arrayRotateRight arr n = def "arrayRotateRight" [ arr; n ]
   let arrayShingles arr l = def "arrayShingles" [ arr; l ]
 
-  let arrayReverseSort ?f arrs =
-    match f with
-    | None -> def "arrayReverseSort" arrs
-    | Some f -> def "arrayReverseSort" (f :: arrs)
+  let arrayReverseSort arr = def "arrayReverseSort" [ arr ]
+  let arrayReverseSortF f arrs = def "arrayReverseSort" (f :: arrs)
 
-  let arraySort ?f arrs =
-    match f with
-    | None -> def "arraySort" arrs
-    | Some f -> def "arraySort" (f :: arrs)
+  let arraySort arr = def "arraySort" [ arr ]
+  let arraySortF f arrs = def "arraySort" (f :: arrs)
 
   let arrayReverseSplit f xs = def "arrayReverseSplit" (f :: xs)
   let arraySplit f xs = def "arraySplit" (f :: xs)

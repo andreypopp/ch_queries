@@ -6,7 +6,7 @@ Testing arraySum:
   > print_endline (Ch_queries.expr_to_string e);;
   > " --run-only
   >>> RUNNING
-  val e : (Ch_queries.non_null, '_weak1 Ch_queries.number) Ch_queries.expr
+  val e : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr
   arraySum([1, 2, 3])
 
 Testing arraySum with lambda:
@@ -17,5 +17,5 @@ Testing arraySum with lambda:
   > print_endline (Ch_queries.expr_to_string e);;
   > " --run-only
   >>> RUNNING
-  val e : (Ch_queries.non_null, '_weak1 Ch_queries.number) Ch_queries.expr
+  val e : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr
   arraySum((x -> (x * 2)), [1, 2, 3])

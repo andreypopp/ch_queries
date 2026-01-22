@@ -526,13 +526,23 @@ let rec stage_expr ~params expr =
             node =
               ( "greatest" | "least" | "concat" | "midpoint" | "arrayConcat"
               | "arrayEnumerateUniq" | "arrayIntersect"
-              | "arraySymmetricDifference" | "arrayUnion" | "arrayUniq"
-              | "arrayZip" | "arrayZipUnaligned" ) as name;
+              | "arraySymmetricDifference" | "arrayUnion" | "arrayUniq" ) as
+              name;
             _;
           } ->
           let f = evar ~loc ("Ch_queries.Expr." ^ name) in
           let args = List.map args ~f:(stage_expr ~params) in
           eapply ~loc f [ elist ~loc args ]
+      | Func { node = ("arrayZip" | "arrayZipUnaligned") as name; _ } -> (
+          match args with
+          | [ arr1; arr2 ] ->
+              let f = evar ~loc ("Ch_queries.Expr." ^ name) in
+              let arr1 = stage_expr ~params arr1 in
+              let arr2 = stage_expr ~params arr2 in
+              eapply ~loc f [ arr1; arr2 ]
+          | _ ->
+              Location.raise_errorf ~loc "%s requires exactly 2 array arguments"
+                name)
       | Func { node = "arrayReduce"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.arrayReduce" in
           match args with
@@ -722,167 +732,176 @@ let rec stage_expr ~params expr =
               Location.raise_errorf ~loc
                 "arrayAvg requires a lambda and at least one array argument")
       | Func { node = "arrayCount"; _ } -> (
-          let f = evar ~loc "Ch_queries.Expr.arrayCount" in
           match args with
           | ({ node = E_lambda _; _ } as lambda) :: arrays
             when List.length arrays >= 1 ->
-              (* arrayCount(lambda, arr1, ...) - with lambda *)
+              (* arrayCount(lambda, arr1, ...) - with lambda, use arrayCountF *)
+              let f = evar ~loc "Ch_queries.Expr.arrayCountF" in
               let lambda = stage_expr ~params lambda in
               let arrays = List.map arrays ~f:(stage_expr ~params) in
-              pexp_apply ~loc f
-                [ (Labelled "f", lambda); (Nolabel, elist ~loc arrays) ]
-          | arrays when List.length arrays >= 1 ->
-              (* arrayCount(arr1, ...) - without lambda *)
-              let arrays = List.map arrays ~f:(stage_expr ~params) in
-              eapply ~loc f [ elist ~loc arrays ]
+              eapply ~loc f [ lambda; elist ~loc arrays ]
+          | [ arr ] ->
+              (* arrayCount(arr) - without lambda, use arrayCount *)
+              let f = evar ~loc "Ch_queries.Expr.arrayCount" in
+              let arr = stage_expr ~params arr in
+              eapply ~loc f [ arr ]
           | _ ->
               Location.raise_errorf ~loc
-                "arrayCount requires at least one array argument")
+                "arrayCount requires exactly one array argument, or a lambda \
+                 followed by one or more arrays")
       | Func { node = "arrayMax"; _ } -> (
-          let f = evar ~loc "Ch_queries.Expr.arrayMax" in
           match args with
           | ({ node = E_lambda _; _ } as lambda) :: arrays
             when List.length arrays >= 1 ->
-              (* arrayMax(lambda, arr1, ...) - with lambda *)
+              (* arrayMax(lambda, arr1, ...) - with lambda, use arrayMaxF *)
+              let f = evar ~loc "Ch_queries.Expr.arrayMaxF" in
               let lambda = stage_expr ~params lambda in
               let arrays = List.map arrays ~f:(stage_expr ~params) in
-              pexp_apply ~loc f
-                [ (Labelled "f", lambda); (Nolabel, elist ~loc arrays) ]
-          | arrays when List.length arrays >= 1 ->
-              (* arrayMax(arr1, ...) - without lambda *)
-              let arrays = List.map arrays ~f:(stage_expr ~params) in
-              eapply ~loc f [ elist ~loc arrays ]
+              eapply ~loc f [ lambda; elist ~loc arrays ]
+          | [ arr ] ->
+              (* arrayMax(arr) - without lambda, use arrayMax *)
+              let f = evar ~loc "Ch_queries.Expr.arrayMax" in
+              let arr = stage_expr ~params arr in
+              eapply ~loc f [ arr ]
           | _ ->
               Location.raise_errorf ~loc
-                "arrayMax requires at least one array argument")
+                "arrayMax requires exactly one array argument, or a lambda \
+                 followed by one or more arrays")
       | Func { node = "arrayMin"; _ } -> (
-          let f = evar ~loc "Ch_queries.Expr.arrayMin" in
           match args with
           | ({ node = E_lambda _; _ } as lambda) :: arrays
             when List.length arrays >= 1 ->
-              (* arrayMin(lambda, arr1, ...) - with lambda *)
+              (* arrayMin(lambda, arr1, ...) - with lambda, use arrayMinF *)
+              let f = evar ~loc "Ch_queries.Expr.arrayMinF" in
               let lambda = stage_expr ~params lambda in
               let arrays = List.map arrays ~f:(stage_expr ~params) in
-              pexp_apply ~loc f
-                [ (Labelled "f", lambda); (Nolabel, elist ~loc arrays) ]
-          | arrays when List.length arrays >= 1 ->
-              (* arrayMin(arr1, ...) - without lambda *)
-              let arrays = List.map arrays ~f:(stage_expr ~params) in
-              eapply ~loc f [ elist ~loc arrays ]
+              eapply ~loc f [ lambda; elist ~loc arrays ]
+          | [ arr ] ->
+              (* arrayMin(arr) - without lambda, use arrayMin *)
+              let f = evar ~loc "Ch_queries.Expr.arrayMin" in
+              let arr = stage_expr ~params arr in
+              eapply ~loc f [ arr ]
           | _ ->
               Location.raise_errorf ~loc
-                "arrayMin requires at least one array argument")
+                "arrayMin requires exactly one array argument, or a lambda \
+                 followed by one or more arrays")
       | Func { node = "arraySum"; _ } -> (
-          let f = evar ~loc "Ch_queries.Expr.arraySum" in
           match args with
           | ({ node = E_lambda _; _ } as lambda) :: arrays
             when List.length arrays >= 1 ->
-              (* arraySum(lambda, arr1, ...) - with lambda *)
+              (* arraySum(lambda, arr1, ...) - with lambda, use arraySumF *)
+              let f = evar ~loc "Ch_queries.Expr.arraySumF" in
               let lambda = stage_expr ~params lambda in
               let arrays = List.map arrays ~f:(stage_expr ~params) in
-              pexp_apply ~loc f
-                [ (Labelled "f", lambda); (Nolabel, elist ~loc arrays) ]
-          | arrays when List.length arrays >= 1 ->
-              (* arraySum(arr1, ...) - without lambda *)
-              let arrays = List.map arrays ~f:(stage_expr ~params) in
-              eapply ~loc f [ elist ~loc arrays ]
+              eapply ~loc f [ lambda; elist ~loc arrays ]
+          | [ arr ] ->
+              (* arraySum(arr) - without lambda, use arraySum *)
+              let f = evar ~loc "Ch_queries.Expr.arraySum" in
+              let arr = stage_expr ~params arr in
+              eapply ~loc f [ arr ]
           | _ ->
               Location.raise_errorf ~loc
-                "arraySum requires at least one array argument")
+                "arraySum requires exactly one array argument, or a lambda \
+                 followed by one or more arrays")
       | Func { node = "arrayProduct"; _ } -> (
-          let f = evar ~loc "Ch_queries.Expr.arrayProduct" in
           match args with
           | ({ node = E_lambda _; _ } as lambda) :: arrays
             when List.length arrays >= 1 ->
-              (* arrayProduct(lambda, arr1, ...) - with lambda *)
+              (* arrayProduct(lambda, arr1, ...) - with lambda, use arrayProductF *)
+              let f = evar ~loc "Ch_queries.Expr.arrayProductF" in
               let lambda = stage_expr ~params lambda in
               let arrays = List.map arrays ~f:(stage_expr ~params) in
-              pexp_apply ~loc f
-                [ (Labelled "f", lambda); (Nolabel, elist ~loc arrays) ]
-          | arrays when List.length arrays >= 1 ->
-              (* arrayProduct(arr1, ...) - without lambda *)
-              let arrays = List.map arrays ~f:(stage_expr ~params) in
-              eapply ~loc f [ elist ~loc arrays ]
+              eapply ~loc f [ lambda; elist ~loc arrays ]
+          | [ arr ] ->
+              (* arrayProduct(arr) - without lambda, use arrayProduct *)
+              let f = evar ~loc "Ch_queries.Expr.arrayProduct" in
+              let arr = stage_expr ~params arr in
+              eapply ~loc f [ arr ]
           | _ ->
               Location.raise_errorf ~loc
-                "arrayProduct requires at least one array argument")
+                "arrayProduct requires exactly one array argument, or a lambda \
+                 followed by one or more arrays")
       | Func { node = "arrayCumSum"; _ } -> (
-          let f = evar ~loc "Ch_queries.Expr.arrayCumSum" in
           match args with
           | ({ node = E_lambda _; _ } as lambda) :: arrays
             when List.length arrays >= 1 ->
-              (* arrayCumSum(lambda, arr1, ...) - with lambda *)
+              (* arrayCumSum(lambda, arr1, ...) - with lambda, use arrayCumSumF *)
+              let f = evar ~loc "Ch_queries.Expr.arrayCumSumF" in
               let lambda = stage_expr ~params lambda in
               let arrays = List.map arrays ~f:(stage_expr ~params) in
-              pexp_apply ~loc f
-                [ (Labelled "f", lambda); (Nolabel, elist ~loc arrays) ]
-          | arrays when List.length arrays >= 1 ->
-              (* arrayCumSum(arr1, ...) - without lambda *)
-              let arrays = List.map arrays ~f:(stage_expr ~params) in
-              eapply ~loc f [ elist ~loc arrays ]
+              eapply ~loc f [ lambda; elist ~loc arrays ]
+          | [ arr ] ->
+              (* arrayCumSum(arr) - without lambda, use arrayCumSum *)
+              let f = evar ~loc "Ch_queries.Expr.arrayCumSum" in
+              let arr = stage_expr ~params arr in
+              eapply ~loc f [ arr ]
           | _ ->
               Location.raise_errorf ~loc
-                "arrayCumSum requires at least one array argument")
+                "arrayCumSum requires exactly one array argument, or a lambda \
+                 followed by one or more arrays")
       | Func { node = "arrayCumSumNonNegative"; _ } -> (
-          let f = evar ~loc "Ch_queries.Expr.arrayCumSumNonNegative" in
           match args with
           | ({ node = E_lambda _; _ } as lambda) :: arrays
             when List.length arrays >= 1 ->
-              (* arrayCumSumNonNegative(lambda, arr1, ...) - with lambda *)
+              (* arrayCumSumNonNegative(lambda, arr1, ...) - with lambda, use arrayCumSumNonNegativeF *)
+              let f = evar ~loc "Ch_queries.Expr.arrayCumSumNonNegativeF" in
               let lambda = stage_expr ~params lambda in
               let arrays = List.map arrays ~f:(stage_expr ~params) in
-              pexp_apply ~loc f
-                [ (Labelled "f", lambda); (Nolabel, elist ~loc arrays) ]
-          | arrays when List.length arrays >= 1 ->
-              (* arrayCumSumNonNegative(arr1, ...) - without lambda *)
-              let arrays = List.map arrays ~f:(stage_expr ~params) in
-              eapply ~loc f [ elist ~loc arrays ]
+              eapply ~loc f [ lambda; elist ~loc arrays ]
+          | [ arr ] ->
+              (* arrayCumSumNonNegative(arr) - without lambda, use arrayCumSumNonNegative *)
+              let f = evar ~loc "Ch_queries.Expr.arrayCumSumNonNegative" in
+              let arr = stage_expr ~params arr in
+              eapply ~loc f [ arr ]
           | _ ->
               Location.raise_errorf ~loc
-                "arrayCumSumNonNegative requires at least one array argument")
+                "arrayCumSumNonNegative requires exactly one array argument, \
+                 or a lambda followed by one or more arrays")
       | Func { node = "arrayReverseSort"; _ } -> (
           (* arrayReverseSort([f,] arr [, arr1, ... ,arrN]) *)
-          let f = evar ~loc "Ch_queries.Expr.arrayReverseSort" in
           match args with
           | ({ node = E_lambda _; _ } as lambda) :: rest
             when List.length rest >= 1 ->
-              (* arrayReverseSort(lambda, arr1, ...) - with lambda *)
+              (* arrayReverseSort(lambda, arr1, ...) - with lambda, use arrayReverseSortF *)
+              let f = evar ~loc "Ch_queries.Expr.arrayReverseSortF" in
               let lambda = stage_expr ~params lambda in
               let arrays = List.map rest ~f:(stage_expr ~params) in
-              pexp_apply ~loc f
-                [ (Labelled "f", lambda); (Nolabel, elist ~loc arrays) ]
-          | arrays when List.length arrays >= 1 ->
-              (* arrayReverseSort(arr1, ...) - without lambda *)
-              let arrays = List.map arrays ~f:(stage_expr ~params) in
-              eapply ~loc f [ elist ~loc arrays ]
+              eapply ~loc f [ lambda; elist ~loc arrays ]
+          | [ arr ] ->
+              (* arrayReverseSort(arr) - without lambda, use arrayReverseSort *)
+              let f = evar ~loc "Ch_queries.Expr.arrayReverseSort" in
+              let arr = stage_expr ~params arr in
+              eapply ~loc f [ arr ]
           | _ ->
               Location.raise_errorf ~loc
-                "arrayReverseSort requires at least one array argument")
+                "arrayReverseSort requires exactly one array argument, or a \
+                 lambda followed by one or more arrays")
       | Func { node = "arraySort"; _ } -> (
           (* arraySort([f,] arr [, arr1, ... ,arrN]) *)
-          let f = evar ~loc "Ch_queries.Expr.arraySort" in
           match args with
           | ({ node = E_lambda _; _ } as lambda) :: rest
             when List.length rest >= 1 ->
-              (* arraySort(lambda, arr1, ...) - with lambda *)
+              (* arraySort(lambda, arr1, ...) - with lambda, use arraySortF *)
+              let f = evar ~loc "Ch_queries.Expr.arraySortF" in
               let lambda = stage_expr ~params lambda in
               let arrays = List.map rest ~f:(stage_expr ~params) in
-              pexp_apply ~loc f
-                [ (Labelled "f", lambda); (Nolabel, elist ~loc arrays) ]
-          | arrays when List.length arrays >= 1 ->
-              (* arraySort(arr1, ...) - without lambda *)
-              let arrays = List.map arrays ~f:(stage_expr ~params) in
-              eapply ~loc f [ elist ~loc arrays ]
+              eapply ~loc f [ lambda; elist ~loc arrays ]
+          | [ arr ] ->
+              (* arraySort(arr) - without lambda, use arraySort *)
+              let f = evar ~loc "Ch_queries.Expr.arraySort" in
+              let arr = stage_expr ~params arr in
+              eapply ~loc f [ arr ]
           | _ ->
               Location.raise_errorf ~loc
-                "arraySort requires at least one array argument")
+                "arraySort requires exactly one array argument, or a lambda \
+                 followed by one or more arrays")
       | Func { node = "arrayPartialReverseSort"; _ } -> (
           (* arrayPartialReverseSort([f,] arr [, arr1, ... ,arrN], limit) *)
-          let f = evar ~loc "Ch_queries.Expr.arrayPartialReverseSort" in
           match args with
           | ({ node = E_lambda _; _ } as lambda) :: rest
             when List.length rest >= 2 ->
-              (* arrayPartialReverseSort(lambda, arr1, ..., limit) - with lambda *)
+              (* arrayPartialReverseSort(lambda, arr1, ..., limit) - with lambda, use arrayPartialReverseSortF *)
+              let f = evar ~loc "Ch_queries.Expr.arrayPartialReverseSortF" in
               let arrays, limit =
                 let rev_rest = List.rev rest in
                 match rev_rest with
@@ -892,34 +911,25 @@ let rec stage_expr ~params expr =
               let lambda = stage_expr ~params lambda in
               let arrays = List.map arrays ~f:(stage_expr ~params) in
               let limit = stage_expr ~params limit in
-              pexp_apply ~loc f
-                [
-                  (Labelled "f", lambda);
-                  (Nolabel, elist ~loc arrays);
-                  (Nolabel, limit);
-                ]
-          | rest when List.length rest >= 2 ->
-              (* arrayPartialReverseSort(arr1, ..., limit) - without lambda *)
-              let arrays, limit =
-                let rev_rest = List.rev rest in
-                match rev_rest with
-                | limit :: rev_arrays -> (List.rev rev_arrays, limit)
-                | _ -> assert false (* checked by length condition *)
-              in
-              let arrays = List.map arrays ~f:(stage_expr ~params) in
+              eapply ~loc f [ lambda; elist ~loc arrays; limit ]
+          | [ arr; limit ] ->
+              (* arrayPartialReverseSort(arr, limit) - without lambda, use arrayPartialReverseSort *)
+              let f = evar ~loc "Ch_queries.Expr.arrayPartialReverseSort" in
+              let arr = stage_expr ~params arr in
               let limit = stage_expr ~params limit in
-              eapply ~loc f [ elist ~loc arrays; limit ]
+              eapply ~loc f [ arr; limit ]
           | _ ->
               Location.raise_errorf ~loc
-                "arrayPartialReverseSort requires at least one array and a \
-                 limit argument")
+                "arrayPartialReverseSort requires exactly one array and a \
+                 limit argument, or a lambda followed by one or more arrays \
+                 and a limit")
       | Func { node = "arrayPartialSort"; _ } -> (
           (* arrayPartialSort([f,] arr [, arr1, ... ,arrN], limit) *)
-          let f = evar ~loc "Ch_queries.Expr.arrayPartialSort" in
           match args with
           | ({ node = E_lambda _; _ } as lambda) :: rest
             when List.length rest >= 2 ->
-              (* arrayPartialSort(lambda, arr1, ..., limit) - with lambda *)
+              (* arrayPartialSort(lambda, arr1, ..., limit) - with lambda, use arrayPartialSortF *)
+              let f = evar ~loc "Ch_queries.Expr.arrayPartialSortF" in
               let arrays, limit =
                 let rev_rest = List.rev rest in
                 match rev_rest with
@@ -929,27 +939,18 @@ let rec stage_expr ~params expr =
               let lambda = stage_expr ~params lambda in
               let arrays = List.map arrays ~f:(stage_expr ~params) in
               let limit = stage_expr ~params limit in
-              pexp_apply ~loc f
-                [
-                  (Labelled "f", lambda);
-                  (Nolabel, elist ~loc arrays);
-                  (Nolabel, limit);
-                ]
-          | rest when List.length rest >= 2 ->
-              (* arrayPartialSort(arr1, ..., limit) - without lambda *)
-              let arrays, limit =
-                let rev_rest = List.rev rest in
-                match rev_rest with
-                | limit :: rev_arrays -> (List.rev rev_arrays, limit)
-                | _ -> assert false (* checked by length condition *)
-              in
-              let arrays = List.map arrays ~f:(stage_expr ~params) in
+              eapply ~loc f [ lambda; elist ~loc arrays; limit ]
+          | [ arr; limit ] ->
+              (* arrayPartialSort(arr, limit) - without lambda, use arrayPartialSort *)
+              let f = evar ~loc "Ch_queries.Expr.arrayPartialSort" in
+              let arr = stage_expr ~params arr in
               let limit = stage_expr ~params limit in
-              eapply ~loc f [ elist ~loc arrays; limit ]
+              eapply ~loc f [ arr; limit ]
           | _ ->
               Location.raise_errorf ~loc
-                "arrayPartialSort requires at least one array and a limit \
-                 argument")
+                "arrayPartialSort requires exactly one array and a limit \
+                 argument, or a lambda followed by one or more arrays and a \
+                 limit")
       | Func { node = "divideDecimal"; _ } -> (
           let f = evar ~loc "Ch_queries.Expr.divideDecimal" in
           match args with
