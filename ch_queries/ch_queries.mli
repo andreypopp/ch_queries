@@ -1111,6 +1111,9 @@ module Expr : sig
   val addYears :
     ('n, 'a timestamp) expr -> ('n, int number) expr -> ('n, 'a timestamp) expr
 
+  val addNanoseconds :
+    ('n, 'a timestamp) expr -> ('n, _ number) expr -> ('n, datetime64) expr
+
   val subDate :
     ('n, 'a timestamp) expr -> ('n, interval) expr -> ('n, 'a timestamp) expr
 
@@ -1140,6 +1143,7 @@ module Expr : sig
 
   val toYYYYMM : ('n, _ timestamp) expr -> ('n, int number) expr
   val toYYYYMMDD : ('n, _ timestamp) expr -> ('n, int number) expr
+  val yYYYMMDDToDate : ('n, _ number) expr -> ('n, date) expr
   val toStartOfYear : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
   val toStartOfMonth : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
   val toStartOfWeek : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr

@@ -323,7 +323,12 @@ let map_operator_to_expr ~loc op arity =
       | Some suf ->
           let name = "json" ^ suf in
           evar ~loc ("Ch_queries.Expr." ^ name)
-      | None -> evar ~loc ("Ch_queries.Expr." ^ name))
+      | None -> (
+          match String.chop_prefix name ~pre:"YYYYMMDD" with
+          | Some suf ->
+              let name = "yYYYMMDD" ^ suf in
+              evar ~loc ("Ch_queries.Expr." ^ name)
+          | None -> evar ~loc ("Ch_queries.Expr." ^ name)))
 
 let adjust_location_for_ocaml_expr loc =
   let open Location in

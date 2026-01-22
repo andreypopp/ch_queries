@@ -811,6 +811,7 @@ module Expr = struct
   let addSeconds datetime num = def "addSeconds" [ datetime; num ]
   let addWeeks date num = def "addWeeks" [ date; num ]
   let addYears date num = def "addYears" [ date; num ]
+  let addNanoseconds datetime num = def "addNanoseconds" [ datetime; num ]
   let subDate date interval = def "subDate" [ date; interval ]
 
   let subtractInterval datetime interval =
@@ -825,6 +826,7 @@ module Expr = struct
   let subtractYears date num = def "subtractYears" [ date; num ]
   let toYYYYMM date = def "toYYYYMM" [ date ]
   let toYYYYMMDD date = def "toYYYYMMDD" [ date ]
+  let yYYYMMDDToDate num = def "YYYYMMDDToDate" [ num ]
   let toStartOfYear date = def "toStartOfYear" [ date ]
   let toStartOfMonth date = def "toStartOfMonth" [ date ]
   let toStartOfWeek date = def "toStartOfWeek" [ date ]
