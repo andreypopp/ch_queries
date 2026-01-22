@@ -1686,6 +1686,14 @@ module Expr : sig
       aggregate functions with the State combinator. The [agg_func] parameter
       is the name of the aggregation function as a string. *)
 
+  val rowNumberInAllBlocks : unit -> (non_null, int64 number) expr
+  (** [rowNumberInAllBlocks ()] returns a unique sequential number for each row
+      across all data blocks in the query result. Numbering starts from 0. *)
+
+  val shardNum : unit -> (non_null, int number) expr
+  (** [shardNum ()] returns the shard number (1-indexed) of the current shard
+      in distributed queries. *)
+
   (** {2 Machine learning functions} *)
 
   val arrayAUCPR :

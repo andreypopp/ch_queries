@@ -1080,6 +1080,8 @@ module Expr = struct
   let identity x = def "identity" [ x ]
   let ignore x = def "ignore" [ x ]
   let initializeAggregation agg_func args = def "initializeAggregation" (agg_func :: args)
+  let rowNumberInAllBlocks () = def "rowNumberInAllBlocks" []
+  let shardNum () = def "shardNum" []
 
   (** {2 Machine learning functions} *)
 
@@ -1229,7 +1231,13 @@ module Expr = struct
     in
     def "joinGet" (unsafe (Printf.sprintf "%s.%s" db table) :: value :: keys)
 
-  let joinGetOrNull = joinGet
+  let joinGetOrNull ({ db; table; keys = _; values = _ } : _ Dict.t) value keys =
+    let keys =
+      match keys.Syntax.node with
+      | Syntax.E_call (Syntax.Func { node = "tuple"; _ }, args) -> args
+      | _ -> [ keys ]
+    in
+    def "joinGetOrNull" (unsafe (Printf.sprintf "%s.%s" db table) :: value :: keys)
 
   let dictGet ({ db; table; keys = _; values = _ } : _ Dict.t) value key =
     def "dictGet" [ unsafe (Printf.sprintf "%s.%s" db table); value; key ]
