@@ -1439,6 +1439,15 @@ module Expr : sig
       pattern syntax with [%] and [_] wildcards. *)
 
   val like : ('n, string) expr -> (non_null, string) expr -> ('n, bool) expr
+
+  val notILike : ('n, string) expr -> (non_null, string) expr -> ('n, bool) expr
+  (** [notILike haystack pattern] case-insensitive negated version of [like].
+      Returns true if pattern doesn't match. Uses SQL LIKE pattern syntax. *)
+
+  val notLike : ('n, string) expr -> (non_null, string) expr -> ('n, bool) expr
+  (** [notLike haystack pattern] negated version of [like]. Returns true if
+      pattern doesn't match. Uses SQL LIKE pattern syntax. *)
+
   val endsWith : ('n, string) expr -> (non_null, string) expr -> ('n, bool) expr
 
   val startsWith :
@@ -1623,6 +1632,23 @@ module Expr : sig
     ('n, (non_null, string) array) expr
   (** [splitByChar separator s] splits a string by a single character separator.
       Returns array of substrings. *)
+
+  val splitByWhitespace :
+    ('n, string) expr -> ('n, (non_null, string) array) expr
+  (** [splitByWhitespace s] splits a string into substrings using whitespace as
+      the separator. Returns array of substrings. *)
+
+  val alphaTokens : ('n, string) expr -> ('n, (non_null, string) array) expr
+  (** [alphaTokens str] selects substrings of consecutive bytes from the ranges
+      a-z and A-Z. Returns an array of substrings. *)
+
+  val extractAllGroupsVertical :
+    ('n, string) expr ->
+    (non_null, string) expr ->
+    ('n, (non_null, (non_null, string) array) array) expr
+  (** [extractAllGroupsVertical haystack pattern] matches all groups of the
+      [haystack] string using the [pattern] regular expression. Returns an array
+      of arrays, where each inner array contains one match per group. *)
 
   (** {2 Formatting} *)
 

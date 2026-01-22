@@ -970,6 +970,8 @@ module Expr = struct
   let extractAll hay pattern = def "extractAll" [ hay; pattern ]
   let ilike hay needle = def "ilike" [ hay; needle ]
   let like hay needle = def "like" [ hay; needle ]
+  let notILike hay needle = def "notILike" [ hay; needle ]
+  let notLike hay needle = def "notLike" [ hay; needle ]
   let endsWith hay needle = def "endsWith" [ hay; needle ]
   let startsWith hay needle = def "startsWith" [ hay; needle ]
   let position hay needle = def "position" [ hay; needle ]
@@ -1042,6 +1044,9 @@ module Expr = struct
   (** {2 Splitting functions} *)
 
   let splitByChar sep str = def "splitByChar" [ sep; str ]
+  let splitByWhitespace str = def "splitByWhitespace" [ str ]
+  let alphaTokens str = def "alphaTokens" [ str ]
+  let extractAllGroupsVertical hay pattern = def "extractAllGroupsVertical" [ hay; pattern ]
 
   (** {2 Formatting} *)
 
