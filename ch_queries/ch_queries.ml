@@ -566,6 +566,8 @@ module Expr = struct
   let ( / ) = divide
   let negate x = def "-" [ x ]
   let abs x = def "abs" [ x ]
+  let exp x = def "exp" [ x ]
+  let intExp2 x = def "intExp2" [ x ]
   let intDiv x y = def "intDiv" [ x; y ]
   let intDivOrNull x y = def "intDivOrNull" [ x; y ]
   let intDivOrZero x y = def "intDivOrZero" [ x; y ]
@@ -900,6 +902,7 @@ module Expr = struct
   let mapContainsKey m k = def "mapContainsKey" [ m; k ]
   let mapFromArrays keys values = def "mapFromArrays" [ keys; values ]
   let mapKeys m = def "mapKeys" [ m ]
+  let mapValues m = def "mapValues" [ m ]
 
   (** {2 Nullable} *)
 

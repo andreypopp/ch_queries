@@ -251,6 +251,12 @@ module Expr : sig
   val negate : ('n, 'a number) expr -> ('n, 'a number) expr
   val abs : ('n, 'a number) expr -> ('n, 'a number) expr
 
+  val exp : ('n, _ number) expr -> ('n, float number) expr
+  (** [exp x] returns e^x. *)
+
+  val intExp2 : ('n, _ number) expr -> ('n, int number) expr
+  (** [intExp2 x] returns 2^x. The result type is UInt64. *)
+
   val intDiv :
     ('n, _ number) expr -> ('n, _ number) expr -> ('n, int number) expr
 
@@ -1264,6 +1270,10 @@ module Expr : sig
   val mapKeys :
     ('n, ('nk, 'k, 'nv, 'v) map) expr -> ('n, ('nk, 'k) array) expr
   (** [mapKeys m] returns all keys of the map [m] as an array. *)
+
+  val mapValues :
+    ('n, ('nk, 'k, 'nv, 'v) map) expr -> ('n, ('nv, 'v) array) expr
+  (** [mapValues m] returns all values of the map [m] as an array. *)
 
   (** {2 Nullable} *)
 
