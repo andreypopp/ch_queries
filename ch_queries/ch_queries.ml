@@ -973,6 +973,9 @@ module Expr = struct
 
   let jsonExtractKeys json = def "JSONExtractKeys" [ json ]
   let jSONExtract args = def "JSONExtract" args
+  let jSONExtractBool args = def "JSONExtractBool" args
+  let jSONExtractInt args = def "JSONExtractInt" args
+  let jSONExtractString args = def "JSONExtractString" args
 
   (** {2 Splitting functions} *)
 

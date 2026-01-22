@@ -1393,6 +1393,24 @@ module Expr : sig
       the string field "name" from the JSON.
       Note: The return type is polymorphic and must be annotated appropriately. *)
 
+  val jSONExtractBool : ('n, string) expr list -> ('m, bool) expr
+  (** [jSONExtractBool args] extracts a boolean value from a JSON string. The
+      [args] list should contain the JSON string, followed by zero or more path
+      components (keys or indices). Returns 0 if the value doesn't exist or
+      isn't a boolean. *)
+
+  val jSONExtractInt : ('n, string) expr list -> ('m, int64 number) expr
+  (** [jSONExtractInt args] extracts an integer value from a JSON string. The
+      [args] list should contain the JSON string, followed by zero or more path
+      components (keys or indices). Returns 0 if the value doesn't exist or
+      isn't numeric. *)
+
+  val jSONExtractString : ('n, string) expr list -> ('m, string) expr
+  (** [jSONExtractString args] extracts a string value from a JSON string. The
+      [args] list should contain the JSON string, followed by zero or more path
+      components (keys or indices). Returns empty string if the value doesn't
+      exist or isn't a string. *)
+
   (** {2 Splitting functions} *)
 
   val splitByChar :
