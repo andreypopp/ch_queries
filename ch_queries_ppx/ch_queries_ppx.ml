@@ -1307,6 +1307,34 @@ let rec stage_expr ~params expr =
           | _ ->
               Location.raise_errorf ~loc
                 "arrayStringConcat requires 1 or 2 arguments")
+      | Func { node = "trimBoth"; _ } -> (
+          (* trimBoth(str[, trim_characters]) *)
+          let f = evar ~loc "Ch_queries.Expr.trimBoth" in
+          match args with
+          | [ str ] ->
+              let str = stage_expr ~params str in
+              eapply ~loc f [ str ]
+          | [ str; trim_characters ] ->
+              let str = stage_expr ~params str in
+              let trim_characters = stage_expr ~params trim_characters in
+              pexp_apply ~loc f
+                [ (Labelled "trim_characters", trim_characters); (Nolabel, str) ]
+          | _ ->
+              Location.raise_errorf ~loc "trimBoth requires 1 or 2 arguments")
+      | Func { node = "trimRight"; _ } -> (
+          (* trimRight(str[, trim_characters]) *)
+          let f = evar ~loc "Ch_queries.Expr.trimRight" in
+          match args with
+          | [ str ] ->
+              let str = stage_expr ~params str in
+              eapply ~loc f [ str ]
+          | [ str; trim_characters ] ->
+              let str = stage_expr ~params str in
+              let trim_characters = stage_expr ~params trim_characters in
+              pexp_apply ~loc f
+                [ (Labelled "trim_characters", trim_characters); (Nolabel, str) ]
+          | _ ->
+              Location.raise_errorf ~loc "trimRight requires 1 or 2 arguments")
       | Func { node = ("joinGet" | "joinGetOrNull") as fname; _ } ->
           (* joinGet(DICT, VALUE, KEYS...) stages as:
              Ch_queries.Expr.joinGet

@@ -1335,6 +1335,36 @@ module Expr : sig
   (** [right str n] returns the rightmost [n] characters of [str]. If [n] is
       negative, returns all but the leftmost -n characters. *)
 
+  val substringIndex :
+    ('n, string) expr ->
+    (non_null, string) expr ->
+    (non_null, int number) expr ->
+    ('n, string) expr
+  (** [substringIndex s delim count] returns the substring of [s] before [count]
+      occurrences of [delim]. If [count] is positive, everything to the left of
+      the final delimiter is returned. If [count] is negative, everything to the
+      right of the final delimiter is returned. *)
+
+  val toValidUTF8 : ('n, string) expr -> ('n, string) expr
+  (** [toValidUTF8 str] replaces invalid UTF-8 characters with the replacement
+      character (U+FFFD). *)
+
+  val trimBoth :
+    ?trim_characters:(non_null, string) expr ->
+    ('n, string) expr ->
+    ('n, string) expr
+  (** [trimBoth ?trim_characters str] removes the specified characters from
+      both ends of [str]. If [trim_characters] is not specified, removes
+      whitespace. *)
+
+  val trimRight :
+    ?trim_characters:(non_null, string) expr ->
+    ('n, string) expr ->
+    ('n, string) expr
+  (** [trimRight ?trim_characters str] removes the specified characters from
+      the end of [str]. If [trim_characters] is not specified, removes
+      whitespace. *)
+
   val concat : ('n, string) expr list -> ('n, string) expr
   (** Concatenates strings. *)
 
@@ -1363,6 +1393,14 @@ module Expr : sig
     (non_null, string) expr ->
     (non_null, string) expr ->
     ('n, string) expr
+
+  val replaceAll :
+    ('n, string) expr ->
+    (non_null, string) expr ->
+    (non_null, string) expr ->
+    ('n, string) expr
+  (** [replaceAll haystack pattern replacement] replaces all occurrences of
+      [pattern] in [haystack] with [replacement]. *)
 
   (** {2 String search} *)
 

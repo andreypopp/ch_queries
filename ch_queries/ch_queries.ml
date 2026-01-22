@@ -929,6 +929,19 @@ module Expr = struct
   let normalizeUTF8NFC str = def "normalizeUTF8NFC" [ str ]
   let reverseUTF8 str = def "reverseUTF8" [ str ]
   let right str n = def "right" [ str; n ]
+  let substringIndex s delim count = def "substringIndex" [ s; delim; count ]
+  let toValidUTF8 str = def "toValidUTF8" [ str ]
+
+  let trimBoth ?trim_characters str =
+    match trim_characters with
+    | None -> def "trimBoth" [ str ]
+    | Some c -> def "trimBoth" [ str; c ]
+
+  let trimRight ?trim_characters str =
+    match trim_characters with
+    | None -> def "trimRight" [ str ]
+    | Some c -> def "trimRight" [ str; c ]
+
   let concat strs = def "concat" strs
   let substring str offset length = def "substring" [ str; offset; length ]
 
@@ -941,6 +954,9 @@ module Expr = struct
 
   let replaceOne hay needle replacement =
     def "replaceOne" [ hay; needle; replacement ]
+
+  let replaceAll hay needle replacement =
+    def "replaceAll" [ hay; needle; replacement ]
 
   (** {2 String search} *)
 
