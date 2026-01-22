@@ -923,7 +923,12 @@ module Expr = struct
   let empty str = def "empty" [ str ]
   let notEmpty str = def "notEmpty" [ str ]
   let isValidUTF8 str = def "isValidUTF8" [ str ]
+  let lengthUTF8 str = def "lengthUTF8" [ str ]
+  let lower str = def "lower" [ str ]
   let lowerUTF8 str = def "lowerUTF8" [ str ]
+  let normalizeUTF8NFC str = def "normalizeUTF8NFC" [ str ]
+  let reverseUTF8 str = def "reverseUTF8" [ str ]
+  let right str n = def "right" [ str; n ]
   let concat strs = def "concat" strs
   let substring str offset length = def "substring" [ str; offset; length ]
 

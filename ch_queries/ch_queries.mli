@@ -1313,7 +1313,27 @@ module Expr : sig
   (** [isValidUTF8 str] returns 1 if [str] contains a set of bytes that form
       valid UTF-8 encoded text, otherwise 0. *)
 
+  val lengthUTF8 : ('n, string) expr -> ('n, int number) expr
+  (** [lengthUTF8 str] returns the length of a string in Unicode code points
+      (not bytes), assuming that the string contains valid UTF-8 encoded text. *)
+
+  val lower : ('n, string) expr -> ('n, string) expr
+  (** [lower str] converts ASCII Latin symbols in a string to lowercase. *)
+
   val lowerUTF8 : ('n, string) expr -> ('n, string) expr
+
+  val normalizeUTF8NFC : ('n, string) expr -> ('n, string) expr
+  (** [normalizeUTF8NFC str] converts a string to NFC normalized form, assuming
+      the string is valid UTF-8 encoded text. *)
+
+  val reverseUTF8 : ('n, string) expr -> ('n, string) expr
+  (** [reverseUTF8 str] reverses a sequence of Unicode code points, assuming
+      that the string is valid UTF-8 encoded text. *)
+
+  val right :
+    ('n, string) expr -> (non_null, int number) expr -> ('n, string) expr
+  (** [right str n] returns the rightmost [n] characters of [str]. If [n] is
+      negative, returns all but the leftmost -n characters. *)
 
   val concat : ('n, string) expr list -> ('n, string) expr
   (** Concatenates strings. *)
