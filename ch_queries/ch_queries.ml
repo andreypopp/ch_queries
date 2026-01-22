@@ -992,8 +992,14 @@ module Expr = struct
 
   let splitByChar sep str = def "splitByChar" [ sep; str ]
 
+  (** {2 Formatting} *)
+
+  let formatReadableQuantity x = def "formatReadableQuantity" [ x ]
+  let formatReadableSize x = def "formatReadableSize" [ x ]
+
   (** {2 Type conversions} *)
 
+  let defaultValueOfTypeName x = def "defaultValueOfTypeName" [ x ]
   let toInt32 x = def "toInt32" [ x ]
   let toInt64 x = def "toInt64" [ x ]
   let toUInt64 x = def "toUInt64" [ x ]

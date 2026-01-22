@@ -1470,7 +1470,21 @@ module Expr : sig
   (** [splitByChar separator s] splits a string by a single character separator.
       Returns array of substrings. *)
 
+  (** {2 Formatting} *)
+
+  val formatReadableQuantity : ('n, _ number) expr -> ('n, string) expr
+  (** [formatReadableQuantity x] returns a rounded number with a suffix (thousand,
+      million, billion, trillion) as a string. *)
+
+  val formatReadableSize : ('n, _ number) expr -> ('n, string) expr
+  (** [formatReadableSize x] returns a readable, rounded size with suffix (B, KiB,
+      MiB, etc.) as a string. Accepts a size in bytes. *)
+
   (** {2 Type conversions} *)
+
+  val defaultValueOfTypeName : ('n, string) expr -> ('m, 'a) expr
+  (** [defaultValueOfTypeName type_name] returns the default value for a given
+      type name string. *)
 
   val toInt32 : ('n, _) expr -> ('n, int number) expr
   val toInt64 : ('n, _) expr -> ('n, int64 number) expr
