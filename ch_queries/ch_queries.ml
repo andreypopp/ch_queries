@@ -851,6 +851,7 @@ module Expr = struct
   let toStartOfSecond datetime = def "toStartOfSecond" [ datetime ]
   let fromUnixTimestamp x = def "fromUnixTimestamp" [ x ]
   let toUnixTimestamp x = def "toUnixTimestamp" [ x ]
+  let toUnixTimestamp64Milli x = def "toUnixTimestamp64Milli" [ x ]
   let toIntervalMinute x = def "toIntervalMinute" [ x ]
   let toIntervalHour x = def "toIntervalHour" [ x ]
   let toIntervalDay x = def "toIntervalDay" [ x ]
@@ -1013,6 +1014,13 @@ module Expr = struct
   let extractURLParameter url name = def "extractURLParameter" [ url; name ]
   let decodeURLComponent url = def "decodeURLComponent" [ url ]
   let decodeXMLComponent str = def "decodeXMLComponent" [ str ]
+  let cutFragment url = def "cutFragment" [ url ]
+  let cutQueryStringAndFragment url = def "cutQueryStringAndFragment" [ url ]
+
+  let cutToFirstSignificantSubdomainCustom url tld_list =
+    def "cutToFirstSignificantSubdomainCustom" [ url; tld_list ]
+
+  let domain url = def "domain" [ url ]
 
   (** {2 HTML functions} *)
 

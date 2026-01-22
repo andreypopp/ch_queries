@@ -1187,6 +1187,10 @@ module Expr : sig
 
   val fromUnixTimestamp : ('n, int number) expr -> ('n, datetime) expr
   val toUnixTimestamp : ('n, _ timestamp) expr -> ('n, int number) expr
+  val toUnixTimestamp64Milli : ('n, _ timestamp) expr -> ('n, int64 number) expr
+  (** [toUnixTimestamp64Milli x] converts DateTime64 to Int64 representing
+      milliseconds since the Unix epoch. *)
+
   val toIntervalMinute : ('n, int number) expr -> ('n, interval) expr
   val toIntervalHour : ('n, int number) expr -> ('n, interval) expr
   val toIntervalDay : ('n, int number) expr -> ('n, interval) expr
@@ -1548,6 +1552,23 @@ module Expr : sig
       These entities are: [&quot;] [&amp;] [&apos;] [&gt;] [&lt;]. Also supports
       numeric character references in decimal ([&#N;]) and hexadecimal
       ([&#xN;]) forms. *)
+
+  val cutFragment : ('n, string) expr -> ('n, string) expr
+  (** [cutFragment url] removes the fragment identifier (the part after #)
+      from the URL. If the URL has no fragment, returns the original string. *)
+
+  val cutQueryStringAndFragment : ('n, string) expr -> ('n, string) expr
+  (** [cutQueryStringAndFragment url] removes the query string and fragment
+      identifier from the URL. *)
+
+  val cutToFirstSignificantSubdomainCustom :
+    ('n, string) expr -> (non_null, string) expr -> ('n, string) expr
+  (** [cutToFirstSignificantSubdomainCustom url tld_list] removes all
+      subdomains except the first significant one, using a custom TLD list.
+      The [tld_list] is the name of a custom TLD list. *)
+
+  val domain : ('n, string) expr -> ('n, string) expr
+  (** [domain url] extracts the domain from a URL. *)
 
   (** {2 HTML functions} *)
 
