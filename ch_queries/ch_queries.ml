@@ -987,6 +987,18 @@ module Expr = struct
   let multiSearchFirstPosition hay needle =
     def "multiSearchFirstPosition" [ hay; needle ]
 
+  let multiSearchFirstPositionCaseInsensitive hay needles =
+    def "multiSearchFirstPositionCaseInsensitive" [ hay; needles ]
+
+  let multiSearchAny hay needles = def "multiSearchAny" [ hay; needles ]
+
+  let multiSearchAnyCaseInsensitiveUTF8 hay needles =
+    def "multiSearchAnyCaseInsensitiveUTF8" [ hay; needles ]
+
+  let multiSearchAnyUTF8 hay needles = def "multiSearchAnyUTF8" [ hay; needles ]
+
+  let multiMatchAny hay patterns = def "multiMatchAny" [ hay; patterns ]
+
   let multiMatchAllIndices hay patterns =
     def "multiMatchAllIndices" [ hay; patterns ]
 

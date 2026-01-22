@@ -1473,6 +1473,44 @@ module Expr : sig
   (** Returns the leftmost offset in a haystack string which matches any of
       multiple needle strings, otherwise 0, if there was no match *)
 
+  val multiSearchFirstPositionCaseInsensitive :
+    ('n, string) expr ->
+    (non_null, (non_null, string) array) expr ->
+    ('n, int number) expr
+  (** Case-insensitive version of [multiSearchFirstPosition]. Returns the
+      leftmost offset in a haystack string which matches any of multiple needle
+      strings, otherwise 0. *)
+
+  val multiSearchAny :
+    ('n, string) expr ->
+    (non_null, (non_null, string) array) expr ->
+    (non_null, bool) expr
+  (** [multiSearchAny haystack needles] returns 1 if at least one of the
+      needle substrings matches the haystack string, 0 otherwise. *)
+
+  val multiSearchAnyCaseInsensitiveUTF8 :
+    ('n, string) expr ->
+    (non_null, (non_null, string) array) expr ->
+    (non_null, bool) expr
+  (** [multiSearchAnyCaseInsensitiveUTF8 haystack needles] returns 1 if at least
+      one of the needle substrings matches the haystack string (case-insensitive,
+      UTF-8 aware), 0 otherwise. *)
+
+  val multiSearchAnyUTF8 :
+    ('n, string) expr ->
+    (non_null, (non_null, string) array) expr ->
+    (non_null, bool) expr
+  (** [multiSearchAnyUTF8 haystack needles] returns 1 if at least one of the
+      needle substrings matches the haystack string (UTF-8 aware), 0 otherwise. *)
+
+  val multiMatchAny :
+    ('n, string) expr ->
+    (non_null, (non_null, string) array) expr ->
+    (non_null, bool) expr
+  (** [multiMatchAny haystack patterns] returns 1 if at least one of the regex
+      patterns matches the haystack string, 0 otherwise. Uses Hyperscan library
+      for regex matching. *)
+
   val multiMatchAllIndices :
     ('n, string) expr ->
     (non_null, (non_null, string) array) expr ->
