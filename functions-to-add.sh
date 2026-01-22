@@ -283,5 +283,5 @@ where
   and description != ''
   and name not in existing
   and name not in ['negate', 'divide', 'minus', 'plus', 'multiply', 'array', 'equals', 'notEquals', 'greater', 'greaterOrEquals', 'less', 'lessOrEquals']
-order by categories, name limit 3
+order by categories, name limit 5
 "
