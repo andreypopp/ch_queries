@@ -1193,6 +1193,7 @@ module Expr : sig
   val toIntervalWeek : ('n, int number) expr -> ('n, interval) expr
   val toIntervalMonth : ('n, int number) expr -> ('n, interval) expr
   val toIntervalYear : ('n, int number) expr -> ('n, interval) expr
+  val toIntervalNanosecond : ('n, int number) expr -> ('n, interval) expr
 
   val age :
     ?timezone:('n, string) expr ->
@@ -1666,8 +1667,21 @@ module Expr : sig
   (** [defaultValueOfTypeName type_name] returns the default value for a given
       type name string. *)
 
+  val toDateTime64 : ('n, _) expr -> ('n, datetime64) expr
+  (** [toDateTime64 x] converts a value to DateTime64 type. *)
+
+  val toDecimal64 :
+    ('n, _) expr -> (non_null, int number) expr -> ('n, float number) expr
+  (** [toDecimal64 x scale] converts [x] to Decimal64 with the specified [scale]
+      (number of decimal places). *)
+
+  val toInt16 : ('n, _) expr -> ('n, int number) expr
   val toInt32 : ('n, _) expr -> ('n, int number) expr
   val toInt64 : ('n, _) expr -> ('n, int64 number) expr
+  val toInt128 : ('n, _) expr -> ('n, int64 number) expr
+  (** [toInt128 x] converts [x] to Int128 type. Note: OCaml int64 is used as the
+      closest representation. *)
+
   val toUInt64 : ('n, _) expr -> ('n, uint64 number) expr
   val toUInt32 : ('n, _) expr -> ('n, int number) expr
 

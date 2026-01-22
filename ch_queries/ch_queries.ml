@@ -857,6 +857,7 @@ module Expr = struct
   let toIntervalWeek x = def "toIntervalWeek" [ x ]
   let toIntervalMonth x = def "toIntervalMonth" [ x ]
   let toIntervalYear x = def "toIntervalYear" [ x ]
+  let toIntervalNanosecond x = def "toIntervalNanosecond" [ x ]
   let toStartOfInterval x interval = def "toStartOfInterval" [ x; interval ]
 
   let age ?timezone unit startdate enddate =
@@ -1056,8 +1057,12 @@ module Expr = struct
   (** {2 Type conversions} *)
 
   let defaultValueOfTypeName x = def "defaultValueOfTypeName" [ x ]
+  let toDateTime64 x = def "toDateTime64" [ x ]
+  let toDecimal64 x scale = def "toDecimal64" [ x; scale ]
+  let toInt16 x = def "toInt16" [ x ]
   let toInt32 x = def "toInt32" [ x ]
   let toInt64 x = def "toInt64" [ x ]
+  let toInt128 x = def "toInt128" [ x ]
   let toUInt64 x = def "toUInt64" [ x ]
   let toUInt32 x = def "toUInt32" [ x ]
   let toUInt32OrDefault x default = def "toUInt32OrDefault" [ x; default ]
