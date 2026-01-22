@@ -1072,6 +1072,12 @@ module Expr = struct
   let bitShiftRight a n = def "bitShiftRight" [ a; n ]
   let byteSwap x = def "byteSwap" [ x ]
 
+  (** {2 Other functions} *)
+
+  let getMacro name = def "getMacro" [ name ]
+  let getSubcolumn expr subcolumn_name = def "getSubcolumn" [ expr; subcolumn_name ]
+  let hostName () = def "hostName" []
+
   (** {2 Machine learning functions} *)
 
   let arrayAUCPR ?partial_offsets scores labels =

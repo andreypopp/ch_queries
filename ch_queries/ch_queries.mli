@@ -1656,6 +1656,21 @@ module Expr : sig
   val byteSwap : ('n, 'a number) expr -> ('n, 'a number) expr
   (** Reverses the bytes of an integer, i.e. changes its endianness. *)
 
+  (** {2 Other functions} *)
+
+  val getMacro : ('n, string) expr -> ('n, string) expr
+  (** [getMacro name] returns the value of a macro from the server configuration
+      file. Macros are defined in the <macros> section and help distinguish
+      servers by convenient names. *)
+
+  val getSubcolumn : ('n, 'a) expr -> ('m, string) expr -> _ expr
+  (** [getSubcolumn expr subcolumn_name] extracts a requested subcolumn from the
+      provided expression. Useful for accessing nested data structures. *)
+
+  val hostName : unit -> (non_null, string) expr
+  (** [hostName ()] returns the name of the host on which this function was
+      executed. In distributed contexts, it returns the remote server name. *)
+
   (** {2 Machine learning functions} *)
 
   val arrayAUCPR :
