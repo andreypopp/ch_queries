@@ -1058,6 +1058,12 @@ module Expr = struct
   (** {2 Rounding functions} *)
 
   let round x = def "round" [ x ]
+  let floor x = def "floor" [ x ]
+
+  (** {2 Random functions} *)
+
+  let rand () = def "rand" []
+  let randCanonical () = def "randCanonical" []
 
   (** {2 Bit functions} *)
 

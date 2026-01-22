@@ -1609,6 +1609,18 @@ module Expr : sig
   val round : ('n, 'a number) expr -> ('n, 'a number) expr
   (** Rounds a value to the nearest integer. *)
 
+  val floor : ('n, 'a number) expr -> ('n, 'a number) expr
+  (** [floor x] returns the largest round number less than or equal to [x]. *)
+
+  (** {2 Random functions} *)
+
+  val rand : unit -> (non_null, int number) expr
+  (** [rand ()] returns a pseudo-random UInt32 number. *)
+
+  val randCanonical : unit -> (non_null, float number) expr
+  (** [randCanonical ()] returns a pseudo-random Float64 number uniformly
+      distributed in the interval [0, 1). *)
+
   (** {2 Bit functions} *)
 
   val bitAnd :
