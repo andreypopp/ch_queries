@@ -1570,6 +1570,18 @@ module Expr : sig
   val domain : ('n, string) expr -> ('n, string) expr
   (** [domain url] extracts the domain from a URL. *)
 
+  val domainWithoutWWW : ('n, string) expr -> ('n, string) expr
+  (** [domainWithoutWWW url] extracts the domain from a URL, removing the
+      leading "www." prefix if present. *)
+
+  val protocol : ('n, string) expr -> ('n, string) expr
+  (** [protocol url] extracts the protocol (scheme) from a URL.
+      For example, returns "https" for "https://example.com". *)
+
+  val queryString : ('n, string) expr -> ('n, string) expr
+  (** [queryString url] extracts the query string from a URL, including the
+      leading question mark. Returns empty string if no query string. *)
+
   (** {2 HTML functions} *)
 
   val extractTextFromHTML : ('n, string) expr -> ('n, string) expr

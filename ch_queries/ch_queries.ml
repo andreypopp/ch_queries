@@ -1021,6 +1021,9 @@ module Expr = struct
     def "cutToFirstSignificantSubdomainCustom" [ url; tld_list ]
 
   let domain url = def "domain" [ url ]
+  let domainWithoutWWW url = def "domainWithoutWWW" [ url ]
+  let protocol url = def "protocol" [ url ]
+  let queryString url = def "queryString" [ url ]
 
   (** {2 HTML functions} *)
 
