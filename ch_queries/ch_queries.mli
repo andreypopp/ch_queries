@@ -1402,7 +1402,41 @@ module Expr : sig
   (** [replaceAll haystack pattern replacement] replaces all occurrences of
       [pattern] in [haystack] with [replacement]. *)
 
+  val replaceRegexpAll :
+    ('n, string) expr ->
+    (non_null, string) expr ->
+    (non_null, string) expr ->
+    ('n, string) expr
+  (** [replaceRegexpAll haystack pattern replacement] replaces all substrings
+      matching the regular expression [pattern] in [haystack] with [replacement].
+      Uses RE2 syntax. *)
+
+  val replaceRegexpOne :
+    ('n, string) expr ->
+    (non_null, string) expr ->
+    (non_null, string) expr ->
+    ('n, string) expr
+  (** [replaceRegexpOne haystack pattern replacement] replaces the first substring
+      matching the regular expression [pattern] in [haystack] with [replacement].
+      Uses RE2 syntax. *)
+
   (** {2 String search} *)
+
+  val countSubstrings :
+    ('n, string) expr -> (non_null, string) expr -> ('n, int number) expr
+  (** [countSubstrings haystack needle] returns the number of non-overlapping
+      occurrences of [needle] in [haystack]. *)
+
+  val extractAll :
+    ('n, string) expr ->
+    (non_null, string) expr ->
+    ('n, (non_null, string) array) expr
+  (** [extractAll haystack pattern] returns an array of all substrings matching
+      the regular expression [pattern] in [haystack]. Uses RE2 syntax. *)
+
+  val ilike : ('n, string) expr -> (non_null, string) expr -> ('n, bool) expr
+  (** [ilike haystack pattern] case-insensitive version of [like]. Uses SQL LIKE
+      pattern syntax with [%] and [_] wildcards. *)
 
   val like : ('n, string) expr -> (non_null, string) expr -> ('n, bool) expr
   val endsWith : ('n, string) expr -> (non_null, string) expr -> ('n, bool) expr

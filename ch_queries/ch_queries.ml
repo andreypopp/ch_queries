@@ -958,8 +958,17 @@ module Expr = struct
   let replaceAll hay needle replacement =
     def "replaceAll" [ hay; needle; replacement ]
 
+  let replaceRegexpAll hay pattern replacement =
+    def "replaceRegexpAll" [ hay; pattern; replacement ]
+
+  let replaceRegexpOne hay pattern replacement =
+    def "replaceRegexpOne" [ hay; pattern; replacement ]
+
   (** {2 String search} *)
 
+  let countSubstrings hay needle = def "countSubstrings" [ hay; needle ]
+  let extractAll hay pattern = def "extractAll" [ hay; pattern ]
+  let ilike hay needle = def "ilike" [ hay; needle ]
   let like hay needle = def "like" [ hay; needle ]
   let endsWith hay needle = def "endsWith" [ hay; needle ]
   let startsWith hay needle = def "startsWith" [ hay; needle ]
