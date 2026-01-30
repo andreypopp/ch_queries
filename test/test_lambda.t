@@ -23,7 +23,7 @@ test IN expression with subquery:
                method x =
                  Ch_queries.Expr.length
                    (Ch_queries.Expr.arrayFilter
-                      (Ch_queries.lambda "x" (fun x ->
+                      (Ch_queries.lambda "x" (fun _ ->
                            Ch_queries.Expr.( = ) (Ch_queries.unsafe "x")
                              (Ch_queries.int 1)))
                       (__q#users#query (fun __q -> __q#xs)))
