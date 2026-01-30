@@ -952,10 +952,16 @@ module Expr = struct
     | Some c -> def "trimRight" [ str; c ]
 
   let concat strs = def "concat" strs
-  let substring str offset length = def "substring" [ str; offset; length ]
 
-  let substringUTF8 str offset length =
-    def "substringUTF8" [ str; offset; length ]
+  let substring ?length str offset =
+    match length with
+    | None -> def "substring" [ str; offset ]
+    | Some len -> def "substring" [ str; offset; len ]
+
+  let substringUTF8 ?length str offset =
+    match length with
+    | None -> def "substringUTF8" [ str; offset ]
+    | Some len -> def "substringUTF8" [ str; offset; len ]
 
   let match_ hay pattern = def "match" [ hay; pattern ]
 

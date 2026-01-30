@@ -1383,6 +1383,43 @@ let rec stage_expr ~params expr =
                 ]
           | _ ->
               Location.raise_errorf ~loc "trimRight requires 1 or 2 arguments")
+      | Func { node = "substring"; _ } -> (
+          (* substring(str, offset[, length]) *)
+          let f = evar ~loc "Ch_queries.Expr.substring" in
+          match args with
+          | [ str; offset ] ->
+              let str = stage_expr ~params str in
+              let offset = stage_expr ~params offset in
+              eapply ~loc f [ str; offset ]
+          | [ str; offset; length ] ->
+              let str = stage_expr ~params str in
+              let offset = stage_expr ~params offset in
+              let length = stage_expr ~params length in
+              pexp_apply ~loc f
+                [
+                  (Labelled "length", length); (Nolabel, str); (Nolabel, offset);
+                ]
+          | _ ->
+              Location.raise_errorf ~loc "substring requires 2 or 3 arguments")
+      | Func { node = "substringUTF8"; _ } -> (
+          (* substringUTF8(str, offset[, length]) *)
+          let f = evar ~loc "Ch_queries.Expr.substringUTF8" in
+          match args with
+          | [ str; offset ] ->
+              let str = stage_expr ~params str in
+              let offset = stage_expr ~params offset in
+              eapply ~loc f [ str; offset ]
+          | [ str; offset; length ] ->
+              let str = stage_expr ~params str in
+              let offset = stage_expr ~params offset in
+              let length = stage_expr ~params length in
+              pexp_apply ~loc f
+                [
+                  (Labelled "length", length); (Nolabel, str); (Nolabel, offset);
+                ]
+          | _ ->
+              Location.raise_errorf ~loc
+                "substringUTF8 requires 2 or 3 arguments")
       | Func { node = ("joinGet" | "joinGetOrNull") as fname; _ } ->
           (* joinGet(DICT, VALUE, KEYS...) stages as:
              Ch_queries.Expr.joinGet

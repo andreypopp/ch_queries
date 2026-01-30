@@ -1380,20 +1380,22 @@ module Expr : sig
   (** Concatenates strings. *)
 
   val substring :
+    ?length:(non_null, int number) expr ->
     ('n, string) expr ->
     (non_null, int number) expr ->
-    (non_null, int number) expr ->
     ('n, string) expr
-  (** [substring s offset length] extracts a substring starting at [offset]
-      (1-based) with [length] bytes. *)
+  (** [substring ?length s offset] extracts a substring starting at [offset]
+      (1-based). If [length] is provided, extracts that many bytes; otherwise
+      extracts to the end of the string. *)
 
   val substringUTF8 :
+    ?length:(non_null, int number) expr ->
     ('n, string) expr ->
     (non_null, int number) expr ->
-    (non_null, int number) expr ->
     ('n, string) expr
-  (** [substringUTF8 s offset length] extracts a substring starting at [offset]
-      (1-based) with [length] Unicode code points. *)
+  (** [substringUTF8 ?length s offset] extracts a substring starting at [offset]
+      (1-based). If [length] is provided, extracts that many Unicode code
+      points; otherwise extracts to the end of the string. *)
 
   val match_ : ('n, string) expr -> (non_null, string) expr -> ('n, bool) expr
 
@@ -1880,7 +1882,7 @@ module Expr : sig
 
   val randCanonical : unit -> (non_null, float number) expr
   (** [randCanonical ()] returns a pseudo-random Float64 number uniformly
-      distributed in the interval [0, 1). *)
+      distributed in the interval \[0, 1). *)
 
   (** {2 Bit functions} *)
 
