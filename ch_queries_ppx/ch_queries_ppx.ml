@@ -1741,7 +1741,7 @@ let rec stage_expr ~params expr =
       | [ param ] ->
           let param_name = param.node in
           [%expr
-            Ch_queries.lambda [%e estring ~loc param_name] (fun x ->
+            Ch_queries.lambda [%e estring ~loc param_name] (fun _ ->
                 [%e body_expr])]
       | [ param1; param2 ] ->
           let param1_name = param1.node in
