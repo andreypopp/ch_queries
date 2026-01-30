@@ -532,8 +532,7 @@ let rec stage_expr ~params expr =
               ( "greatest" | "least" | "concat" | "midpoint" | "arrayConcat"
               | "arrayEnumerateUniq" | "arrayIntersect"
               | "arraySymmetricDifference" | "arrayUnion" | "arrayUniq"
-              | "firstNonDefault" ) as
-              name;
+              | "firstNonDefault" ) as name;
             _;
           } ->
           let f = evar ~loc ("Ch_queries.Expr." ^ name) in
@@ -615,7 +614,9 @@ let rec stage_expr ~params expr =
               let args = List.map args ~f:(stage_expr ~params) in
               eapply ~loc f [ elist ~loc args ])
       | Func { node = "wordShingleMinHashCaseInsensitiveUTF8"; _ } -> (
-          let f = evar ~loc "Ch_queries.Expr.wordShingleMinHashCaseInsensitiveUTF8" in
+          let f =
+            evar ~loc "Ch_queries.Expr.wordShingleMinHashCaseInsensitiveUTF8"
+          in
           match args with
           | [ str ] ->
               let str = stage_expr ~params str in
@@ -1307,6 +1308,49 @@ let rec stage_expr ~params expr =
           | _ ->
               Location.raise_errorf ~loc
                 "arrayStringConcat requires 1 or 2 arguments")
+      | Func { node = "splitByChar"; _ } -> (
+          (* splitByChar(sep, str[, max_substrings]) *)
+          let f = evar ~loc "Ch_queries.Expr.splitByChar" in
+          match args with
+          | [ sep; str ] ->
+              let sep = stage_expr ~params sep in
+              let str = stage_expr ~params str in
+              eapply ~loc f [ sep; str ]
+          | [ sep; str; max_substrings ] ->
+              let sep = stage_expr ~params sep in
+              let str = stage_expr ~params str in
+              let max_substrings = stage_expr ~params max_substrings in
+              pexp_apply ~loc f
+                [
+                  (Labelled "max_substrings", max_substrings);
+                  (Nolabel, sep);
+                  (Nolabel, str);
+                ]
+          | _ ->
+              Location.raise_errorf ~loc "splitByChar requires 2 or 3 arguments"
+          )
+      | Func { node = "match"; _ } ->
+          (* match is a reserved keyword in OCaml, so we use match_ *)
+          let f = evar ~loc "Ch_queries.Expr.match_" in
+          let args = List.map args ~f:(stage_expr ~params) in
+          eapply ~loc f args
+      | Func { node = "length"; _ } -> (
+          (* length(x::String) or length('literal') -> stringLength, otherwise length for arrays *)
+          match args with
+          | [
+           { node = E_ascribe (e, { node = T { node = "String"; _ }; _ }); _ };
+          ] ->
+              let f = evar ~loc "Ch_queries.Expr.stringLength" in
+              let e = stage_expr ~params e in
+              eapply ~loc f [ e ]
+          | [ ({ node = E_lit (L_string _); _ } as e) ] ->
+              let f = evar ~loc "Ch_queries.Expr.stringLength" in
+              let e = stage_expr ~params e in
+              eapply ~loc f [ e ]
+          | _ ->
+              let f = evar ~loc "Ch_queries.Expr.length" in
+              let args = List.map args ~f:(stage_expr ~params) in
+              eapply ~loc f args)
       | Func { node = "trimBoth"; _ } -> (
           (* trimBoth(str[, trim_characters]) *)
           let f = evar ~loc "Ch_queries.Expr.trimBoth" in
@@ -1318,9 +1362,11 @@ let rec stage_expr ~params expr =
               let str = stage_expr ~params str in
               let trim_characters = stage_expr ~params trim_characters in
               pexp_apply ~loc f
-                [ (Labelled "trim_characters", trim_characters); (Nolabel, str) ]
-          | _ ->
-              Location.raise_errorf ~loc "trimBoth requires 1 or 2 arguments")
+                [
+                  (Labelled "trim_characters", trim_characters); (Nolabel, str);
+                ]
+          | _ -> Location.raise_errorf ~loc "trimBoth requires 1 or 2 arguments"
+          )
       | Func { node = "trimRight"; _ } -> (
           (* trimRight(str[, trim_characters]) *)
           let f = evar ~loc "Ch_queries.Expr.trimRight" in
@@ -1332,7 +1378,9 @@ let rec stage_expr ~params expr =
               let str = stage_expr ~params str in
               let trim_characters = stage_expr ~params trim_characters in
               pexp_apply ~loc f
-                [ (Labelled "trim_characters", trim_characters); (Nolabel, str) ]
+                [
+                  (Labelled "trim_characters", trim_characters); (Nolabel, str);
+                ]
           | _ ->
               Location.raise_errorf ~loc "trimRight requires 1 or 2 arguments")
       | Func { node = ("joinGet" | "joinGetOrNull") as fname; _ } ->
@@ -1523,7 +1571,8 @@ let rec stage_expr ~params expr =
                   (Nolabel, startdate);
                   (Nolabel, enddate);
                 ]
-          | _ -> Location.raise_errorf ~loc "dateDiff requires 3 or 4 arguments")
+          | _ -> Location.raise_errorf ~loc "dateDiff requires 3 or 4 arguments"
+          )
       | Func { node = "formatDateTime"; _ } -> (
           (* formatDateTime(datetime, format[, timezone]) *)
           let f = evar ~loc "Ch_queries.Expr.formatDateTime" in

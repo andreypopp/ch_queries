@@ -412,6 +412,7 @@ module Expr : sig
       arrays are passed, [f] operates on corresponding elements. *)
 
   val length : ('n, _ array) expr -> ('n, int number) expr
+  val stringLength : ('n, string) expr -> ('n, int number) expr
 
   val arrayJoin : ('n, ('m, 'a) array) expr -> ('m, 'a) expr
   (** [arrayJoin arr] unfolds the array into multiple rows - one per element.
@@ -1177,7 +1178,10 @@ module Expr : sig
   val toStartOfDay : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
   val toStartOfHour : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
   val toStartOfMinute : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
-  val toStartOfFifteenMinutes : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
+
+  val toStartOfFifteenMinutes :
+    ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
+
   val toStartOfSecond : ('n, 'a timestamp) expr -> ('n, 'a timestamp) expr
 
   val toStartOfInterval :
@@ -1187,6 +1191,7 @@ module Expr : sig
 
   val fromUnixTimestamp : ('n, int number) expr -> ('n, datetime) expr
   val toUnixTimestamp : ('n, _ timestamp) expr -> ('n, int number) expr
+
   val toUnixTimestamp64Milli : ('n, _ timestamp) expr -> ('n, int64 number) expr
   (** [toUnixTimestamp64Milli x] converts DateTime64 to Int64 representing
       milliseconds since the Unix epoch. *)
@@ -1269,8 +1274,8 @@ module Expr : sig
 
   val mapContainsKey :
     ('n, ('nk, 'k, 'nv, 'v) map) expr -> ('nk, 'k) expr -> (non_null, bool) expr
-  (** [mapContainsKey m k] returns 1 if the map [m] contains the key [k],
-      0 otherwise. *)
+  (** [mapContainsKey m k] returns 1 if the map [m] contains the key [k], 0
+      otherwise. *)
 
   val mapFromArrays :
     ('n, ('nk, 'k) array) expr ->
@@ -1280,8 +1285,7 @@ module Expr : sig
       array provides the keys and [values] array provides the values. Both
       arrays must have the same length. *)
 
-  val mapKeys :
-    ('n, ('nk, 'k, 'nv, 'v) map) expr -> ('n, ('nk, 'k) array) expr
+  val mapKeys : ('n, ('nk, 'k, 'nv, 'v) map) expr -> ('n, ('nk, 'k) array) expr
   (** [mapKeys m] returns all keys of the map [m] as an array. *)
 
   val mapValues :
@@ -1321,7 +1325,8 @@ module Expr : sig
 
   val lengthUTF8 : ('n, string) expr -> ('n, int number) expr
   (** [lengthUTF8 str] returns the length of a string in Unicode code points
-      (not bytes), assuming that the string contains valid UTF-8 encoded text. *)
+      (not bytes), assuming that the string contains valid UTF-8 encoded text.
+  *)
 
   val lower : ('n, string) expr -> ('n, string) expr
   (** [lower str] converts ASCII Latin symbols in a string to lowercase. *)
@@ -1359,17 +1364,17 @@ module Expr : sig
     ?trim_characters:(non_null, string) expr ->
     ('n, string) expr ->
     ('n, string) expr
-  (** [trimBoth ?trim_characters str] removes the specified characters from
-      both ends of [str]. If [trim_characters] is not specified, removes
-      whitespace. *)
+  (** [trimBoth ?trim_characters str] removes the specified characters from both
+      ends of [str]. If [trim_characters] is not specified, removes whitespace.
+  *)
 
   val trimRight :
     ?trim_characters:(non_null, string) expr ->
     ('n, string) expr ->
     ('n, string) expr
-  (** [trimRight ?trim_characters str] removes the specified characters from
-      the end of [str]. If [trim_characters] is not specified, removes
-      whitespace. *)
+  (** [trimRight ?trim_characters str] removes the specified characters from the
+      end of [str]. If [trim_characters] is not specified, removes whitespace.
+  *)
 
   val concat : ('n, string) expr list -> ('n, string) expr
   (** Concatenates strings. *)
@@ -1414,17 +1419,17 @@ module Expr : sig
     (non_null, string) expr ->
     ('n, string) expr
   (** [replaceRegexpAll haystack pattern replacement] replaces all substrings
-      matching the regular expression [pattern] in [haystack] with [replacement].
-      Uses RE2 syntax. *)
+      matching the regular expression [pattern] in [haystack] with
+      [replacement]. Uses RE2 syntax. *)
 
   val replaceRegexpOne :
     ('n, string) expr ->
     (non_null, string) expr ->
     (non_null, string) expr ->
     ('n, string) expr
-  (** [replaceRegexpOne haystack pattern replacement] replaces the first substring
-      matching the regular expression [pattern] in [haystack] with [replacement].
-      Uses RE2 syntax. *)
+  (** [replaceRegexpOne haystack pattern replacement] replaces the first
+      substring matching the regular expression [pattern] in [haystack] with
+      [replacement]. Uses RE2 syntax. *)
 
   (** {2 String search} *)
 
@@ -1500,23 +1505,24 @@ module Expr : sig
     ('n, string) expr ->
     (non_null, (non_null, string) array) expr ->
     (non_null, bool) expr
-  (** [multiSearchAny haystack needles] returns 1 if at least one of the
-      needle substrings matches the haystack string, 0 otherwise. *)
+  (** [multiSearchAny haystack needles] returns 1 if at least one of the needle
+      substrings matches the haystack string, 0 otherwise. *)
 
   val multiSearchAnyCaseInsensitiveUTF8 :
     ('n, string) expr ->
     (non_null, (non_null, string) array) expr ->
     (non_null, bool) expr
   (** [multiSearchAnyCaseInsensitiveUTF8 haystack needles] returns 1 if at least
-      one of the needle substrings matches the haystack string (case-insensitive,
-      UTF-8 aware), 0 otherwise. *)
+      one of the needle substrings matches the haystack string
+      (case-insensitive, UTF-8 aware), 0 otherwise. *)
 
   val multiSearchAnyUTF8 :
     ('n, string) expr ->
     (non_null, (non_null, string) array) expr ->
     (non_null, bool) expr
   (** [multiSearchAnyUTF8 haystack needles] returns 1 if at least one of the
-      needle substrings matches the haystack string (UTF-8 aware), 0 otherwise. *)
+      needle substrings matches the haystack string (UTF-8 aware), 0 otherwise.
+  *)
 
   val multiMatchAny :
     ('n, string) expr ->
@@ -1550,12 +1556,12 @@ module Expr : sig
   val decodeXMLComponent : ('n, string) expr -> ('n, string) expr
   (** [decodeXMLComponent str] replaces XML predefined entities with characters.
       These entities are: [&quot;] [&amp;] [&apos;] [&gt;] [&lt;]. Also supports
-      numeric character references in decimal ([&#N;]) and hexadecimal
-      ([&#xN;]) forms. *)
+      numeric character references in decimal ([&#N;]) and hexadecimal ([&#xN;])
+      forms. *)
 
   val cutFragment : ('n, string) expr -> ('n, string) expr
-  (** [cutFragment url] removes the fragment identifier (the part after #)
-      from the URL. If the URL has no fragment, returns the original string. *)
+  (** [cutFragment url] removes the fragment identifier (the part after #) from
+      the URL. If the URL has no fragment, returns the original string. *)
 
   val cutQueryStringAndFragment : ('n, string) expr -> ('n, string) expr
   (** [cutQueryStringAndFragment url] removes the query string and fragment
@@ -1563,9 +1569,9 @@ module Expr : sig
 
   val cutToFirstSignificantSubdomainCustom :
     ('n, string) expr -> (non_null, string) expr -> ('n, string) expr
-  (** [cutToFirstSignificantSubdomainCustom url tld_list] removes all
-      subdomains except the first significant one, using a custom TLD list.
-      The [tld_list] is the name of a custom TLD list. *)
+  (** [cutToFirstSignificantSubdomainCustom url tld_list] removes all subdomains
+      except the first significant one, using a custom TLD list. The [tld_list]
+      is the name of a custom TLD list. *)
 
   val domain : ('n, string) expr -> ('n, string) expr
   (** [domain url] extracts the domain from a URL. *)
@@ -1575,8 +1581,8 @@ module Expr : sig
       leading "www." prefix if present. *)
 
   val protocol : ('n, string) expr -> ('n, string) expr
-  (** [protocol url] extracts the protocol (scheme) from a URL.
-      For example, returns "https" for "https://example.com". *)
+  (** [protocol url] extracts the protocol (scheme) from a URL. For example,
+      returns "https" for "https://example.com". *)
 
   val queryString : ('n, string) expr -> ('n, string) expr
   (** [queryString url] extracts the query string from a URL, including the
@@ -1586,8 +1592,8 @@ module Expr : sig
 
   val extractTextFromHTML : ('n, string) expr -> ('n, string) expr
   (** [extractTextFromHTML str] extracts text from HTML or XHTML. The function
-      attempts to conform to the HTML5 spec, using common browser behavior as
-      a guide. It handles comments, CDATA, DTD, script/style tags, and extracts
+      attempts to conform to the HTML5 spec, using common browser behavior as a
+      guide. It handles comments, CDATA, DTD, script/style tags, and extracts
       text from all other tags. *)
 
   (** {2 JSON functions} *)
@@ -1626,9 +1632,9 @@ module Expr : sig
   (** [jSONExtract args] extracts a value from a JSON string. The [args] list
       should contain the JSON string, followed by zero or more path components
       (keys or indices), followed by the type name as the last argument.
-      Example: [jSONExtract [json; string "name"; string "String"]] extracts
-      the string field "name" from the JSON.
-      Note: The return type is polymorphic and must be annotated appropriately. *)
+      Example: [jSONExtract [json; string "name"; string "String"]] extracts the
+      string field "name" from the JSON. Note: The return type is polymorphic
+      and must be annotated appropriately. *)
 
   val jSONExtractBool : ('n, string) expr list -> ('m, bool) expr
   (** [jSONExtractBool args] extracts a boolean value from a JSON string. The
@@ -1662,11 +1668,13 @@ module Expr : sig
   (** {2 Splitting functions} *)
 
   val splitByChar :
+    ?max_substrings:('o, _ number) expr ->
     (non_null, string) expr ->
     ('n, string) expr ->
     ('n, (non_null, string) array) expr
-  (** [splitByChar separator s] splits a string by a single character separator.
-      Returns array of substrings. *)
+  (** [splitByChar ?max_substrings separator s] splits a string by a single
+      character separator. [max_substrings] optionally limits the number of
+      substrings returned. Returns array of substrings. *)
 
   val splitByWhitespace :
     ('n, string) expr -> ('n, (non_null, string) array) expr
@@ -1688,12 +1696,12 @@ module Expr : sig
   (** {2 Formatting} *)
 
   val formatReadableQuantity : ('n, _ number) expr -> ('n, string) expr
-  (** [formatReadableQuantity x] returns a rounded number with a suffix (thousand,
-      million, billion, trillion) as a string. *)
+  (** [formatReadableQuantity x] returns a rounded number with a suffix
+      (thousand, million, billion, trillion) as a string. *)
 
   val formatReadableSize : ('n, _ number) expr -> ('n, string) expr
-  (** [formatReadableSize x] returns a readable, rounded size with suffix (B, KiB,
-      MiB, etc.) as a string. Accepts a size in bytes. *)
+  (** [formatReadableSize x] returns a readable, rounded size with suffix (B,
+      KiB, MiB, etc.) as a string. Accepts a size in bytes. *)
 
   (** {2 Type conversions} *)
 
@@ -1712,13 +1720,16 @@ module Expr : sig
   val toInt16 : ('n, _) expr -> ('n, int number) expr
   val toInt32 : ('n, _) expr -> ('n, int number) expr
   val toInt64 : ('n, _) expr -> ('n, int64 number) expr
+
   val toInt128 : ('n, _) expr -> ('n, int64 number) expr
   (** [toInt128 x] converts [x] to Int128 type. Note: OCaml int64 is used as the
       closest representation. *)
 
   val toUInt64 : ('n, _) expr -> ('n, uint64 number) expr
+
   val toUInt64OrNull : ('n, _) expr -> (null, uint64 number) expr
-  (** [toUInt64OrNull x] converts [x] to UInt64 or returns NULL if conversion fails. *)
+  (** [toUInt64OrNull x] converts [x] to UInt64 or returns NULL if conversion
+      fails. *)
 
   val toUInt32 : ('n, _) expr -> ('n, int number) expr
   val toUInt16 : ('n, _) expr -> ('n, int number) expr
@@ -1817,7 +1828,11 @@ module Expr : sig
     ?shinglesize:(non_null, int number) expr ->
     ?hashnum:(non_null, int number) expr ->
     ('n, string) expr ->
-    ('n, ((non_null, uint64 number) tuple2, (non_null, uint64 number) tuple2) tuple2) expr
+    ( 'n,
+      ( (non_null, uint64 number) tuple2,
+        (non_null, uint64 number) tuple2 )
+      tuple2 )
+    expr
   (** [wordShingleMinHashCaseInsensitiveUTF8 ?shinglesize ?hashnum str] splits a
       UTF-8 string into parts (shingles) of [shinglesize] words each and returns
       the shingles with minimum and maximum word hashes. It is case insensitive.
@@ -1835,7 +1850,9 @@ module Expr : sig
       last octet with "xxx" (e.g., "192.168.0.xxx"). *)
 
   val iPv4StringToNumOrDefault :
-    ('n, string) expr -> (non_null, _ number) expr -> (non_null, int number) expr
+    ('n, string) expr ->
+    (non_null, _ number) expr ->
+    (non_null, int number) expr
   (** [iPv4StringToNumOrDefault x default] converts an IPv4 address in string
       format to a UInt32 number. If the string is not a valid IPv4 address,
       returns the default value. *)
@@ -1938,17 +1955,17 @@ module Expr : sig
   val initializeAggregation :
     (non_null, string) expr -> ('n, 'a) expr list -> ('m, 'b) expr
   (** [initializeAggregation agg_func args] calculates the result of an
-      aggregate function based on the provided arguments. Useful for initializing
-      aggregate functions with the State combinator. The [agg_func] parameter
-      is the name of the aggregation function as a string. *)
+      aggregate function based on the provided arguments. Useful for
+      initializing aggregate functions with the State combinator. The [agg_func]
+      parameter is the name of the aggregation function as a string. *)
 
   val rowNumberInAllBlocks : unit -> (non_null, int64 number) expr
   (** [rowNumberInAllBlocks ()] returns a unique sequential number for each row
       across all data blocks in the query result. Numbering starts from 0. *)
 
   val shardNum : unit -> (non_null, int number) expr
-  (** [shardNum ()] returns the shard number (1-indexed) of the current shard
-      in distributed queries. *)
+  (** [shardNum ()] returns the shard number (1-indexed) of the current shard in
+      distributed queries. *)
 
   val toTypeName : ('n, 'a) expr -> (non_null, string) expr
   (** [toTypeName x] returns a string containing the type name of the passed

@@ -611,6 +611,7 @@ module Expr = struct
   let arrayCumSumNonNegative arr = def "arrayCumSumNonNegative" [ arr ]
   let arrayCumSumNonNegativeF f xs = def "arrayCumSumNonNegative" (f :: xs)
   let length x = def "length" [ x ]
+  let stringLength x = def "length" [ x ]
   let arrayJoin arr = def "arrayJoin" [ arr ]
   let arrayCompact arr = def "arrayCompact" [ arr ]
   let arrayConcat arrs = def "arrayConcat" arrs
@@ -836,7 +837,9 @@ module Expr = struct
     | None, None -> def "toYearWeek" [ date ]
     | Some m, None -> def "toYearWeek" [ date; m ]
     | Some m, Some tz -> def "toYearWeek" [ date; m; tz ]
-    | None, Some _ -> failwith "toYearWeek: timezone requires mode to be specified"
+    | None, Some _ ->
+        failwith "toYearWeek: timezone requires mode to be specified"
+
   let toRelativeMonthNum date = def "toRelativeMonthNum" [ date ]
   let toYYYYMM date = def "toYYYYMM" [ date ]
   let toYYYYMMDD date = def "toYYYYMMDD" [ date ]
@@ -847,7 +850,10 @@ module Expr = struct
   let toStartOfDay date = def "toStartOfDay" [ date ]
   let toStartOfHour datetime = def "toStartOfHour" [ datetime ]
   let toStartOfMinute datetime = def "toStartOfMinute" [ datetime ]
-  let toStartOfFifteenMinutes datetime = def "toStartOfFifteenMinutes" [ datetime ]
+
+  let toStartOfFifteenMinutes datetime =
+    def "toStartOfFifteenMinutes" [ datetime ]
+
   let toStartOfSecond datetime = def "toStartOfSecond" [ datetime ]
   let fromUnixTimestamp x = def "fromUnixTimestamp" [ x ]
   let toUnixTimestamp x = def "toUnixTimestamp" [ x ]
@@ -1001,7 +1007,6 @@ module Expr = struct
     def "multiSearchAnyCaseInsensitiveUTF8" [ hay; needles ]
 
   let multiSearchAnyUTF8 hay needles = def "multiSearchAnyUTF8" [ hay; needles ]
-
   let multiMatchAny hay patterns = def "multiMatchAny" [ hay; patterns ]
 
   let multiMatchAllIndices hay patterns =
@@ -1056,10 +1061,16 @@ module Expr = struct
 
   (** {2 Splitting functions} *)
 
-  let splitByChar sep str = def "splitByChar" [ sep; str ]
+  let splitByChar ?max_substrings sep str =
+    match max_substrings with
+    | None -> def "splitByChar" [ sep; str ]
+    | Some max -> def "splitByChar" [ sep; str; max ]
+
   let splitByWhitespace str = def "splitByWhitespace" [ str ]
   let alphaTokens str = def "alphaTokens" [ str ]
-  let extractAllGroupsVertical hay pattern = def "extractAllGroupsVertical" [ hay; pattern ]
+
+  let extractAllGroupsVertical hay pattern =
+    def "extractAllGroupsVertical" [ hay; pattern ]
 
   (** {2 Formatting} *)
 
@@ -1119,7 +1130,8 @@ module Expr = struct
     match (shinglesize, hashnum) with
     | None, None -> def "wordShingleMinHashCaseInsensitiveUTF8" [ str ]
     | Some s, None -> def "wordShingleMinHashCaseInsensitiveUTF8" [ str; s ]
-    | Some s, Some h -> def "wordShingleMinHashCaseInsensitiveUTF8" [ str; s; h ]
+    | Some s, Some h ->
+        def "wordShingleMinHashCaseInsensitiveUTF8" [ str; s; h ]
     | None, Some _ ->
         failwith
           "wordShingleMinHashCaseInsensitiveUTF8: hashnum requires shinglesize \
@@ -1129,7 +1141,10 @@ module Expr = struct
 
   let iPv4NumToString x = def "IPv4NumToString" [ x ]
   let iPv4NumToStringClassC x = def "IPv4NumToStringClassC" [ x ]
-  let iPv4StringToNumOrDefault x default = def "IPv4StringToNumOrDefault" [ x; default ]
+
+  let iPv4StringToNumOrDefault x default =
+    def "IPv4StringToNumOrDefault" [ x; default ]
+
   let toIPv4 x = def "toIPv4" [ x ]
 
   (** {2 Rounding functions} *)
@@ -1138,9 +1153,7 @@ module Expr = struct
   let floor x = def "floor" [ x ]
 
   let trunc ?n x =
-    match n with
-    | None -> def "trunc" [ x ]
-    | Some n -> def "trunc" [ x; n ]
+    match n with None -> def "trunc" [ x ] | Some n -> def "trunc" [ x; n ]
 
   (** {2 Random functions} *)
 
@@ -1163,11 +1176,17 @@ module Expr = struct
   (** {2 Other functions} *)
 
   let getMacro name = def "getMacro" [ name ]
-  let getSubcolumn expr subcolumn_name = def "getSubcolumn" [ expr; subcolumn_name ]
+
+  let getSubcolumn expr subcolumn_name =
+    def "getSubcolumn" [ expr; subcolumn_name ]
+
   let hostName () = def "hostName" []
   let identity x = def "identity" [ x ]
   let ignore x = def "ignore" [ x ]
-  let initializeAggregation agg_func args = def "initializeAggregation" (agg_func :: args)
+
+  let initializeAggregation agg_func args =
+    def "initializeAggregation" (agg_func :: args)
+
   let rowNumberInAllBlocks () = def "rowNumberInAllBlocks" []
   let shardNum () = def "shardNum" []
   let toTypeName x = def "toTypeName" [ x ]
@@ -1322,13 +1341,15 @@ module Expr = struct
     in
     def "joinGet" (unsafe (Printf.sprintf "%s.%s" db table) :: value :: keys)
 
-  let joinGetOrNull ({ db; table; keys = _; values = _ } : _ Dict.t) value keys =
+  let joinGetOrNull ({ db; table; keys = _; values = _ } : _ Dict.t) value keys
+      =
     let keys =
       match keys.Syntax.node with
       | Syntax.E_call (Syntax.Func { node = "tuple"; _ }, args) -> args
       | _ -> [ keys ]
     in
-    def "joinGetOrNull" (unsafe (Printf.sprintf "%s.%s" db table) :: value :: keys)
+    def "joinGetOrNull"
+      (unsafe (Printf.sprintf "%s.%s" db table) :: value :: keys)
 
   let dictGet ({ db; table; keys = _; values = _ } : _ Dict.t) value key =
     def "dictGet" [ unsafe (Printf.sprintf "%s.%s" db table); value; key ]
