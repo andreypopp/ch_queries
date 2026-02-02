@@ -137,6 +137,10 @@ val unsafe : string -> _ expr
 (** Inject a string into an expression without any checks. This is unsafe to do,
     if string comes from user input (= SQL injection). *)
 
+val unsafe_cast : _ expr -> _ expr
+(** Unsafely cast an expression to another type without any checks. This is
+    unsafe. *)
+
 val unsafe_concat : a_expr list -> _ expr
 
 val select :
@@ -215,6 +219,9 @@ val select_syntax :
 
 val expr_to_syntax : _ expr -> Ch_queries_syntax.Syntax.expr
 (** Convert an expression to syntax AST. *)
+
+val unsafe_expr_of_syntax : Ch_queries_syntax.Syntax.expr -> _ expr
+(** Unsafely convert syntax AST to an expression. *)
 
 val expr_to_string : _ expr -> string
 (** Convert an expression to string. *)

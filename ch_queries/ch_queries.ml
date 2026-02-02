@@ -478,6 +478,8 @@ let select_syntax ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by
   To_syntax.to_syntax select
 
 let expr_to_syntax x = x
+let unsafe_expr_of_syntax x = x
+let unsafe_cast x = x
 let expr_to_string x = Ch_queries_syntax.Printer.print_expr x
 let unsafe x = Syntax.make_expr (E_unsafe (Syntax.make_id x))
 
