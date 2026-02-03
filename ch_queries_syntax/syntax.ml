@@ -26,7 +26,7 @@ and exprsyn =
   | E_unsafe_concat of expr list
   | E_ascribe of expr * typ
 
-and param = { param : id; param_has_scope : bool }
+and param = { param : id; param_has_scope : bool; param_optional : bool }
 and func = Func of id | Func_method of id * id
 
 and lit =

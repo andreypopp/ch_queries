@@ -365,7 +365,34 @@ let rec extract_alias expr =
   | E_query (_, expr) -> extract_alias expr
   | _ -> None
 
-let rec stage_expr ~params expr =
+(* Stage an expression for use in a clause (WHERE, HAVING, etc.) that supports
+   optional params. Returns (label, staged_expr) where label is Optional if the
+   expression is an immediate optional param with scope access (?$.param),
+   Labelled otherwise. For optional params, we just pass the variable directly;
+   OCaml's optional argument syntax handles the option unwrapping.
+   For regular expressions, it's wrapped in make_hole. *)
+let rec stage_clause_expr ~label expr =
+  let loc = to_location expr in
+  match expr.Syntax.node with
+  | Syntax.E_param { param; param_has_scope; param_optional = true } ->
+      if not param_has_scope then
+        Location.raise_errorf ~loc:(to_location param)
+          "?$%s: optional parameters must use scope access syntax (?$.%s)"
+          param.Syntax.node param.Syntax.node;
+      let var = evar ~loc:(to_location param) param.Syntax.node in
+      (Optional label, var)
+  | Syntax.E_ascribe
+      ( { node = E_param { param; param_has_scope; param_optional = true }; _ },
+        _ ) ->
+      if not param_has_scope then
+        Location.raise_errorf ~loc:(to_location param)
+          "?$%s: optional parameters must use scope access syntax (?$.%s)"
+          param.Syntax.node param.Syntax.node;
+      let var = evar ~loc:(to_location param) param.Syntax.node in
+      (Optional label, var)
+  | _ -> (Labelled label, make_hole ~loc (stage_expr ~params:[] expr))
+
+and stage_expr ~params expr =
   let loc = to_location expr in
   match expr.node with
   | Syntax.E_ascribe (e, t) ->
@@ -1446,11 +1473,15 @@ let rec stage_expr ~params expr =
                 | _ ->
                     Location.raise_errorf ~loc
                       "%s: dict string must be 'db.table'" fname)
-            | E_param { param; param_has_scope } ->
+            | E_param { param; param_has_scope; param_optional } ->
                 if param_has_scope then
                   Location.raise_errorf ~loc
                     "%s: $.%s: scope-accessing parameters are not allowed for \
                      dict"
+                    fname param.Syntax.node;
+                if param_optional then
+                  Location.raise_errorf ~loc
+                    "%s: ?%s: optional parameters are not allowed for dict"
                     fname param.Syntax.node;
 
                 evar ~loc:(to_location param) param.Syntax.node
@@ -1469,7 +1500,12 @@ let rec stage_expr ~params expr =
                   [%e q] (fun __q ->
                       [%e
                         pexp_send ~loc [%expr __q] (Located.mk ~loc value_name)])]
-            | E_param { param; param_has_scope } ->
+            | E_param { param; param_has_scope; param_optional } ->
+                if param_optional then
+                  Location.raise_errorf ~loc
+                    "%s: ?%s: optional parameters are not allowed for dict \
+                     value"
+                    fname param.Syntax.node;
                 let e = evar ~loc:(to_location param) param.Syntax.node in
                 let scope = [%expr [%e dict].Ch_queries.Dict.values] in
                 let q = pexp_send ~loc scope (Located.mk ~loc "query") in
@@ -1528,11 +1564,15 @@ let rec stage_expr ~params expr =
                 | _ ->
                     Location.raise_errorf ~loc
                       "dictGet: dict string must be 'db.table'")
-            | E_param { param; param_has_scope } ->
+            | E_param { param; param_has_scope; param_optional } ->
                 if param_has_scope then
                   Location.raise_errorf ~loc
                     "dictGet: $.%s: scope-accessing parameters are not allowed \
                      for dict"
+                    param.Syntax.node;
+                if param_optional then
+                  Location.raise_errorf ~loc
+                    "dictGet: ?%s: optional parameters are not allowed for dict"
                     param.Syntax.node;
 
                 evar ~loc:(to_location param) param.Syntax.node
@@ -1551,7 +1591,12 @@ let rec stage_expr ~params expr =
                   [%e q] (fun __q ->
                       [%e
                         pexp_send ~loc [%expr __q] (Located.mk ~loc value_name)])]
-            | E_param { param; param_has_scope } ->
+            | E_param { param; param_has_scope; param_optional } ->
+                if param_optional then
+                  Location.raise_errorf ~loc
+                    "dictGet: ?%s: optional parameters are not allowed for \
+                     dict value"
+                    param.Syntax.node;
                 let e = evar ~loc:(to_location param) param.Syntax.node in
                 let scope = [%expr [%e dict].Ch_queries.Dict.values] in
                 let q = pexp_send ~loc scope (Located.mk ~loc "query") in
@@ -1690,7 +1735,10 @@ let rec stage_expr ~params expr =
           refer_to_scope ~loc scope method_name ~map:(fun e ->
               let staged_args = List.map args ~f:(stage_expr ~params) in
               eapply ~loc e staged_args))
-  | Syntax.E_param { param; param_has_scope } -> (
+  | Syntax.E_param { param; param_has_scope; param_optional } -> (
+      if param_optional then
+        Location.raise_errorf ~loc
+          "?%s: optional parameters are not allowed in expressions" param.node;
       let e = evar ~loc param.node in
       match param_has_scope with true -> [%expr [%e e] __q] | false -> e)
   | Syntax.E_ocaml_expr ocaml_code -> parse_ocaml_expr ~loc ocaml_code
@@ -1700,13 +1748,17 @@ let rec stage_expr ~params expr =
       | Syntax.In_query query ->
           let query = stage_query query in
           [%expr Ch_queries.in_ [%e expr] (Ch_queries.In_query [%e query])]
-      | Syntax.In_expr { node = E_param { param; param_has_scope }; _ } ->
+      | Syntax.In_expr
+          { node = E_param { param; param_has_scope; param_optional }; _ } ->
           (* special for [E in $param], we don't treat it as expression *)
           let loc = to_location param in
           if param_has_scope then
             Location.raise_errorf ~loc
               "$.%s: scope-accessing parameters are not allowed in IN clause"
               param.node;
+          if param_optional then
+            Location.raise_errorf ~loc
+              "?%s: optional parameters are not allowed in IN clause" param.node;
 
           let param = evar ~loc param.node in
           [%expr Ch_queries.in_ [%e expr] [%e param]]
@@ -1714,7 +1766,12 @@ let rec stage_expr ~params expr =
           {
             node =
               E_ascribe
-                ({ node = E_param { param; param_has_scope }; loc; _ }, t);
+                ( {
+                    node = E_param { param; param_has_scope; param_optional };
+                    loc;
+                    _;
+                  },
+                  t );
             _;
           }
         when Syntax.is_scope_typ t ->
@@ -1725,8 +1782,15 @@ let rec stage_expr ~params expr =
                "$.%s: scope-accessing parameters are not allowed in this \
                 context"
                param.node);
+          (if param_optional then
+             let loc = to_location param in
+             Location.raise_errorf ~loc
+               "?%s: optional parameters are not allowed in this context"
+               param.node);
           let query =
-            Syntax.make_query ~loc (Q_param { param; param_has_scope = false })
+            Syntax.make_query ~loc
+              (Q_param
+                 { param; param_has_scope = false; param_optional = false })
           in
           let loc = to_location param in
           let query = stage_query query in
@@ -1867,13 +1931,22 @@ and stage_settings ~loc settings =
             | Syntax.Setting_lit (L_interval (_, _)) ->
                 Location.raise_errorf ~loc
                   "INTERVAL is not supported in settings"
-            | Syntax.Setting_param { param; param_has_scope } ->
+            | Syntax.Setting_param { param; param_has_scope; param_optional } ->
                 if param_has_scope then
                   Location.raise_errorf ~loc
                     "scope-accessing parameters are not allowed in settings";
+                if param_optional then
+                  Location.raise_errorf ~loc
+                    "?%s: optional parameters are not allowed in settings"
+                    param.node;
                 let e =
                   Syntax.make_expr ~loc:param.loc
-                    (E_param { param; param_has_scope = false })
+                    (E_param
+                       {
+                         param;
+                         param_has_scope = false;
+                         param_optional = false;
+                       })
                 in
                 stage_expr ~params:[] e
           in
@@ -1913,12 +1986,15 @@ and stage_query ({ node; _ } as q) =
       let q1 = stage_query q1 in
       let q2 = stage_query q2 in
       pexp_apply ~loc [%expr Ch_queries.union] [ (Nolabel, q1); (Nolabel, q2) ]
-  | Q_param { param; param_has_scope } ->
+  | Q_param { param; param_has_scope; param_optional } ->
       let loc = to_location param in
       if param_has_scope then
         Location.raise_errorf ~loc
           "$.%s: scope-accessing parameters are not allowed for query params"
           param.node;
+      if param_optional then
+        Location.raise_errorf ~loc
+          "?%s: optional parameters are not allowed for query params" param.node;
 
       evar ~loc param.node
   | Q_select
@@ -1971,8 +2047,12 @@ and stage_query ({ node; _ } as q) =
                 | _, None -> None)
             in
             (make_hole ~loc select_obj, [ scope_of_with; scope_of_select ])
-        | Syntax.Select_splice { param; param_has_scope } ->
+        | Syntax.Select_splice { param; param_has_scope; param_optional } ->
             let loc = to_location param in
+            if param_optional then
+              Location.raise_errorf ~loc
+                "?%s: optional parameters are not allowed in SELECT splice"
+                param.node;
             let scope =
               match param_has_scope with
               | true -> [%expr fun __q -> [%e evar ~loc param.node] __q]
@@ -2021,7 +2101,6 @@ and stage_query_args args ({ Ch_queries_syntax.Syntax.node; _ } as q) =
         offset;
         settings;
       } ->
-      let loc = to_location q in
       let args =
         match prewhere with
         | None -> args
@@ -2033,18 +2112,12 @@ and stage_query_args args ({ Ch_queries_syntax.Syntax.node; _ } as q) =
       let args =
         match where with
         | None -> args
-        | Some where ->
-            let loc = to_location where in
-            let where = make_hole ~loc (stage_expr ~params:[] where) in
-            (Labelled "where", where) :: args
+        | Some where -> stage_clause_expr ~label:"where" where :: args
       in
       let args =
         match qualify with
         | None -> args
-        | Some qualify ->
-            let loc = to_location qualify in
-            let qualify = make_hole ~loc (stage_expr ~params:[] qualify) in
-            (Labelled "qualify", qualify) :: args
+        | Some qualify -> stage_clause_expr ~label:"qualify" qualify :: args
       in
       let args =
         match group_by with
@@ -2058,10 +2131,7 @@ and stage_query_args args ({ Ch_queries_syntax.Syntax.node; _ } as q) =
       let args =
         match having with
         | None -> args
-        | Some having ->
-            let loc = to_location having in
-            let having = make_hole ~loc (stage_expr ~params:[] having) in
-            (Labelled "having", having) :: args
+        | Some having -> stage_clause_expr ~label:"having" having :: args
       in
       let args =
         match order_by with
@@ -2075,16 +2145,12 @@ and stage_query_args args ({ Ch_queries_syntax.Syntax.node; _ } as q) =
       let args =
         match limit with
         | None -> args
-        | Some expr ->
-            let limit = make_hole ~loc (stage_expr ~params:[] expr) in
-            (Labelled "limit", limit) :: args
+        | Some limit -> stage_clause_expr ~label:"limit" limit :: args
       in
       let args =
         match offset with
         | None -> args
-        | Some expr ->
-            let offset = make_hole ~loc (stage_expr ~params:[] expr) in
-            (Labelled "offset", offset) :: args
+        | Some offset -> stage_clause_expr ~label:"offset" offset :: args
       in
       let args =
         match settings with
@@ -2209,23 +2275,32 @@ and stage_from_one from_one =
         | Some (Cluster_name id) ->
             let loc = to_location id in
             (Labelled "cluster_name", estring ~loc id.node) :: args
-        | Some (Cluster_name_param { param; param_has_scope }) ->
+        | Some (Cluster_name_param { param; param_has_scope; param_optional })
+          ->
             let loc = to_location param in
             if param_has_scope then
               Location.raise_errorf ~loc
                 "$.%s: scope-accessing parameters are not allowed for cluster \
                  name"
                 param.node;
+            if param_optional then
+              Location.raise_errorf ~loc
+                "?%s: optional parameters are not allowed for cluster name"
+                param.node;
 
             (Labelled "cluster_name", evar ~loc param.node) :: args
       in
       pexp_apply ~loc [%expr Ch_queries.from_select] args
-  | F_param { param = { param; param_has_scope }; alias; final } -> (
+  | F_param { param = { param; param_has_scope; param_optional }; alias; final }
+    -> (
       let loc = to_location param in
       if param_has_scope then
         Location.raise_errorf ~loc
           "$.%s: scope-accessing parameters are not allowed for FROM clause"
           param.node;
+      if param_optional then
+        Location.raise_errorf ~loc
+          "?%s: optional parameters are not allowed for FROM clause" param.node;
 
       match final with
       | false ->

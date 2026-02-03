@@ -26,7 +26,7 @@ and exprsyn =
   | E_unsafe_concat of expr list  (** unsafe concatenation of SQL fragments *)
   | E_ascribe of expr * typ  (** type ascription, e.g. `expr: Typ` *)
 
-and param = { param : id; param_has_scope : bool }
+and param = { param : id; param_has_scope : bool; param_optional : bool }
 and func = Func of id | Func_method of id * id
 
 and lit =

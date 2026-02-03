@@ -20,8 +20,8 @@
 %}
 
 %token <string> ID
-%token <string * bool> PARAM
-%token <string * bool> PARAM_SPLICE
+%token <string * bool * bool> PARAM
+%token <string * bool * bool> PARAM_SPLICE
 %token <string> CH_PARAM
 %token <string> OCAML_EXPR
 %token <Syntax.expr> UNSAFE
@@ -48,7 +48,7 @@
 %token WITH
 %token FILL STEP TO INTERPOLATE
 %token AS_MATERIALIZED AS_LPAREN
-%token <string * bool> AS_PARAM
+%token <string * bool * bool> AS_PARAM
 %token EOF
 
 %left UNION
@@ -140,8 +140,8 @@ with_field:
     { With_expr { expr = expr; alias = Some alias } }
 
 as_param:
-    id=AS_PARAM { let id, param_has_scope = id in
-                  {param=make_id $startpos $endpos id; param_has_scope} }
+    id=AS_PARAM { let id, param_has_scope, param_optional = id in
+                  {param=make_id $startpos $endpos id; param_has_scope; param_optional} }
 
 %inline query_no_param:
     q=query_select { q }
@@ -189,12 +189,12 @@ alias_or_q:
   | id=alias { id }
 
 param:
-    id=PARAM { let param, param_has_scope = id in
-               {param=make_id $startpos $endpos param; param_has_scope} }
+    id=PARAM { let param, param_has_scope, param_optional = id in
+               {param=make_id $startpos $endpos param; param_has_scope; param_optional} }
 
 param_splice:
-    id=PARAM_SPLICE { let param, param_has_scope = id in
-                      {param=make_id $startpos $endpos param; param_has_scope} }
+    id=PARAM_SPLICE { let param, param_has_scope, param_optional = id in
+                      {param=make_id $startpos $endpos param; param_has_scope; param_optional} }
 
 prewhere:
     PREWHERE e=expr { e }
@@ -306,7 +306,7 @@ from_one:
 
 %inline from_param:
     id=param { id }
-  | id=id { {param=id; param_has_scope=false} } (* TODO(andreypopp): probably need to deprecate this syntax *)
+  | id=id { {param=id; param_has_scope=false; param_optional=false} } (* TODO(andreypopp): probably need to deprecate this syntax *)
 
 cluster_name:
     id=id { Cluster_name id }

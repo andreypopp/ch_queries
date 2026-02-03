@@ -64,7 +64,15 @@ let rec pp_expr opts ~parent_prec expr =
         | Second -> "SECONDS"
       in
       string (Printf.sprintf "INTERVAL %d %s" n unit_str)
-  | E_param v -> string (Printf.sprintf "$%s" v.param.node)
+  | E_param v ->
+      let prefix =
+        match (v.param_optional, v.param_has_scope) with
+        | false, false -> "$"
+        | false, true -> "$."
+        | true, false -> "?$"
+        | true, true -> "?$."
+      in
+      string (Printf.sprintf "%s%s" prefix v.param.node)
   | E_window (name, args, window_spec) ->
       let pp_args =
         match args with

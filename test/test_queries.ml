@@ -21,8 +21,8 @@ module Ch_database = struct
           method is_active : (non_null, bool) expr =
             unsafe_col alias "is_active"
 
-          method uniq_state : (non_null, (non_null, int64 number) agg_state) expr
-              =
+          method uniq_state :
+              (non_null, (non_null, int64 number) agg_state) expr =
             unsafe_col alias "uniq_state"
         end
       in

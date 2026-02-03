@@ -74,8 +74,8 @@
 
   let string_of_token : Parser.token -> string = function
     | Parser.ID s -> Printf.sprintf "ID(%s)" s
-    | Parser.PARAM (s, has_scope) -> Printf.sprintf "PARAM(%s, %b)" s has_scope
-    | Parser.PARAM_SPLICE (s, has_scope) -> Printf.sprintf "PARAM_SPLICE(%s, %b)" s has_scope
+    | Parser.PARAM (s, has_scope, optional) -> Printf.sprintf "PARAM(%s, %b, %b)" s has_scope optional
+    | Parser.PARAM_SPLICE (s, has_scope, optional) -> Printf.sprintf "PARAM_SPLICE(%s, %b, %b)" s has_scope optional
     | Parser.CH_PARAM s -> Printf.sprintf "CH_PARAM(%s)" s
     | Parser.OCAML_EXPR s -> Printf.sprintf "OCAML_EXPR(%s)" s
     | Parser.UNSAFE _ -> Printf.sprintf "UNSAFE(...)"
@@ -148,7 +148,7 @@
     | Parser.INTERPOLATE -> "INTERPOLATE"
     | Parser.AS_MATERIALIZED -> "AS_MATERIALIZED"
     | Parser.AS_LPAREN -> "AS_LPAREN"
-    | Parser.AS_PARAM (s, has_scope) -> Printf.sprintf "AS_PARAM(%s, %b)" s has_scope
+    | Parser.AS_PARAM (s, has_scope, optional) -> Printf.sprintf "AS_PARAM(%s, %b, %b)" s has_scope optional
     | Parser.QUESTION -> "QUESTION"
     | Parser.DOT_DOT_DOT -> "DOT_DOT_DOT"
     | Parser.EOF -> "EOF"
@@ -177,8 +177,10 @@ rule token = parse
     let s = string_literal (Buffer.create 16) lexbuf in
     lexbuf.Lexing.lex_start_p <- lex_start_p;
     STRING s }
-  | param_char (id as s) '.' '.' '.' { PARAM_SPLICE (s, false) }
-  | param_char '.' (id as s) '.' '.' '.' { PARAM_SPLICE (s, true) }
+  | param_char (id as s) '.' '.' '.' { PARAM_SPLICE (s, false, false) }
+  | param_char '.' (id as s) '.' '.' '.' { PARAM_SPLICE (s, true, false) }
+  | '?' param_char (id as s) '.' '.' '.' { PARAM_SPLICE (s, false, true) }
+  | '?' param_char '.' (id as s) '.' '.' '.' { PARAM_SPLICE (s, true, true) }
   | param_char '{'             {
     (* remember start position to restore later *)
     let lex_start_p = Lexing.lexeme_start_p lexbuf in
@@ -199,8 +201,10 @@ rule token = parse
     let s = ch_param buf 0 lexbuf in
     lexbuf.Lexing.lex_start_p <- lex_start_p;
     CH_PARAM s }
-  | param_char (id as s)     { PARAM (s, false) }
-  | param_char '.' (id as s) { PARAM (s, true) }
+  | param_char (id as s)     { PARAM (s, false, false) }
+  | param_char '.' (id as s) { PARAM (s, true, false) }
+  | '?' param_char (id as s)     { PARAM (s, false, true) }
+  | '?' param_char '.' (id as s) { PARAM (s, true, true) }
   | id as s             { get_keyword_or_id s }
   | '('                 { LPAREN }
   | ')'                 { RPAREN }

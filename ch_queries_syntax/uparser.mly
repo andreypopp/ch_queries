@@ -33,9 +33,9 @@ uexpr_items:
   | item=uexpr_item rest=uexpr_items { item :: rest }
 
 uexpr_item:
-    param=PARAM { 
+    param=PARAM {
       let param = make_id $startpos $endpos param in
-      make_expr $startpos $endpos (E_param {param; param_has_scope=false}) 
+      make_expr $startpos $endpos (E_param {param; param_has_scope=false; param_optional=false})
     }
   | col=COLUMN { 
       let x, y = col in
