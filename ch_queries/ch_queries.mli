@@ -2212,6 +2212,8 @@ module Expr : sig
     (_, (non_null, 't number) agg_state) expr -> (non_null, 't number) expr
 
   val uniqMerge :
+    ?partition_by:a_expr list ->
+    ?order_by:(a_expr * [ `ASC | `DESC ]) list ->
     (_, (non_null, int64 number) agg_state) expr ->
     (non_null, int64 number) expr
 
@@ -2272,6 +2274,13 @@ module Expr : sig
     (_, bool) expr ->
     (non_null, (non_null, float number) agg_state) expr
   (** avgMerge with State and If combinators. *)
+
+  val uniqMergeState :
+    ?partition_by:a_expr list ->
+    ?order_by:(a_expr * [ `ASC | `DESC ]) list ->
+    (_, (non_null, int64 number) agg_state) expr ->
+    (non_null, (non_null, int64 number) agg_state) expr
+  (** uniqMerge with State combinator. *)
 
   (* {2 Join/Dict table functions} *)
 

@@ -6,7 +6,8 @@ module Ch_database = struct
       < id : (non_null, int number) expr
       ; is_active : (non_null, bool) expr
       ; x : (non_null, string) expr
-      ; xs : (non_null, (non_null, string) Ch_queries.array) expr >
+      ; xs : (non_null, (non_null, string) Ch_queries.array) expr
+      ; uniq_state : (non_null, (non_null, int64 number) agg_state) expr >
 
     let users : final:bool -> alias:string -> users scope from_one =
       let scope ~alias =
@@ -19,6 +20,10 @@ module Ch_database = struct
 
           method is_active : (non_null, bool) expr =
             unsafe_col alias "is_active"
+
+          method uniq_state : (non_null, (non_null, int64 number) agg_state) expr
+              =
+            unsafe_col alias "uniq_state"
         end
       in
       from_table ~db:"public" ~table:"users" scope

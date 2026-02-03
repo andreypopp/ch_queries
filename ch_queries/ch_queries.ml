@@ -1318,7 +1318,8 @@ module Expr = struct
   let avgMerge x = def "avgMerge" [ x ]
   let countMerge x = def "countMerge" [ x ]
   let sumMerge x = def "sumMerge" [ x ]
-  let uniqMerge x = def "uniqMerge" [ x ]
+  let uniqMerge ?partition_by ?order_by x =
+    make_window "uniqMerge" ?partition_by ?order_by [ x ]
   let uniqExactMerge x = def "uniqExactMerge" [ x ]
   let minMerge x = def "minMerge" [ x ]
   let maxMerge x = def "maxMerge" [ x ]
@@ -1338,6 +1339,8 @@ module Expr = struct
   let sumMapMerge x = def "sumMapMerge" [ x ]
   let sumMapMergeState keys values = def "sumMapMergeState" [ keys; values ]
   let avgMergeStateIf x cond = def "avgMergeStateIf" [ x; cond ]
+  let uniqMergeState ?partition_by ?order_by x =
+    make_window "uniqMergeState" ?partition_by ?order_by [ x ]
 
   (** {2 Join Tables / Dictionaries} *)
 
