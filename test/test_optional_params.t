@@ -18,7 +18,7 @@ optional param in WHERE clause:
              in
              object
                method users = users
-               method x = __q#users#query (fun __q -> __q#x)
+               method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -54,14 +54,20 @@ optional param in HAVING clause:
              in
              object
                method users = users
-               method x = __q#users#query (fun __q -> __q#x)
+               method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
           method x = __q#x
         end)
       ~group_by:(fun __q ->
-        List.concat [ [ Ch_queries.A_expr (__q#users#query (fun __q -> __q#x)) ] ])
+        List.concat
+          [
+            [
+              Ch_queries.A_expr
+                (__q#users#query ?alias:(Some "x") (fun __q -> __q#x));
+            ];
+          ])
       ?having
   >>> RUNNING
   val users :
@@ -92,7 +98,7 @@ optional param in QUALIFY clause:
              in
              object
                method users = users
-               method x = __q#users#query (fun __q -> __q#x)
+               method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -128,7 +134,7 @@ optional param in LIMIT clause:
              in
              object
                method users = users
-               method x = __q#users#query (fun __q -> __q#x)
+               method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -164,7 +170,7 @@ optional param in OFFSET clause:
              in
              object
                method users = users
-               method x = __q#users#query (fun __q -> __q#x)
+               method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -200,7 +206,7 @@ optional param in ORDER BY clause:
              in
              object
                method users = users
-               method x = __q#users#query (fun __q -> __q#x)
+               method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -244,7 +250,7 @@ optional ORDER BY with empty list omits ORDER BY clause:
              in
              object
                method users = users
-               method x = __q#users#query (fun __q -> __q#x)
+               method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -254,20 +260,21 @@ optional ORDER BY with empty list omits ORDER BY clause:
   
   let sql, _ =
     Ch_queries.query (users ()) @@ fun __q ->
-    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query ?alias:(Some "x") (fun __q -> __q#x))
   
   let () = print_endline sql
   
   let sql, _ =
     Ch_queries.query (users ~order_by:(fun _ -> []) ()) @@ fun __q ->
-    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query ?alias:(Some "x") (fun __q -> __q#x))
   
   let () = print_endline sql
   
   let sql, _ =
     Ch_queries.query
       (users ~order_by:(fun __q -> [ (Ch_queries.A_expr __q#x, `ASC, None) ]) ())
-    @@ fun __q -> Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
+    @@ fun __q ->
+    Ch_queries.Row.ignore (__q#q#query ?alias:(Some "x") (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING

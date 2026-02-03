@@ -19,7 +19,7 @@ test IN expression with subquery:
              in
              object
                method users = users
-               method x = __q#users#query (fun __q -> __q#x)
+               method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -27,7 +27,7 @@ test IN expression with subquery:
         end)
       ~where:(fun __q ->
         Ch_queries.in_
-          (__q#users#query (fun __q -> __q#id))
+          (__q#users#query ?alias:(Some "id") (fun __q -> __q#id))
           (Ch_queries.In_query
              (Ch_queries.select ()
                 ~from:
@@ -42,7 +42,9 @@ test IN expression with subquery:
                        in
                        object
                          method users = users
-                         method _1 = __q#users#query (fun __q -> __q#id)
+  
+                         method _1 =
+                           __q#users#query ?alias:(Some "id") (fun __q -> __q#id)
                        end))
                 ~select:(fun __q ->
                   object
@@ -51,7 +53,7 @@ test IN expression with subquery:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query ?alias:(Some "x") (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -80,7 +82,7 @@ test IN expression with expression::
              in
              object
                method users = users
-               method x = __q#users#query (fun __q -> __q#x)
+               method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -88,13 +90,13 @@ test IN expression with expression::
         end)
       ~where:(fun __q ->
         Ch_queries.in_
-          (__q#users#query (fun __q -> __q#id))
+          (__q#users#query ?alias:(Some "id") (fun __q -> __q#id))
           (Ch_queries.In_array
              (Ch_queries.array [ Ch_queries.int 1; Ch_queries.int 2 ])))
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query ?alias:(Some "x") (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -120,13 +122,16 @@ test IN expression with parameter:
              in
              object
                method users = users
-               method x = __q#users#query (fun __q -> __q#x)
+               method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
           method x = __q#x
         end)
-      ~where:(fun __q -> Ch_queries.in_ (__q#users#query (fun __q -> __q#id)) ids)
+      ~where:(fun __q ->
+        Ch_queries.in_
+          (__q#users#query ?alias:(Some "id") (fun __q -> __q#id))
+          ids)
   >>> RUNNING
   val users :
     ids:int Ch_queries.number Ch_queries.in_rhs ->

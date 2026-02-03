@@ -38,16 +38,20 @@ and a_expr = A_expr : _ expr -> a_expr
 and 'a scope =
   < query' :
       'n 'e.
-      ('a -> ('n, 'e) expr) -> ('n, 'e) expr * (force:bool -> ('n, 'e) expr)
-  ; query : 'n 'e. ('a -> ('n, 'e) expr) -> ('n, 'e) expr
-  ; query_many : ('a -> a_expr list) -> a_expr list >
+      ?alias:string ->
+      ('a -> ('n, 'e) expr) ->
+      ('n, 'e) expr * (force:bool -> ('n, 'e) expr)
+  ; query : 'n 'e. ?alias:string -> ('a -> ('n, 'e) expr) -> ('n, 'e) expr
+  ; query_many : ?alias:string -> ('a -> a_expr list) -> a_expr list >
 
 and 'a nullable_scope =
   < query' :
       'n 'e.
-      ('a -> ('n, 'e) expr) -> ('n, 'e) expr * (force:bool -> (null, 'e) expr)
-  ; query : 'n 'e. ('a -> ('n, 'e) expr) -> (null, 'e) expr
-  ; query_many : ('a -> a_expr list) -> a_expr list >
+      ?alias:string ->
+      ('a -> ('n, 'e) expr) ->
+      ('n, 'e) expr * (force:bool -> (null, 'e) expr)
+  ; query : 'n 'e. ?alias:string -> ('a -> ('n, 'e) expr) -> (null, 'e) expr
+  ; query_many : ?alias:string -> ('a -> a_expr list) -> a_expr list >
 
 and a_field = A_field : Ch_queries_syntax.Syntax.expr * string -> a_field
 
@@ -148,15 +152,15 @@ module Dict = struct
   }
 
   let make ~db ~table ~keys ~values =
-    let values =
+    let values : _ scope =
       object (self)
-        method query' f =
+        method query' ?alias:_ f =
           let e = f values in
           let commit ~force:_ = e in
           (e, commit)
 
-        method query f = snd (self#query' f) ~force:false
-        method query_many f = f values
+        method query ?alias:_ f = snd (self#query' f) ~force:false
+        method query_many ?alias:_ f = f values
       end
     in
     { db; table; keys; values }
@@ -173,18 +177,18 @@ let from_select ?cluster_name ~alias select () =
   From_select { select = select ~alias; alias; cluster_name }
 
 let from_table ~db ~table scope =
- fun ~final ~alias () : _ scope from_one0 ->
-  let scope = scope ~alias in
+ fun ~final ~alias:table_alias () : _ scope from_one0 ->
+  let scope = scope ~alias:table_alias in
   let rec t =
     lazy
       (From_table
          {
            db;
            table;
-           alias;
+           alias = table_alias;
            scope =
              (object (self)
-                method query' f =
+                method query' ?alias:_ f =
                   let e = f scope in
                   let commit ~force:_ =
                     let () =
@@ -196,9 +200,9 @@ let from_table ~db ~table scope =
                   in
                   (e, commit)
 
-                method query f = snd (self#query' f) ~force:false
+                method query ?alias:_ f = snd (self#query' f) ~force:false
 
-                method query_many f =
+                method query_many ?alias:_ f =
                   let () =
                     match Lazy.force t with
                     | From_table t -> t.used <- true
@@ -247,16 +251,16 @@ let left_join ?(optional = false) from (join : 'a scope from_one) ~on () =
   let scope_from = scope_from from in
   let scope_join' : _ scope =
     object
-      method query' f = (scope_from_one join)#query' f
-      method query f = (scope_from_one join)#query f
-      method query_many f = (scope_from_one join)#query_many f
+      method query' ?alias f = (scope_from_one join)#query' ?alias f
+      method query ?alias f = (scope_from_one join)#query ?alias f
+      method query_many ?alias f = (scope_from_one join)#query_many ?alias f
     end
   in
   let scope_join : _ nullable_scope =
     object
-      method query' f = scope_join'#query' f
-      method query f = scope_join'#query f
-      method query_many f = scope_join'#query_many f
+      method query' ?alias f = scope_join'#query' ?alias f
+      method query ?alias f = scope_join'#query ?alias f
+      method query_many ?alias f = scope_join'#query_many ?alias f
     end
   in
   From_join
@@ -1403,28 +1407,27 @@ let mem_field expr select =
     | A_field (expr', alias) when Syntax.equal_expr expr expr' -> Some alias
     | _ -> None)
 
-let add_field ?(force = false) ~expr select =
+let rec alias_of_expr expr =
+  match expr.Syntax.node with
+  | Syntax.E_col (_, name) -> Some name.node
+  | Syntax.E_id id -> Some id.node
+  | Syntax.E_ascribe (expr, _) -> alias_of_expr expr
+  | Syntax.E_query (_, expr) -> alias_of_expr expr
+  | _ -> None
+
+let rec find_unique aliases alias n =
+  let alias' = if n = 0 then alias else Printf.sprintf "%s_%d" alias n in
+  if SS.mem alias' aliases then find_unique aliases alias (n + 1) else alias'
+
+let add_field ?alias ?(force = false) ~expr select =
   let do_add () =
-    let rec alias expr =
-      match expr.Syntax.node with
-      | Syntax.E_col (_, name) -> Some name.node
-      | Syntax.E_id id -> Some id.node
-      | Syntax.E_ascribe (expr, _) -> alias expr
-      | Syntax.E_query (_, expr) -> alias expr
-      | _ -> None
-    in
     let alias =
-      match alias expr with
-      | None -> Printf.sprintf "_%d" (List.length select.rev_fields + 1)
-      | Some alias ->
-          let rec find_unique alias n =
-            let alias' =
-              if n = 0 then alias else Printf.sprintf "%s_%d" alias n
-            in
-            if SS.mem alias' select.fields_aliases then find_unique alias (n + 1)
-            else alias'
-          in
-          find_unique alias 0
+      match alias with
+      | Some alias -> find_unique select.fields_aliases alias 0
+      | None -> (
+          match alias_of_expr expr with
+          | None -> Printf.sprintf "_%d" (List.length select.rev_fields + 1)
+          | Some alias -> find_unique select.fields_aliases alias 0)
     in
     let field = A_field (expr, alias) in
     select.rev_fields <- field :: select.rev_fields;
@@ -1438,43 +1441,43 @@ let add_field ?(force = false) ~expr select =
 
 let with_cte ?(materialized = false) ~alias:cte_alias cte_query :
     ((alias:string -> _ from_one) -> _ select) -> _ select =
- fun query ~alias ->
-  let cte_query = cte_query ~alias in
+ fun query ~alias:query_alias ->
+  let cte_query = cte_query ~alias:query_alias in
   let cte =
     From_select { select = cte_query; alias = cte_alias; cluster_name = None }
   in
   let query =
     query
-      (fun ~alias () ->
+      (fun ~alias:query_alias () ->
         let scope' = scope_from_select cte_query in
         let scope =
           (object (self)
-             method query' f =
-               let witness, add = scope'#query' f in
+             method query' ?alias f =
+               let witness, add = scope'#query' ?alias f in
                let add ~force =
                  let x = add ~force in
                  match x.Syntax.node with
-                 | E_col (_, name) -> unsafe_col alias name.node
+                 | E_col (_, name) -> unsafe_col query_alias name.node
                  | _ -> failwith "invariant violation: expected column"
                in
                (witness, add)
 
-             method query f = snd (self#query' f) ~force:false
+             method query ?alias f = snd (self#query' ?alias f) ~force:false
 
-             method query_many f =
-               let xs = scope'#query_many f in
+             method query_many ?alias f =
+               let xs = scope'#query_many ?alias f in
                List.map xs ~f:(fun (A_expr e) ->
                    let e =
                      match e.Syntax.node with
-                     | E_col (_, name) -> unsafe_col alias name.node
+                     | E_col (_, name) -> unsafe_col query_alias name.node
                      | _ -> failwith "invariant violation: expected column"
                    in
                    A_expr e)
            end
             : _ scope)
         in
-        From_cte_ref { cte; cte_alias; scope; alias })
-      ~alias
+        From_cte_ref { cte; cte_alias; scope; alias = query_alias })
+      ~alias:query_alias
   in
   let rec add_cte = function
     | Select select ->
@@ -1489,7 +1492,7 @@ let with_cte ?(materialized = false) ~alias:cte_alias cte_query :
   query
 
 let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit
-    ?offset ?(settings = []) ~select () ~alias : _ scope select0 =
+    ?offset ?(settings = []) ~select () ~alias:select_alias : _ scope select0 =
   let from = from () in
   let inner_scope = scope_from from in
   let scope' = select inner_scope in
@@ -1512,20 +1515,20 @@ let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit
         from = A_from from;
         scope =
           (object (self)
-             method query' f =
+             method query' ?alias f =
                let expr = f scope' in
                ( expr,
                  fun ~force ->
-                   let c = add_field ~force ~expr (Lazy.force select) in
-                   unsafe_col alias c )
+                   let c = add_field ?alias ~force ~expr (Lazy.force select) in
+                   unsafe_col select_alias c )
 
-             method query f = snd (self#query' f) ~force:false
+             method query ?alias f = snd (self#query' ?alias f) ~force:false
 
-             method query_many f =
+             method query_many ?alias f =
                let xs = f scope' in
                List.map xs ~f:(fun (A_expr expr) ->
-                   let c = add_field ~expr (Lazy.force select) in
-                   A_expr (unsafe_col alias c))
+                   let c = add_field ?alias ~expr (Lazy.force select) in
+                   A_expr (unsafe_col select_alias c))
            end
             : _ scope);
         prewhere;
@@ -1543,9 +1546,9 @@ let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit
   in
   Select (Lazy.force select)
 
-let union x y ~alias =
-  let x = x ~alias in
-  let y = y ~alias in
+let union x y ~alias:query_alias =
+  let x = x ~alias:query_alias in
+  let y = y ~alias:query_alias in
   let scope_x = scope_from_select x in
   let scope_y = scope_from_select y in
   let rec union =
@@ -1555,9 +1558,9 @@ let union x y ~alias =
         y;
         scope =
           object (self)
-            method query' f =
-              let e_x, commit_x = scope_x#query' f in
-              let e_y, commit_y = scope_y#query' f in
+            method query' ?alias f =
+              let e_x, commit_x = scope_x#query' ?alias f in
+              let e_y, commit_y = scope_y#query' ?alias f in
               ( Syntax.make_expr
                   (E_call (Func (Syntax.make_id "tuple"), [ e_x; e_y ])),
                 fun ~force ->
@@ -1581,10 +1584,10 @@ let union x y ~alias =
                       commit_x ~force:true
                   | true, true -> commit_x ~force )
 
-            method query f = snd (self#query' f) ~force:false
+            method query ?alias f = snd (self#query' ?alias f) ~force:false
 
-            method query_many f =
-              let xs = scope_x#query_many f in
+            method query_many ?alias f =
+              let xs = scope_x#query_many ?alias f in
               let _ys : a_expr list = scope_y#query_many f in
               xs
           end;

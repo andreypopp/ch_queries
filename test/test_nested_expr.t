@@ -26,8 +26,9 @@
                   end
                 in
                 Ch_queries.Expr.( = )
-                  (__q#users#query (fun __q -> __q#id))
-                  (__q#profiles#query (fun __q -> __q#user_id))))
+                  (__q#users#query ?alias:(Some "id") (fun __q -> __q#id))
+                  (__q#profiles#query ?alias:(Some "user_id") (fun __q ->
+                       __q#user_id))))
            (fun ((users : _ Ch_queries.scope), (profiles : _ Ch_queries.scope)) ->
              object
                method users = users
@@ -45,10 +46,12 @@
       (let open Ch_queries.Row in
        fun __q ->
          ignore
-           (__q#q#query (fun __q ->
+           (__q#q#query ?alias:None (fun __q ->
                 Ch_queries.Expr.coalesce
-                  [ __q#profiles#query (fun __q -> __q#name) ]
-                  ~else_:(__q#users#query (fun __q -> __q#x)))))
+                  [
+                    __q#profiles#query ?alias:(Some "name") (fun __q -> __q#name);
+                  ]
+                  ~else_:(__q#users#query ?alias:(Some "x") (fun __q -> __q#x)))))
   in
   print_endline sql
   >>> RUNNING
@@ -92,8 +95,9 @@ The param within the scope receives the scope as argument:
                   end
                 in
                 Ch_queries.Expr.( = )
-                  (__q#users#query (fun __q -> __q#id))
-                  (__q#profiles#query (fun __q -> __q#user_id))))
+                  (__q#users#query ?alias:(Some "id") (fun __q -> __q#id))
+                  (__q#profiles#query ?alias:(Some "user_id") (fun __q ->
+                       __q#user_id))))
            (fun ((users : _ Ch_queries.scope), (profiles : _ Ch_queries.scope)) ->
              object
                method users = users
@@ -120,7 +124,7 @@ The param within the scope receives the scope as argument:
              in
              object
                method q = q
-               method field = __q#q#query (fun __q -> field __q)
+               method field = __q#q#query ?alias:None (fun __q -> field __q)
              end))
       ~select:(fun __q ->
         object
@@ -131,13 +135,14 @@ The param within the scope receives the scope as argument:
   let q =
     q2 ~field:(fun __q ->
         Ch_queries.Expr.coalesce
-          [ __q#profiles#query (fun __q -> __q#name) ]
-          ~else_:(__q#users#query (fun __q -> __q#x)))
+          [ __q#profiles#query ?alias:(Some "name") (fun __q -> __q#name) ]
+          ~else_:(__q#users#query ?alias:(Some "x") (fun __q -> __q#x)))
   in
   let sql, _parse_row =
     Ch_queries.query q
       (let open Ch_queries.Row in
-       fun __q -> ignore (__q#q#query (fun __q -> __q#field)))
+       fun __q ->
+         ignore (__q#q#query ?alias:(Some "field") (fun __q -> __q#field)))
   in
   print_endline sql
   >>> RUNNING
@@ -146,7 +151,7 @@ The param within the scope receives the scope as argument:
              users : Ch_database.Public.users Ch_queries.scope > ->
            ('a, 'b) Ch_queries.expr) ->
     < field : ('a, 'b) Ch_queries.expr > Ch_queries.scope Ch_queries.select
-  SELECT q._1 AS _1
+  SELECT q._1 AS field
   FROM (
     SELECT coalesce(profiles.name, users.x) AS _1
     FROM public.users AS users

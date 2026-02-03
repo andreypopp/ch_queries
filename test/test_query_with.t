@@ -27,21 +27,23 @@ can define expression for reuse with `WITH` clause:
                method x = Ch_queries.int 1
   
                method id_and_x =
-                 Ch_queries.Expr.( + ) __q#x (__q#u#query (fun __q -> __q#id))
+                 Ch_queries.Expr.( + ) __q#x
+                   (__q#u#query ?alias:(Some "id") (fun __q -> __q#id))
              end))
       ~select:(fun __q ->
         object
-          method id = __q#u#query (fun __q -> __q#id)
+          method id = __q#u#query ?alias:(Some "id") (fun __q -> __q#id)
           method id_and_x = __q#id_and_x
         end)
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#id_and_x))
+    Ch_queries.Row.ignore
+      (__q#q#query ?alias:(Some "id_and_x") (fun __q -> __q#id_and_x))
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT 1 + u.id AS _1 FROM public.users AS u
+  SELECT 1 + u.id AS id_and_x FROM public.users AS u
 
 select shadows `WITH` clause:
   $ ./compile_and_run '
@@ -71,7 +73,8 @@ select shadows `WITH` clause:
                method u = u
   
                method x =
-                 Ch_queries.Expr.( + ) __q#x (__q#u#query (fun __q -> __q#id))
+                 Ch_queries.Expr.( + ) __q#x
+                   (__q#u#query ?alias:(Some "id") (fun __q -> __q#id))
              end))
       ~select:(fun __q ->
         object
@@ -80,11 +83,11 @@ select shadows `WITH` clause:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query ?alias:(Some "x") (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT 1 + u.id AS _1 FROM public.users AS u
+  SELECT 1 + u.id AS x FROM public.users AS u
 
 WITH has access to table columns:
   $ ./compile_and_run '
@@ -107,15 +110,16 @@ WITH has access to table columns:
              let __q =
                object
                  method u = u
-                 method x = __q#u#query (fun __q -> __q#id)
+                 method x = __q#u#query ?alias:(Some "id") (fun __q -> __q#id)
                end
              in
              object
                method u = u
-               method x = __q#u#query (fun __q -> __q#id)
+               method x = __q#u#query ?alias:(Some "id") (fun __q -> __q#id)
   
                method y =
-                 Ch_queries.Expr.( + ) __q#x (__q#u#query (fun __q -> __q#id))
+                 Ch_queries.Expr.( + ) __q#x
+                   (__q#u#query ?alias:(Some "id") (fun __q -> __q#id))
              end))
       ~select:(fun __q ->
         object
@@ -124,8 +128,8 @@ WITH has access to table columns:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#y))
+    Ch_queries.Row.ignore (__q#q#query ?alias:(Some "y") (fun __q -> __q#y))
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT u.id + u.id AS _1 FROM public.users AS u
+  SELECT u.id + u.id AS y FROM public.users AS u

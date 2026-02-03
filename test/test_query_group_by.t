@@ -19,18 +19,24 @@ GROUP BY single column:
              in
              object
                method users = users
-               method x = __q#users#query (fun __q -> __q#x)
+               method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
           method x = __q#x
         end)
       ~group_by:(fun __q ->
-        List.concat [ [ Ch_queries.A_expr (__q#users#query (fun __q -> __q#x)) ] ])
+        List.concat
+          [
+            [
+              Ch_queries.A_expr
+                (__q#users#query ?alias:(Some "x") (fun __q -> __q#x));
+            ];
+          ])
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query ?alias:(Some "x") (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -57,7 +63,7 @@ GROUP BY multiple columns:
              in
              object
                method users = users
-               method x = __q#users#query (fun __q -> __q#x)
+               method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -66,13 +72,19 @@ GROUP BY multiple columns:
       ~group_by:(fun __q ->
         List.concat
           [
-            [ Ch_queries.A_expr (__q#users#query (fun __q -> __q#x)) ];
-            [ Ch_queries.A_expr (__q#users#query (fun __q -> __q#id)) ];
+            [
+              Ch_queries.A_expr
+                (__q#users#query ?alias:(Some "x") (fun __q -> __q#x));
+            ];
+            [
+              Ch_queries.A_expr
+                (__q#users#query ?alias:(Some "id") (fun __q -> __q#id));
+            ];
           ])
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query ?alias:(Some "x") (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -98,7 +110,7 @@ GROUP BY with a parameter:
              in
              object
                method users = users
-               method x = __q#users#query (fun __q -> __q#x)
+               method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -107,7 +119,10 @@ GROUP BY with a parameter:
       ~group_by:(fun __q ->
         List.concat
           [
-            [ Ch_queries.A_expr (__q#users#query (fun __q -> __q#id)) ];
+            [
+              Ch_queries.A_expr
+                (__q#users#query ?alias:(Some "id") (fun __q -> __q#id));
+            ];
             dimension __q;
           ])
   >>> RUNNING
@@ -152,11 +167,11 @@ GROUP BY GROUPING SETS:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#one))
+    Ch_queries.Row.ignore (__q#q#query ?alias:(Some "one") (fun __q -> __q#one))
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT 1 AS _1 FROM public.users AS users GROUP BY GROUPING SETS ()
+  SELECT 1 AS one FROM public.users AS users GROUP BY GROUPING SETS ()
 
   $ ./compile_and_run '
   > let group_by (__q : < u : _ Ch_queries.scope; .. >) = Ch_queries.grouping_sets [[A_expr {%e|u.x|}; A_expr {%e|u.id|}]; [A_expr {%e|u.id|}]];;
@@ -169,10 +184,10 @@ GROUP BY GROUPING SETS:
     Ch_queries.grouping_sets
       [
         [
-          A_expr (__q#u#query (fun __q -> __q#x));
-          A_expr (__q#u#query (fun __q -> __q#id));
+          A_expr (__q#u#query ?alias:(Some "x") (fun __q -> __q#x));
+          A_expr (__q#u#query ?alias:(Some "id") (fun __q -> __q#id));
         ];
-        [ A_expr (__q#u#query (fun __q -> __q#id)) ];
+        [ A_expr (__q#u#query ?alias:(Some "id") (fun __q -> __q#id)) ];
       ]
   
   let users =
@@ -198,11 +213,11 @@ GROUP BY GROUPING SETS:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#one))
+    Ch_queries.Row.ignore (__q#q#query ?alias:(Some "one") (fun __q -> __q#one))
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT 1 AS _1
+  SELECT 1 AS one
   FROM public.users AS u
   GROUP BY GROUPING SETS ((u.x, u.id), (u.id))
 
@@ -227,7 +242,7 @@ GROUP BY can refer to SELECTed columns:
              in
              object
                method users = users
-               method x = __q#users#query (fun __q -> __q#x)
+               method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -237,7 +252,7 @@ GROUP BY can refer to SELECTed columns:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query ?alias:(Some "x") (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING

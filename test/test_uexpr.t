@@ -63,13 +63,14 @@ Test untyped expressions
     (Ch_queries.unsafe_concat
        [
          Ch_queries.A_expr (Ch_queries.unsafe "someUnknownFunction(");
-         Ch_queries.A_expr (__q#users#query (fun __q -> __q#x));
+         Ch_queries.A_expr (__q#users#query ?alias:(Some "x") (fun __q -> __q#x));
          Ch_queries.A_expr (Ch_queries.unsafe ", interval 1 day)");
        ]
       : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr)
   >>> RUNNING
   val e :
-    < users : < query : (< x : 'a; .. > -> 'a) -> ('b, 'c) Ch_queries.expr;
+    < users : < query : ?alias:string ->
+                        (< x : 'a; .. > -> 'a) -> ('b, 'c) Ch_queries.expr;
                 .. >;
       .. > ->
     (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr
@@ -83,12 +84,13 @@ Test untyped expressions
     Ch_queries.unsafe_concat
       [
         Ch_queries.A_expr (Ch_queries.unsafe "joinGet('db.dict', 'field', ");
-        Ch_queries.A_expr (__q#users#query (fun __q -> __q#x));
+        Ch_queries.A_expr (__q#users#query ?alias:(Some "x") (fun __q -> __q#x));
         Ch_queries.A_expr (Ch_queries.unsafe ")");
       ]
   >>> RUNNING
   val e :
-    < users : < query : (< x : 'a; .. > -> 'a) -> ('b, 'c) Ch_queries.expr;
+    < users : < query : ?alias:string ->
+                        (< x : 'a; .. > -> 'a) -> ('b, 'c) Ch_queries.expr;
                 .. >;
       .. > ->
     ('d, 'e) Ch_queries.expr

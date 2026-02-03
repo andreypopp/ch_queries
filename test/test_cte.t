@@ -23,7 +23,7 @@ CTE is supported:
                 in
                 object
                   method users = users
-                  method x = __q#users#query (fun __q -> __q#x)
+                  method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
                 end))
          ~select:(fun __q ->
            object
@@ -45,8 +45,8 @@ CTE is supported:
                       end
                     in
                     Ch_queries.Expr.( = )
-                      (__q#x#query (fun __q -> __q#x))
-                      (__q#y#query (fun __q -> __q#x))))
+                      (__q#x#query ?alias:(Some "x") (fun __q -> __q#x))
+                      (__q#y#query ?alias:(Some "x") (fun __q -> __q#x))))
                (fun ((x : _ Ch_queries.scope), (y : _ Ch_queries.scope)) ->
                  let __q =
                    object
@@ -57,8 +57,8 @@ CTE is supported:
                  object
                    method x = x
                    method y = y
-                   method a = __q#x#query (fun __q -> __q#x)
-                   method b = __q#y#query (fun __q -> __q#x)
+                   method a = __q#x#query ?alias:(Some "x") (fun __q -> __q#x)
+                   method b = __q#y#query ?alias:(Some "x") (fun __q -> __q#x)
                  end))
           ~select:(fun __q ->
             object
@@ -70,15 +70,18 @@ CTE is supported:
     Ch_queries.query q @@ fun __q ->
     Ch_queries.Row.ignore
       (Ch_queries.array
-         [ __q#q#query (fun __q -> __q#a); __q#q#query (fun __q -> __q#b) ])
+         [
+           __q#q#query ?alias:(Some "a") (fun __q -> __q#a);
+           __q#q#query ?alias:(Some "b") (fun __q -> __q#b);
+         ])
   ;;
   
   print_endline sql
   >>> RUNNING
-  SELECT [q.x_1, q.x]
+  SELECT [q.a, q.b]
   FROM (
     WITH users AS (SELECT users.x AS x FROM public.users AS users)
-    SELECT y.x AS x, x.x AS x_1
+    SELECT y.x AS b, x.x AS a
     FROM users AS x INNER JOIN users AS y ON x.x = y.x) AS q
 
 CTE can be defined programmatically and then used as query params:
@@ -90,10 +93,10 @@ CTE can be defined programmatically and then used as query params:
   > print_endline sql;;
   > ' --run-only
   >>> RUNNING
-  SELECT [q.x_1, q.x]
+  SELECT [q.a, q.b]
   FROM (
     WITH users AS (SELECT users.x AS x FROM public.users AS users)
-    SELECT y.x AS x, x.x AS x_1
+    SELECT y.x AS b, x.x AS a
     FROM users AS x INNER JOIN users AS y ON x.x = y.x) AS q
 
 materilized CTE is supported as well:
@@ -106,10 +109,10 @@ materilized CTE is supported as well:
   > print_endline sql;;
   > ' --run-only
   >>> RUNNING
-  SELECT [q.x_1, q.x]
+  SELECT [q.a, q.b]
   FROM (
     WITH users AS MATERIALIZED (SELECT users.x AS x FROM public.users AS users)
-    SELECT y.x AS x, x.x AS x_1
+    SELECT y.x AS b, x.x AS a
     FROM users AS x INNER JOIN users AS y ON x.x = y.x) AS q
 
 a query within CTE can be a param:
@@ -121,7 +124,7 @@ a query within CTE can be a param:
   > ' --run-only
   >>> RUNNING
   WITH u AS (SELECT users.x AS x FROM public.users AS users)
-  SELECT u.x AS x
+  SELECT u.x AS a
   FROM u AS u
 
 a CTE used in IN:
@@ -139,7 +142,7 @@ a CTE used in IN:
     u AS (
       SELECT users.is_active AS is_active, users.x AS x FROM public.users AS users
     )
-  SELECT 1 AS _1
+  SELECT 1 AS a
   FROM u AS u
   WHERE u.x IN (SELECT u.x AS x FROM u AS u) AND u.is_active
 
@@ -155,6 +158,6 @@ a CTE used in IN (only IN references CTE):
   > ' --run-only
   >>> RUNNING
   WITH u AS (SELECT users.x AS x FROM public.users AS users)
-  SELECT 1 AS _1
+  SELECT 1 AS a
   FROM u AS u
   WHERE u.x IN (SELECT u.x AS x FROM u AS u)

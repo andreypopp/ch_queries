@@ -54,17 +54,21 @@ type an_order_by = a_expr * [ `ASC | `DESC ] * fill option
 type 'a scope =
   < query' :
       'n 'e.
-      ('a -> ('n, 'e) expr) -> ('n, 'e) expr * (force:bool -> ('n, 'e) expr)
-  ; query : 'n 'e. ('a -> ('n, 'e) expr) -> ('n, 'e) expr
-  ; query_many : ('a -> a_expr list) -> a_expr list >
+      ?alias:string ->
+      ('a -> ('n, 'e) expr) ->
+      ('n, 'e) expr * (force:bool -> ('n, 'e) expr)
+  ; query : 'n 'e. ?alias:string -> ('a -> ('n, 'e) expr) -> ('n, 'e) expr
+  ; query_many : ?alias:string -> ('a -> a_expr list) -> a_expr list >
 (** Represents a table's or a subquery's scope. *)
 
 and 'a nullable_scope =
   < query' :
       'n 'e.
-      ('a -> ('n, 'e) expr) -> ('n, 'e) expr * (force:bool -> (null, 'e) expr)
-  ; query : 'n 'e. ('a -> ('n, 'e) expr) -> (null, 'e) expr
-  ; query_many : ('a -> a_expr list) -> a_expr list >
+      ?alias:string ->
+      ('a -> ('n, 'e) expr) ->
+      ('n, 'e) expr * (force:bool -> (null, 'e) expr)
+  ; query : 'n 'e. ?alias:string -> ('a -> ('n, 'e) expr) -> (null, 'e) expr
+  ; query_many : ?alias:string -> ('a -> a_expr list) -> a_expr list >
 (** Represents a table's or a subquery's scope when one is used on the right
     side of a LEFT JOIN. *)
 

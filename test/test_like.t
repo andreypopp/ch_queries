@@ -19,7 +19,7 @@ test IN expression with subquery:
              in
              object
                method users = users
-               method x = __q#users#query (fun __q -> __q#x)
+               method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -27,12 +27,12 @@ test IN expression with subquery:
         end)
       ~where:(fun __q ->
         Ch_queries.Expr.like
-          (__q#users#query (fun __q -> __q#x))
+          (__q#users#query ?alias:(Some "x") (fun __q -> __q#x))
           (Ch_queries.string "123%"))
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query ?alias:(Some "x") (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING

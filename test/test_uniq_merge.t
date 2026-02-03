@@ -18,7 +18,8 @@ uniqMerge basic:
         object
           method _1 =
             Ch_queries.Expr.uniqMerge
-              (__q#users#query (fun __q -> __q#uniq_state))
+              (__q#users#query ?alias:(Some "uniq_state") (fun __q ->
+                   __q#uniq_state))
         end)
   >>> RUNNING
   val q :
@@ -47,8 +48,14 @@ uniqMerge with window:
             Ch_queries.Expr.uniqMerge
               ~partition_by:
                 (List.concat
-                   [ [ Ch_queries.A_expr (__q#users#query (fun __q -> __q#id)) ] ])
-              (__q#users#query (fun __q -> __q#uniq_state))
+                   [
+                     [
+                       Ch_queries.A_expr
+                         (__q#users#query ?alias:(Some "id") (fun __q -> __q#id));
+                     ];
+                   ])
+              (__q#users#query ?alias:(Some "uniq_state") (fun __q ->
+                   __q#uniq_state))
         end)
   >>> RUNNING
   val q :
@@ -75,7 +82,8 @@ uniqMergeState basic:
         object
           method _1 =
             Ch_queries.Expr.uniqMergeState
-              (__q#users#query (fun __q -> __q#uniq_state))
+              (__q#users#query ?alias:(Some "uniq_state") (fun __q ->
+                   __q#uniq_state))
         end)
   >>> RUNNING
   val q :
@@ -108,14 +116,21 @@ uniqMergeState with window:
                 (List.concat
                    [
                      [
-                       ( Ch_queries.A_expr (__q#users#query (fun __q -> __q#x)),
+                       ( Ch_queries.A_expr
+                           (__q#users#query ?alias:(Some "x") (fun __q -> __q#x)),
                          `ASC );
                      ];
                    ])
               ~partition_by:
                 (List.concat
-                   [ [ Ch_queries.A_expr (__q#users#query (fun __q -> __q#id)) ] ])
-              (__q#users#query (fun __q -> __q#uniq_state))
+                   [
+                     [
+                       Ch_queries.A_expr
+                         (__q#users#query ?alias:(Some "id") (fun __q -> __q#id));
+                     ];
+                   ])
+              (__q#users#query ?alias:(Some "uniq_state") (fun __q ->
+                   __q#uniq_state))
         end)
   >>> RUNNING
   val q :

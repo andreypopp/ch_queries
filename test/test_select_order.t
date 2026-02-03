@@ -11,7 +11,7 @@ querying columns:
   > let () = print_endline @@ Yojson.Basic.to_string @@ parse_row [`String "x"; `Bool false];;
   > ' --run-only
   >>> RUNNING
-  SELECT users.x AS x, users.is_active AS is_active FROM public.users AS users
+  SELECT users.x AS x, users.is_active AS y FROM public.users AS users
   ["x",false]
 
 querying a list of columns (while `y` evals before `x` the order is still intact):
@@ -28,7 +28,7 @@ querying a list of columns (while `y` evals before `x` the order is still intact
   > let () = print_endline @@ Yojson.Basic.to_string @@ parse_row [`String "x"; `Bool false];;
   > ' --run-only
   >>> RUNNING
-  SELECT users.x AS x, users.is_active AS is_active FROM public.users AS users
+  SELECT users.x AS x, users.is_active AS y FROM public.users AS users
   ["x",false]
 
 querying columns, same column twice:

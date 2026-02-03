@@ -18,7 +18,7 @@
                end
              in
              object
-               method x = __q#x#query (fun __q -> __q#x)
+               method x = __q#x#query ?alias:(Some "x") (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -27,7 +27,7 @@
   
   let sql, _parse_row =
     Ch_queries.query q @@ fun __q ->
-    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query ?alias:(Some "x") (fun __q -> __q#x))
   ;;
   
   print_endline sql

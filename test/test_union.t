@@ -63,15 +63,15 @@ UNION syntax:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query ?alias:(Some "x") (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q._1
+  SELECT q.x
   FROM (
-    SELECT 1 AS _1 FROM public.users AS users
+    SELECT 1 AS x FROM public.users AS users
     UNION
-    SELECT 2 AS _1 FROM public.users AS users) AS q
+    SELECT 2 AS x FROM public.users AS users) AS q
 
 test edge case with dynamic scopes:
   $ ./compile_and_run '
@@ -159,18 +159,28 @@ test edge case with dynamic scopes:
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
     let open Ch_queries.Row in
-    let+ _ = Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#get `X))
-    and+ _ = Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#get `Y))
-    and+ _ = Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#get `Z))
-    and+ _ = Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#get `Z)) in
+    let+ _ =
+      Ch_queries.Row.ignore
+        (__q#q#query ?alias:(Some "get") (fun __q -> __q#get `X))
+    and+ _ =
+      Ch_queries.Row.ignore
+        (__q#q#query ?alias:(Some "get") (fun __q -> __q#get `Y))
+    and+ _ =
+      Ch_queries.Row.ignore
+        (__q#q#query ?alias:(Some "get") (fun __q -> __q#get `Z))
+    and+ _ =
+      Ch_queries.Row.ignore
+        (__q#q#query ?alias:(Some "get") (fun __q -> __q#get `Z))
+    in
     ()
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT q._1, q._2, q._3, q._3
+  SELECT q.get, q.get_1, q.get_2, q.get_2
   FROM (
-    SELECT 'dup' AS _1, 'X_Y' AS _2, 'dup' AS _3 FROM public.users AS users
+    SELECT 'dup' AS get, 'X_Y' AS get_1, 'dup' AS get_2 FROM public.users AS users
     UNION
-    SELECT 'dup' AS _1, 'dup' AS _2, 'Y_Z' AS _3 FROM public.users AS users
+    SELECT 'dup' AS get, 'dup' AS get_1, 'Y_Z' AS get_2 FROM public.users AS users
     UNION
-    SELECT 'Z_X' AS _1, 'dup' AS _2, 'dup' AS _3 FROM public.users AS users) AS q
+    SELECT 'Z_X' AS get, 'dup' AS get_1, 'dup' AS get_2 FROM public.users AS users)
+    AS q

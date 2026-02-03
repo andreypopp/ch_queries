@@ -17,7 +17,7 @@ SETTINGS with literal values:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun __q -> __q#x)
+          method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
         end)
       ~settings:
         (List.concat
@@ -25,7 +25,7 @@ SETTINGS with literal values:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query ?alias:(Some "x") (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -51,7 +51,7 @@ SETTINGS with parameter:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun __q -> __q#x)
+          method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
         end)
       ~settings:(List.concat [ [ ("max_threads", max_threads) ] ])
   >>> RUNNING
@@ -78,7 +78,7 @@ SETTINGS with splice:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun __q -> __q#x)
+          method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
         end)
       ~settings:(List.concat [ settings ])
   >>> RUNNING
@@ -106,7 +106,7 @@ SETTINGS with mixed literal and splice:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun __q -> __q#x)
+          method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
         end)
       ~settings:
         (List.concat
@@ -141,7 +141,7 @@ SETTINGS with multiple splices:
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun __q -> __q#x)
+          method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
         end)
       ~settings:
         (List.concat [ perf_settings; [ ("timeout", `Int 60) ]; cache_settings ])
@@ -174,7 +174,7 @@ SETTINGS with boolean values (rendered as ints):
              end))
       ~select:(fun __q ->
         object
-          method x = __q#users#query (fun __q -> __q#x)
+          method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
         end)
       ~settings:
         (List.concat
@@ -182,7 +182,7 @@ SETTINGS with boolean values (rendered as ints):
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query ?alias:(Some "x") (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING

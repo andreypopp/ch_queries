@@ -18,8 +18,8 @@ select from a JOIN:
                   end
                 in
                 Ch_queries.Expr.( = )
-                  (__q#u#query (fun __q -> __q#id))
-                  (__q#p#query (fun __q -> __q#user_id))))
+                  (__q#u#query ?alias:(Some "id") (fun __q -> __q#id))
+                  (__q#p#query ?alias:(Some "user_id") (fun __q -> __q#user_id))))
            (fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.scope)) ->
              object
                method u = u
@@ -27,10 +27,11 @@ select from a JOIN:
              end))
       ~select:(fun __q ->
         object
-          method id = __q#u#query (fun __q -> __q#id)
-          method name = __q#p#query (fun __q -> __q#name)
+          method id = __q#u#query ?alias:(Some "id") (fun __q -> __q#id)
+          method name = __q#p#query ?alias:(Some "name") (fun __q -> __q#name)
         end)
-      ~where:(fun __q -> __q#u#query (fun __q -> __q#is_active))
+      ~where:(fun __q ->
+        __q#u#query ?alias:(Some "is_active") (fun __q -> __q#is_active))
   >>> RUNNING
 
 select from a LEFT JOIN:
@@ -59,8 +60,8 @@ select from a LEFT JOIN:
                   end
                 in
                 Ch_queries.Expr.( = )
-                  (__q#u#query (fun __q -> __q#id))
-                  (__q#p#query (fun __q -> __q#user_id))))
+                  (__q#u#query ?alias:(Some "id") (fun __q -> __q#id))
+                  (__q#p#query ?alias:(Some "user_id") (fun __q -> __q#user_id))))
            (fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.nullable_scope)) ->
              let __q =
                object
@@ -71,8 +72,10 @@ select from a LEFT JOIN:
              object
                method u = u
                method p = p
-               method user_id = __q#u#query (fun __q -> __q#id)
-               method user_name = __q#p#query (fun __q -> __q#name)
+               method user_id = __q#u#query ?alias:(Some "id") (fun __q -> __q#id)
+  
+               method user_name =
+                 __q#p#query ?alias:(Some "name") (fun __q -> __q#name)
              end))
       ~select:(fun __q ->
         object
@@ -113,8 +116,8 @@ select from an OCaml value with JOIN:
                   end
                 in
                 Ch_queries.Expr.( = )
-                  (__q#u#query (fun __q -> __q#id))
-                  (__q#p#query (fun __q -> __q#user_id))))
+                  (__q#u#query ?alias:(Some "id") (fun __q -> __q#id))
+                  (__q#p#query ?alias:(Some "user_id") (fun __q -> __q#user_id))))
            (fun ((u : _ Ch_queries.scope), (p : _ Ch_queries.nullable_scope)) ->
              let __q =
                object
@@ -125,8 +128,10 @@ select from an OCaml value with JOIN:
              object
                method u = u
                method p = p
-               method user_id = __q#u#query (fun __q -> __q#id)
-               method user_name = __q#p#query (fun __q -> __q#name)
+               method user_id = __q#u#query ?alias:(Some "id") (fun __q -> __q#id)
+  
+               method user_name =
+                 __q#p#query ?alias:(Some "name") (fun __q -> __q#name)
              end))
       ~select:(fun __q ->
         object

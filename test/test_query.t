@@ -19,17 +19,18 @@ basic form:
              in
              object
                method users = users
-               method x = __q#users#query (fun __q -> __q#x)
+               method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
           method x = __q#x
         end)
-      ~where:(fun __q -> __q#users#query (fun __q -> __q#is_active))
+      ~where:(fun __q ->
+        __q#users#query ?alias:(Some "is_active") (fun __q -> __q#is_active))
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query ?alias:(Some "x") (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -61,10 +62,14 @@ select from a subquery:
                            in
                            object
                              method users = users
-                             method x = __q#users#query (fun __q -> __q#x)
+  
+                             method x =
+                               __q#users#query ?alias:(Some "x") (fun __q ->
+                                   __q#x)
   
                              method is_active =
-                               __q#users#query (fun __q -> __q#is_active)
+                               __q#users#query ?alias:(Some "is_active")
+                                 (fun __q -> __q#is_active)
                            end))
                     ~select:(fun __q ->
                       object
@@ -80,17 +85,19 @@ select from a subquery:
              in
              object
                method q = q
-               method x = __q#q#query (fun __q -> __q#x)
+               method x = __q#q#query ?alias:(Some "x") (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
           method x = __q#x
         end)
-      ~where:(fun __q -> __q#q#query (fun __q -> __q#is_active))
+      ~where:(fun __q ->
+        __q#q#query ?alias:(Some "is_active") (fun __q -> __q#is_active))
   
   let sql, _parse_row =
     let open Ch_queries in
-    query users @@ fun __q -> Row.ignore (__q#q#query (fun __q -> __q#x))
+    query users @@ fun __q ->
+    Row.ignore (__q#q#query ?alias:(Some "x") (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -126,10 +133,14 @@ select from a subquery (no alias default to "q"):
                            in
                            object
                              method users = users
-                             method x = __q#users#query (fun __q -> __q#x)
+  
+                             method x =
+                               __q#users#query ?alias:(Some "x") (fun __q ->
+                                   __q#x)
   
                              method is_active =
-                               __q#users#query (fun __q -> __q#is_active)
+                               __q#users#query ?alias:(Some "is_active")
+                                 (fun __q -> __q#is_active)
                            end))
                     ~select:(fun __q ->
                       object
@@ -145,17 +156,19 @@ select from a subquery (no alias default to "q"):
              in
              object
                method q = q
-               method x = __q#q#query (fun __q -> __q#x)
+               method x = __q#q#query ?alias:(Some "x") (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
           method x = __q#x
         end)
-      ~where:(fun __q -> __q#q#query (fun __q -> __q#is_active))
+      ~where:(fun __q ->
+        __q#q#query ?alias:(Some "is_active") (fun __q -> __q#is_active))
   
   let sql, _parse_row =
     let open Ch_queries in
-    query users @@ fun __q -> Row.ignore (__q#q#query (fun __q -> __q#x))
+    query users @@ fun __q ->
+    Row.ignore (__q#q#query ?alias:(Some "x") (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -183,9 +196,10 @@ select from an OCaml value (parameter syntax):
              end))
       ~select:(fun __q ->
         object
-          method x = __q#q#query (fun __q -> __q#x)
+          method x = __q#q#query ?alias:(Some "x") (fun __q -> __q#x)
         end)
-      ~where:(fun __q -> __q#q#query (fun __q -> __q#is_active))
+      ~where:(fun __q ->
+        __q#q#query ?alias:(Some "is_active") (fun __q -> __q#is_active))
   >>> RUNNING
   val users :
     (alias:string ->
@@ -212,9 +226,10 @@ select from an OCaml value (id syntax):
              end))
       ~select:(fun __q ->
         object
-          method x = __q#t#query (fun __q -> __q#x)
+          method x = __q#t#query ?alias:(Some "x") (fun __q -> __q#x)
         end)
-      ~where:(fun __q -> __q#t#query (fun __q -> __q#is_active))
+      ~where:(fun __q ->
+        __q#t#query ?alias:(Some "is_active") (fun __q -> __q#is_active))
   >>> RUNNING
   val users :
     (alias:string ->
@@ -243,7 +258,7 @@ splicing ocaml values into WHERE:
              in
              object
                method users = users
-               method x = __q#users#query (fun __q -> __q#x)
+               method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -278,7 +293,7 @@ splicing ocaml values into WHERE:
              in
              object
                method users = users
-               method x = __q#users#query (fun __q -> __q#x)
+               method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
@@ -368,21 +383,22 @@ select with PREWHERE clause:
              in
              object
                method users = users
-               method x = __q#users#query (fun __q -> __q#x)
+               method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
              end))
       ~select:(fun __q ->
         object
           method x = __q#x
         end)
-      ~prewhere:(fun __q -> __q#users#query (fun __q -> __q#is_active))
+      ~prewhere:(fun __q ->
+        __q#users#query ?alias:(Some "is_active") (fun __q -> __q#is_active))
       ~where:(fun __q ->
         Ch_queries.Expr.( = )
-          (__q#users#query (fun __q -> __q#id))
+          (__q#users#query ?alias:(Some "id") (fun __q -> __q#id))
           (Ch_queries.int 10))
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query ?alias:(Some "x") (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
@@ -419,7 +435,8 @@ expressions referenced multiple times result in a single column added to teh sub
                              method users = users
   
                              method is_active =
-                               __q#users#query (fun __q -> __q#is_active)
+                               __q#users#query ?alias:(Some "is_active")
+                                 (fun __q -> __q#is_active)
                            end))
                     ~select:(fun __q ->
                       object
@@ -434,17 +451,21 @@ expressions referenced multiple times result in a single column added to teh sub
              in
              object
                method q = q
-               method is_active = __q#q#query (fun __q -> __q#is_active)
+  
+               method is_active =
+                 __q#q#query ?alias:(Some "is_active") (fun __q -> __q#is_active)
              end))
       ~select:(fun __q ->
         object
           method is_active = __q#is_active
         end)
-      ~where:(fun __q -> __q#q#query (fun __q -> __q#is_active))
+      ~where:(fun __q ->
+        __q#q#query ?alias:(Some "is_active") (fun __q -> __q#is_active))
   
   let sql, _parse_row =
     let open Ch_queries in
-    query users @@ fun __q -> Row.ignore (__q#q#query (fun __q -> __q#is_active))
+    query users @@ fun __q ->
+    Row.ignore (__q#q#query ?alias:(Some "is_active") (fun __q -> __q#is_active))
   
   let () = print_endline sql
   >>> RUNNING

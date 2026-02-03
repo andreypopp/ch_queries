@@ -123,7 +123,7 @@ specify how they should be parsed. Fields without type annotation default to
 # let sql, map = {%ch.query_and_map|
     SELECT users.name AS data FROM db.users
   |};;
-val sql : string = "SELECT users.name AS name FROM public.users AS users"
+val sql : string = "SELECT users.name AS data FROM public.users AS users"
 val map : json list -> (data:json -> '_weak2) -> '_weak2 = <fun>
 ```
 

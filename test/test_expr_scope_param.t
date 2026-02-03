@@ -6,7 +6,7 @@ propagating scopes
   > '
   >>> PREPROCESSING
   let x (__q : < table : < .. > Ch_queries.scope >) =
-    __q#table#query (fun __q -> __q#col)
+    __q#table#query ?alias:(Some "col") (fun __q -> __q#col)
   
   let y __q = Ch_queries.Expr.( + ) (x __q) (Ch_queries.int 1)
   >>> RUNNING

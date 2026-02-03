@@ -26,7 +26,7 @@ test IN expression with subquery:
                       (Ch_queries.lambda "x" (fun _ ->
                            Ch_queries.Expr.( = ) (Ch_queries.unsafe "x")
                              (Ch_queries.int 1)))
-                      (__q#users#query (fun __q -> __q#xs)))
+                      (__q#users#query ?alias:(Some "xs") (fun __q -> __q#xs)))
              end))
       ~select:(fun __q ->
         object
@@ -35,10 +35,10 @@ test IN expression with subquery:
   
   let sql, _parse_row =
     Ch_queries.query users @@ fun __q ->
-    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
+    Ch_queries.Row.ignore (__q#q#query ?alias:(Some "x") (fun __q -> __q#x))
   
   let () = print_endline sql
   >>> RUNNING
-  SELECT length(arrayFilter((x -> (x = 1)), users.xs)) AS _1
+  SELECT length(arrayFilter((x -> (x = 1)), users.xs)) AS x
   FROM public.users AS users
 

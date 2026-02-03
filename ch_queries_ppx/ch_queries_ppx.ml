@@ -288,10 +288,15 @@ let rec stage_typ_to_parser typ =
   | T_db_table _ ->
       Location.raise_errorf ~loc "table types could not be used in this context"
 
-let query_scope ~loc scope expr =
-  let e = pexp_send ~loc [%expr __q] (Located.mk ~loc scope.Syntax.node) in
-  let e' = pexp_send ~loc e (Located.mk ~loc "query") in
-  [%expr [%e e'] (fun __q -> [%e expr])]
+let query_scope ~loc ~alias scope expr =
+  let scope = pexp_send ~loc [%expr __q] (Located.mk ~loc scope.Syntax.node) in
+  let scope_query = pexp_send ~loc scope (Located.mk ~loc "query") in
+  let alias =
+    match alias with
+    | None -> [%expr None]
+    | Some alias -> [%expr Some [%e estring ~loc alias]]
+  in
+  [%expr [%e scope_query] ?alias:[%e alias] (fun __q -> [%e expr])]
 
 let normalise_col name =
   (if Char.is_uppercase_ascii name.[0] then "_" ^ name else name)
@@ -303,7 +308,7 @@ let refer_to_scope ~loc ?map scope id =
     pexp_send ~loc [%expr __q] (Located.mk ~loc (normalise_col id.Syntax.node))
   in
   let e = match map with None -> e | Some f -> f e in
-  query_scope ~loc scope e
+  query_scope ~alias:(Some id.node) ~loc scope e
 
 let map_operator_to_expr ~loc op arity =
   match (op, arity) with
@@ -409,7 +414,7 @@ and stage_expr ~params expr =
       [%expr Ch_queries.unsafe [%e estring ~loc id.node]]
   | Syntax.E_col (scope, id) -> refer_to_scope ~loc scope id
   | Syntax.E_query (scope, expr) ->
-      query_scope ~loc scope (stage_expr ~params:[] expr)
+      query_scope ~loc ~alias:None scope (stage_expr ~params:[] expr)
   | Syntax.E_id id -> (
       match CCList.mem id params ~eq:Syntax.equal_id with
       | true -> [%expr Ch_queries.unsafe [%e estring ~loc id.node]]
@@ -2138,13 +2143,11 @@ and stage_query_args args ({ Ch_queries_syntax.Syntax.node; _ } as q) =
         | None -> args
         | Some
             [
-              Order_by_splice
-                { param; param_has_scope; param_optional = true };
+              Order_by_splice { param; param_has_scope; param_optional = true };
             ] ->
             if not param_has_scope then
               Location.raise_errorf ~loc:(to_location param)
-                "?$%s: optional parameters must use scope access syntax \
-                 (?$.%s)"
+                "?$%s: optional parameters must use scope access syntax (?$.%s)"
                 param.Syntax.node param.Syntax.node;
             let var = evar ~loc:(to_location param) param.Syntax.node in
             (Optional "order_by", var) :: args
