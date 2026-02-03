@@ -22,8 +22,6 @@ let id = (letter | '_') id_rest*
 let param = '$'
 
 rule token = parse
-  | whitespace+              { token lexbuf }
-  | newline                  { Lexing.new_line lexbuf; token lexbuf }
   | param (id as param)      { PARAM param }
   | (id as x) "." (id as y)  { COLUMN (x, y) }
   | '\''                     {
@@ -35,6 +33,14 @@ rule token = parse
     lexbuf.Lexing.lex_start_p <- lex_start_p;
     SQL (Buffer.contents buf) }
   | eof                      { EOF }
+  | newline                  {
+    let lex_start_p = Lexing.lexeme_start_p lexbuf in
+    Lexing.new_line lexbuf;
+    let buf = Buffer.create 32 in
+    Buffer.add_char buf '\n';
+    let sql = sql_fragment buf lexbuf in
+    lexbuf.Lexing.lex_start_p <- lex_start_p;
+    SQL sql }
   | _ as c                   {
     let lex_start_p = Lexing.lexeme_start_p lexbuf in
     let buf = Buffer.create 32 in

@@ -103,3 +103,28 @@ Test untyped expressions
   let e = Ch_queries.unsafe "'db.dict'"
   >>> RUNNING
   val e : ('a, 'b) Ch_queries.expr
+
+  $ ./compile_and_run "
+  > let e __q = {%eu|uniqMerge(q.visitors)OVER(ORDER BY q.step DESC)|};;
+  > #show e
+  > "
+  >>> PREPROCESSING
+  let e __q =
+    Ch_queries.unsafe_concat
+      [
+        Ch_queries.A_expr (Ch_queries.unsafe "uniqMerge(");
+        Ch_queries.A_expr
+          (__q#q#query ?alias:(Some "visitors") (fun __q -> __q#visitors));
+        Ch_queries.A_expr (Ch_queries.unsafe ")OVER(ORDER BY ");
+        Ch_queries.A_expr (__q#q#query ?alias:(Some "step") (fun __q -> __q#step));
+        Ch_queries.A_expr (Ch_queries.unsafe " DESC)");
+      ]
+  >>> RUNNING
+  val e :
+    < q : < query : ?alias:string ->
+                    (< step : 'a; visitors : 'a; .. > -> 'a) ->
+                    ('b, 'c) Ch_queries.expr;
+            .. >;
+      .. > ->
+    ('d, 'e) Ch_queries.expr
+
