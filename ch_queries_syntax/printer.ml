@@ -86,7 +86,7 @@ let rec pp_expr opts ~parent_prec expr =
         match window_spec.partition_by with
         | None -> empty
         | Some dimensions ->
-            string "PARTITION BY" ^^ char ' '
+            string "PARTITION BY" ^^ space
             ^^ separate
                  (string "," ^^ space)
                  (List.map ~f:(pp_dimension opts) dimensions)
@@ -98,13 +98,13 @@ let rec pp_expr opts ~parent_prec expr =
             let pp_order = function
               | Order_by_expr (expr, `ASC, fill) ->
                   pp_expr opts ~parent_prec:0 expr
-                  ^^ char ' ' ^^ string "ASC" ^^ pp_with_fill opts fill
+                  ^^ space ^^ string "ASC" ^^ pp_with_fill opts fill
               | Order_by_expr (expr, `DESC, fill) ->
                   pp_expr opts ~parent_prec:0 expr
-                  ^^ char ' ' ^^ string "DESC" ^^ pp_with_fill opts fill
+                  ^^ space ^^ string "DESC" ^^ pp_with_fill opts fill
               | Order_by_splice p -> pp_id p.param
             in
-            string "ORDER BY" ^^ char ' '
+            string "ORDER BY" ^^ space
             ^^ separate (string "," ^^ space) (List.map ~f:pp_order orders)
       in
       let pp_over_clause =
@@ -119,7 +119,7 @@ let rec pp_expr opts ~parent_prec expr =
           | false, false -> empty
           | true, false -> pp_partition_by
           | false, true -> pp_order_by
-          | true, true -> pp_partition_by ^^ char ' ' ^^ pp_order_by
+          | true, true -> pp_partition_by ^^ space ^^ pp_order_by
         in
         string "OVER" ^^ space ^^ string "(" ^^ content ^^ string ")"
       in
@@ -558,7 +558,7 @@ and pp_scope_columns ~is_open cols =
 and pp_scope_columns' cols =
   separate (string "," ^^ space) (List.map ~f:pp_scope_column cols)
 
-and pp_scope_column col = pp_id col.name ^^ char ' ' ^^ pp_typ col.typ
+and pp_scope_column col = pp_id col.name ^^ space ^^ pp_typ col.typ
 
 let print' pp v =
   let buffer = Buffer.create 256 in
