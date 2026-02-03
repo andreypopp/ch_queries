@@ -369,7 +369,7 @@ and pp_from opts from =
 and pp_query opts { node; eq = _; loc = _ } =
   match node with
   | Q_union (q1, q2) ->
-      group (pp_query opts q1 ^/^ string "UNION" ^/^ pp_query opts q2)
+      group (pp_query opts q1 ^/^ string "UNION ALL" ^/^ pp_query opts q2)
   | Q_param p -> string "?" ^^ pp_id p.param
   | Q_ascribe (q, t) -> pp_query opts q ^^ string "::" ^^ pp_typ t
   | Q_select

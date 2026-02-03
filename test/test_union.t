@@ -70,7 +70,7 @@ UNION syntax:
   SELECT q.x
   FROM (
     SELECT 1 AS x FROM public.users AS users
-    UNION
+    UNION ALL
     SELECT 2 AS x FROM public.users AS users) AS q
 
 test edge case with dynamic scopes:
@@ -179,8 +179,8 @@ test edge case with dynamic scopes:
   SELECT q.get, q.get_1, q.get_2, q.get_2
   FROM (
     SELECT 'dup' AS get, 'X_Y' AS get_1, 'dup' AS get_2 FROM public.users AS users
-    UNION
+    UNION ALL
     SELECT 'dup' AS get, 'dup' AS get_1, 'Y_Z' AS get_2 FROM public.users AS users
-    UNION
+    UNION ALL
     SELECT 'Z_X' AS get, 'dup' AS get_1, 'dup' AS get_2 FROM public.users AS users)
     AS q
