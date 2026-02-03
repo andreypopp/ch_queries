@@ -2136,6 +2136,18 @@ and stage_query_args args ({ Ch_queries_syntax.Syntax.node; _ } as q) =
       let args =
         match order_by with
         | None -> args
+        | Some
+            [
+              Order_by_splice
+                { param; param_has_scope; param_optional = true };
+            ] ->
+            if not param_has_scope then
+              Location.raise_errorf ~loc:(to_location param)
+                "?$%s: optional parameters must use scope access syntax \
+                 (?$.%s)"
+                param.Syntax.node param.Syntax.node;
+            let var = evar ~loc:(to_location param) param.Syntax.node in
+            (Optional "order_by", var) :: args
         | Some order_by_items ->
             let loc = to_location q in
             let order_by = stage_order_by ~loc order_by_items in

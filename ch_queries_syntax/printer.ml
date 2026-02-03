@@ -93,7 +93,7 @@ let rec pp_expr opts ~parent_prec expr =
       in
       let pp_order_by =
         match window_spec.order_by with
-        | None -> empty
+        | None | Some [] -> empty
         | Some orders ->
             let pp_order = function
               | Order_by_expr (expr, `ASC, fill) ->
@@ -108,12 +108,18 @@ let rec pp_expr opts ~parent_prec expr =
             ^^ separate (string "," ^^ space) (List.map ~f:pp_order orders)
       in
       let pp_over_clause =
+        let has_partition = Option.is_some window_spec.partition_by in
+        let has_order =
+          match window_spec.order_by with
+          | None | Some [] -> false
+          | Some _ -> true
+        in
         let content =
-          match (window_spec.partition_by, window_spec.order_by) with
-          | None, None -> empty
-          | Some _, None -> pp_partition_by
-          | None, Some _ -> pp_order_by
-          | Some _, Some _ -> pp_partition_by ^^ space ^^ pp_order_by
+          match (has_partition, has_order) with
+          | false, false -> empty
+          | true, false -> pp_partition_by
+          | false, true -> pp_order_by
+          | true, true -> pp_partition_by ^^ space ^^ pp_order_by
         in
         string "OVER" ^^ space ^^ string "(" ^^ content ^^ string ")"
       in
@@ -442,7 +448,7 @@ and pp_query opts { node; eq = _; loc = _ } =
       in
       let order_by =
         match order_by with
-        | None -> None
+        | None | Some [] -> None
         | Some items ->
             let pp_item = function
               | Syntax.Order_by_splice p -> pp_id p.param ^^ string "..."

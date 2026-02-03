@@ -180,6 +180,101 @@ optional param in OFFSET clause:
     < x : (Ch_queries.non_null, string) Ch_queries.expr > Ch_queries.scope
     Ch_queries.select
 
+optional param in ORDER BY clause:
+  $ ./compile_and_run '
+  > let users ?order_by () = [%q "SELECT users.x AS x FROM public.users ORDER BY ?$.order_by..."];;
+  > #show users
+  > '
+  >>> PREPROCESSING
+  let users ?order_by () =
+    Ch_queries.select ()
+      ~from:
+        (Ch_queries.map_from_scope
+           (Ch_queries.from
+              (Ch_database.Public.users ~alias:"users" ~final:false))
+           (fun (users : _ Ch_queries.scope) ->
+             let __q =
+               object
+                 method users = users
+               end
+             in
+             object
+               method users = users
+               method x = __q#users#query (fun __q -> __q#x)
+             end))
+      ~select:(fun __q ->
+        object
+          method x = __q#x
+        end)
+      ?order_by
+  >>> RUNNING
+  val users :
+    ?order_by:(< users : Ch_database.Public.users Ch_queries.scope;
+                 x : (Ch_queries.non_null, string) Ch_queries.expr > ->
+               Ch_queries.an_order_by list) ->
+    unit ->
+    < x : (Ch_queries.non_null, string) Ch_queries.expr > Ch_queries.scope
+    Ch_queries.select
+
+optional ORDER BY with empty list omits ORDER BY clause:
+  $ ./compile_and_run '
+  > let users ?order_by () = [%q "SELECT users.x AS x FROM public.users ORDER BY ?$.order_by..."];;
+  > (* without order_by - no ORDER BY *)
+  > let sql, _ = Ch_queries.query (users ()) @@ fun __q -> Ch_queries.Row.ignore [%e "q.x"]
+  > let () = print_endline sql;;
+  > (* with empty list - no ORDER BY *)
+  > let sql, _ = Ch_queries.query (users ~order_by:(fun _ -> []) ()) @@ fun __q -> Ch_queries.Row.ignore [%e "q.x"]
+  > let () = print_endline sql;;
+  > (* with order_by - ORDER BY is printed *)
+  > let sql, _ = Ch_queries.query (users ~order_by:(fun __q -> [(Ch_queries.A_expr __q#x, `ASC, None)]) ()) @@ fun __q -> Ch_queries.Row.ignore [%e "q.x"]
+  > let () = print_endline sql;;
+  > '
+  >>> PREPROCESSING
+  let users ?order_by () =
+    Ch_queries.select ()
+      ~from:
+        (Ch_queries.map_from_scope
+           (Ch_queries.from
+              (Ch_database.Public.users ~alias:"users" ~final:false))
+           (fun (users : _ Ch_queries.scope) ->
+             let __q =
+               object
+                 method users = users
+               end
+             in
+             object
+               method users = users
+               method x = __q#users#query (fun __q -> __q#x)
+             end))
+      ~select:(fun __q ->
+        object
+          method x = __q#x
+        end)
+      ?order_by
+  
+  let sql, _ =
+    Ch_queries.query (users ()) @@ fun __q ->
+    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
+  
+  let () = print_endline sql
+  
+  let sql, _ =
+    Ch_queries.query (users ~order_by:(fun _ -> []) ()) @@ fun __q ->
+    Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
+  
+  let () = print_endline sql
+  
+  let sql, _ =
+    Ch_queries.query
+      (users ~order_by:(fun __q -> [ (Ch_queries.A_expr __q#x, `ASC, None) ]) ())
+    @@ fun __q -> Ch_queries.Row.ignore (__q#q#query (fun __q -> __q#x))
+  
+  let () = print_endline sql
+  >>> RUNNING
+  SELECT users.x AS x FROM public.users AS users
+  SELECT users.x AS x FROM public.users AS users
+  SELECT users.x AS x FROM public.users AS users ORDER BY users.x ASC
+
 error: optional param without scope access not allowed:
   $ ./compile_and_run '
   > let users ?where () = [%q "SELECT users.x AS x FROM public.users WHERE ?$where"];;
