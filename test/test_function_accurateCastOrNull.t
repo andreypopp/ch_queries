@@ -7,4 +7,4 @@ Testing accurateCastOrNull:
   > " --run-only
   >>> RUNNING
   val e : (Ch_queries.null, 'a) Ch_queries.expr
-  accurateCastOrNull(-1, 'UInt8')
+  accurateCastOrNull(negate(1), 'UInt8')

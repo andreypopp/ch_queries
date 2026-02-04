@@ -179,11 +179,11 @@ let rec pp_expr opts ~parent_prec expr =
               ^/^ string "LIKE"
               ^/^ pp_expr opts ~parent_prec:prec right
           | "NOT", [ operand ] ->
-              parens_if_needed @@ fun prec ->
-              string "NOT" ^/^ pp_expr opts ~parent_prec:prec operand
+              string "not"
+              ^^ group (parens (pp_expr opts ~parent_prec:0 operand))
           | "-", [ operand ] ->
-              parens_if_needed @@ fun prec ->
-              string "-" ^^ pp_expr opts ~parent_prec:prec operand
+              string "negate"
+              ^^ group (parens (pp_expr opts ~parent_prec:0 operand))
           | "=", [ left; right ] ->
               parens_if_needed @@ fun prec ->
               pp_expr opts ~parent_prec:prec left

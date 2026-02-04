@@ -25,7 +25,7 @@ Parsing float literals in expressions:
 
 Negative floats via unary minus:
   $ ch_queries parse 'SELECT -3.14 FROM $x'
-  SELECT -3.14 FROM x AS x
+  SELECT negate(3.14) FROM x AS x
 
 Floats in arithmetic:
   $ ch_queries parse 'SELECT 3.14 + 2.0 FROM $x'

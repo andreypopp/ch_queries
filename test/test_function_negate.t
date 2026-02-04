@@ -7,4 +7,4 @@ Testing negate:
   > " --run-only
   >>> RUNNING
   val e : (Ch_queries.non_null, int Ch_queries.number) Ch_queries.expr
-  -10
+  negate(10)

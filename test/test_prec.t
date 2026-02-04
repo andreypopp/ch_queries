@@ -136,3 +136,9 @@ Test without --print-force-parens to check how we can eliminate unnecessary pare
 
   $ ch_queries parse 'SELECT a + a * b FROM $x'
   SELECT a + a * b FROM x AS x
+
+  $ ch_queries parse 'SELECT NOT (a != b) FROM $x'
+  SELECT not(a != b) FROM x AS x
+
+  $ ch_queries parse 'SELECT NOT unsafe{a!=b} FROM $x'
+  SELECT not(a!=b) FROM x AS x

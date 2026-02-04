@@ -78,7 +78,7 @@ ORDER BY DESC WITH FILL:
   >>> RUNNING
   SELECT users.x AS x
   FROM public.users AS users
-  ORDER BY users.x DESC WITH FILL FROM 100 TO 0 STEP -1
+  ORDER BY users.x DESC WITH FILL FROM 100 TO 0 STEP negate(1)
 
 Multiple ORDER BY - one with fill, one without:
   $ ./compile_and_run '
@@ -100,4 +100,4 @@ Multiple ORDER BY - both with different fills:
   >>> RUNNING
   SELECT users.x AS x
   FROM public.users AS users
-  ORDER BY users.x ASC WITH FILL FROM 1 TO 10 STEP 1, users.id DESC WITH FILL FROM 100 TO 0 STEP -10
+  ORDER BY users.x ASC WITH FILL FROM 1 TO 10 STEP 1, users.id DESC WITH FILL FROM 100 TO 0 STEP negate(10)

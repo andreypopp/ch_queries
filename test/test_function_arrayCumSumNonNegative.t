@@ -10,7 +10,7 @@ Testing arrayCumSumNonNegative:
     (Ch_queries.non_null,
      (Ch_queries.non_null, int Ch_queries.number) Ch_queries.array)
     Ch_queries.expr
-  arrayCumSumNonNegative([1, -2, 3])
+  arrayCumSumNonNegative([1, negate(2), 3])
 
 Testing arrayCumSumNonNegative with lambda:
 
@@ -24,4 +24,4 @@ Testing arrayCumSumNonNegative with lambda:
     (Ch_queries.non_null,
      (Ch_queries.non_null, int Ch_queries.number) Ch_queries.array)
     Ch_queries.expr
-  arrayCumSumNonNegative((x -> (x * 2)), [1, -2, 3])
+  arrayCumSumNonNegative((x -> (x * 2)), [1, negate(2), 3])
