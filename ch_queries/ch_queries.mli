@@ -2458,3 +2458,5 @@ val query :
     The result is the SQL string and a function to parse a single result row.
     The parse function raises [Row.Parse_error] in case of incorrect row being
     supplied. *)
+
+val scope_of_from : 'a scope from -> 'a scope

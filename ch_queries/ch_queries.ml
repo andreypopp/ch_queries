@@ -176,6 +176,8 @@ let rec scope_from : type scope. scope from0 -> scope = function
 let from_select ?cluster_name ~alias select () =
   From_select { select = select ~alias; alias; cluster_name }
 
+let scope_of_from from = scope_from (from ())
+
 let from_table ~db ~table scope =
  fun ~final ~alias:table_alias () : _ scope from_one0 ->
   let scope = scope ~alias:table_alias in
