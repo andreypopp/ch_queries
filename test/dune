@@ -8,4 +8,5 @@
  (deps
   ./test_queries.ml
   ./compile_and_run
+  ./compile_and_run_simple
   (package ch_queries)))
