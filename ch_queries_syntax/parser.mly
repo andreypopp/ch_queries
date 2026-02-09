@@ -297,12 +297,17 @@ from_one:
     let f = make_from_one $startpos $endpos (F_param {param; alias = Option.value alias ~default:param.param; final;}) in
     let f = match t with None -> f | Some t -> make_from_one f.loc.start_pos f.loc.end_pos (F_ascribe (f, t)) in
     f }
+  | db=id DOT table=id LPAREN args=flex_list(COMMA, from_call_arg) RPAREN alias=alias?
+    { make_from_one $startpos $endpos (F_call { db; table; args; alias = Option.value alias ~default:table }) }
   | db=id DOT table=id alias=alias? final=final
     { make_from_one $startpos $endpos (F_table { db; table; alias = Option.value alias ~default:table; final; }) }
   | LPAREN q=query RPAREN t=query_ascription? alias=alias_or_q
     { make_from_one $startpos $endpos (F_select { select = ascribe_query q t; alias; cluster_name = None }) }
   | CLUSTER LPAREN cluster_name=cluster_name COMMA VIEW LPAREN q=query RPAREN t1=query_ascription? RPAREN t2=typ? alias=alias_or_q
     { make_from_one $startpos $endpos (F_select { select = ascribe_query (ascribe_query q t1) t2; alias; cluster_name = Some cluster_name }) }
+
+from_call_arg:
+    name=id EQUALS value=expr { (name, value) }
 
 %inline from_param:
     id=param { id }

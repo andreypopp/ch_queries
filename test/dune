@@ -1,12 +1,23 @@
 (library
  (name test_ch_queries)
+ (modules test_queries)
  (preprocess
   (pps ch_queries.ppx))
  (libraries ch_queries))
+
+(executable
+ (name test_catalog)
+ (modules test_catalog)
+ (flags
+  (:standard -open ContainersLabels))
+ (preprocess
+  (pps ch_queries.ppx))
+ (libraries ch_queries.catalog ch_queries ch_queries.syntax))
 
 (cram
  (deps
   ./test_queries.ml
   ./compile_and_run
   ./compile_and_run_simple
+  ./test_catalog.exe
   (package ch_queries)))

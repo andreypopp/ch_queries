@@ -104,6 +104,8 @@ and from_onesyn =
     }
   | F_param of { param : param; alias : id; final : bool }
   | F_ascribe of from_one * typ
+  | F_call of { db : id; table : id; args : (id * expr) list; alias : id }
+      (** parameterized table reference, e.g. schema.view(arg = val) *)
 
 and cluster_name = Cluster_name of id | Cluster_name_param of param
 

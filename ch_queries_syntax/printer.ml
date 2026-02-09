@@ -350,6 +350,18 @@ and pp_from_one opts from_one =
       group (pp_id param.param ^^ pp_as alias ^^ final)
   | F_ascribe (from, typ) ->
       group (pp_from_one opts from ^^ string "::" ^^ pp_typ typ)
+  | F_call { db; table; args; alias } ->
+      let pp_arg (name, value) =
+        group (pp_id name ^^ string "=" ^^ pp_expr opts ~parent_prec:0 value)
+      in
+      let pp_args =
+        match args with
+        | [] -> empty
+        | _ -> separate (string "," ^^ space) (List.map ~f:pp_arg args)
+      in
+      group
+        (pp_id db ^^ string "." ^^ pp_id table ^^ string "(" ^^ pp_args
+       ^^ string ")" ^^ pp_as alias)
 
 and pp_from opts from =
   match from.node with

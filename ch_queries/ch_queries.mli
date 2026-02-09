@@ -2404,6 +2404,12 @@ module Parse : sig
 
   val unparse : ('n, 's, 'a) t -> 'a -> ('n, 's) expr
   (** Unparse an OCaml value into SQL expression. *)
+
+  val parse_syntax : (_, _, 'a) t -> Ch_queries_syntax.Syntax.expr -> 'a
+  (** Parse a value from an expression syntax.
+
+      Raises [Parse_error] if the value is not compatible with the parser or the
+      expression syntax passed in doesn't represent a value. *)
 end
 
 module Row : sig
@@ -2459,4 +2465,6 @@ val query :
     The parse function raises [Row.Parse_error] in case of incorrect row being
     supplied. *)
 
-val scope_of_from : 'a scope from -> 'a scope
+val scope_of_from : 'a from -> 'a
+val memo_from : 'a from -> 'a from
+val from_to_syntax : _ from -> Ch_queries_syntax.Syntax.from

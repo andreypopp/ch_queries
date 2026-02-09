@@ -41,7 +41,7 @@ let id_to_located id = Located.mk ~loc:(to_location id) id.node
 let rec alias from_one =
   match from_one.Syntax.node with
   | Syntax.F_table { alias; _ } | F_select { alias; _ } | F_param { alias; _ }
-    ->
+  | F_call { alias; _ } ->
       alias
   | F_ascribe (f, _) -> alias f
 
@@ -109,7 +109,7 @@ let from_scope_expr ~scopes from =
 let rec from_one_scope_pattern from_one =
   match from_one.Syntax.node with
   | Syntax.F_table { alias; _ } | F_select { alias; _ } | F_param { alias; _ }
-    ->
+  | F_call { alias; _ } ->
       pvar ~loc:(to_location alias) alias.node
   | F_ascribe (f, _) -> from_one_scope_pattern f
 
@@ -2331,6 +2331,10 @@ and stage_from_one from_one =
       let from_one = stage_from_one from_one in
       let t = stage_typ t in
       [%expr ([%e from_one] : [%t t] Ch_queries.from_one)]
+  | F_call _ ->
+      Location.raise_errorf ~loc
+        "parameterized table references are not supported in %%%%q; use \
+         ch_queries_catalog for rewriting"
 
 let expand_query ~ctxt:_ expr =
   match expr.pexp_desc with

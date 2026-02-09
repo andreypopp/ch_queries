@@ -178,6 +178,10 @@ let from_select ?cluster_name ~alias select () =
 
 let scope_of_from from = scope_from (from ())
 
+let memo_from from =
+  let v = lazy (from ()) in
+  fun () -> Lazy.force v
+
 let from_table ~db ~table scope =
  fun ~final ~alias:table_alias () : _ scope from_one0 ->
   let scope = scope ~alias:table_alias in
@@ -302,12 +306,63 @@ module To_syntax = struct
         Syntax.Order_by_expr (expr, dir, fill))
 
   and to_syntax : type a. a select0 -> Syntax.query =
-   fun q ->
-    let rec select_to_syntax : type a. a select0 -> Syntax.querysyn = function
-      | Select
+   fun q -> Syntax.make_query (select_to_syntax q)
+
+  and select_to_syntax : type a. a select0 -> Syntax.querysyn = function
+    | Select
+        {
+          ctes;
+          from = A_from from;
+          prewhere;
+          where;
+          qualify;
+          group_by;
+          having;
+          order_by;
+          limit;
+          offset;
+          settings;
+          rev_fields;
+          fields_aliases = _;
+          scope = _;
+        } ->
+        let select =
+          List.rev_map
+            ~f:(fun (A_field (expr, alias)) ->
+              { Syntax.expr; alias = Some (Syntax.make_id alias) })
+            rev_fields
+        in
+        let prewhere = Option.map (fun (A_expr expr) -> expr) prewhere in
+        let where = Option.map (fun (A_expr expr) -> expr) where in
+        let qualify = Option.map (fun (A_expr expr) -> expr) qualify in
+        let group_by = Option.map group_by_to_syntax group_by in
+        let having = Option.map (fun (A_expr expr) -> expr) having in
+        let order_by = Option.map order_by_to_syntax order_by in
+        let limit = Option.map (fun (A_expr expr) -> expr) limit in
+        let offset = Option.map (fun (A_expr expr) -> expr) offset in
+        let settings =
+          List.map settings ~f:(fun (id, value) ->
+              let setting_value =
+                match value with
+                | `Int n -> Syntax.Setting_lit (L_int n)
+                | `String s -> Syntax.Setting_lit (L_string s)
+                | `Bool b -> Syntax.Setting_lit (L_bool b)
+              in
+              Syntax.Setting_item (Syntax.make_id id, setting_value))
+        in
+        let from = from_to_syntax from in
+        let with_fields =
+          List.map ctes ~f:(fun (Cte_query (alias, query, materialized)) ->
+              let query = query in
+              let query = to_syntax query in
+              let alias = Syntax.make_id alias in
+              Syntax.With_query (alias, query, materialized))
+        in
+        Q_select
           {
-            ctes;
-            from = A_from from;
+            with_fields;
+            select = Select_fields select;
+            from;
             prewhere;
             where;
             qualify;
@@ -317,128 +372,76 @@ module To_syntax = struct
             limit;
             offset;
             settings;
-            rev_fields;
-            fields_aliases = _;
-            scope = _;
-          } ->
-          let select =
-            List.rev_map
-              ~f:(fun (A_field (expr, alias)) ->
-                { Syntax.expr; alias = Some (Syntax.make_id alias) })
-              rev_fields
+          }
+    | Union { x; y; exprs = _; scope = _ } -> Q_union (to_syntax x, to_syntax y)
+
+  and from_one_to_syntax : type a. a from_one0 -> Syntax.from_one =
+   fun from ->
+    match from with
+    | From_table { db; table; alias; final; _ } ->
+        Syntax.make_from_one
+          (F_table
+             {
+               db = Syntax.make_id db;
+               table = Syntax.make_id table;
+               alias = Syntax.make_id alias;
+               final;
+             })
+    | From_select { select; alias; cluster_name } ->
+        Syntax.make_from_one
+          (F_select
+             {
+               select = Syntax.make_query (select_to_syntax select);
+               alias = Syntax.make_id alias;
+               cluster_name =
+                 Option.map
+                   (fun name -> Syntax.Cluster_name (Syntax.make_id name))
+                   cluster_name;
+             })
+    | From_cte_ref { cte_alias; alias; _ } ->
+        let param = Syntax.make_id cte_alias in
+        let alias = Syntax.make_id alias in
+        Syntax.make_from_one
+          (F_param
+             {
+               param =
+                 { param; param_has_scope = false; param_optional = false };
+               alias;
+               final = false;
+             })
+
+  and from_to_syntax : type a. a from0 -> Syntax.from =
+   fun from ->
+    match from with
+    | From_map (from, _f) -> from_to_syntax from
+    | From { from = A_from_one from; _ } ->
+        let from = from_one_to_syntax from in
+        Syntax.make_from (F from)
+    | From_join { kind; from = A_from from; join = A_from_one join; on; _ } -> (
+        let translate () =
+          let kind =
+            match kind with
+            | `INNER_JOIN -> `INNER_JOIN
+            | `LEFT_JOIN | `LEFT_JOIN_OPTIONAL -> `LEFT_JOIN
           in
-          let prewhere = Option.map (fun (A_expr expr) -> expr) prewhere in
-          let where = Option.map (fun (A_expr expr) -> expr) where in
-          let qualify = Option.map (fun (A_expr expr) -> expr) qualify in
-          let group_by = Option.map group_by_to_syntax group_by in
-          let having = Option.map (fun (A_expr expr) -> expr) having in
-          let order_by = Option.map order_by_to_syntax order_by in
-          let limit = Option.map (fun (A_expr expr) -> expr) limit in
-          let offset = Option.map (fun (A_expr expr) -> expr) offset in
-          let settings =
-            List.map settings ~f:(fun (id, value) ->
-                let setting_value =
-                  match value with
-                  | `Int n -> Syntax.Setting_lit (L_int n)
-                  | `String s -> Syntax.Setting_lit (L_string s)
-                  | `Bool b -> Syntax.Setting_lit (L_bool b)
-                in
-                Syntax.Setting_item (Syntax.make_id id, setting_value))
-          in
+          let (A_expr on) = Lazy.force on in
           let from = from_to_syntax from in
-          let with_fields =
-            List.map ctes ~f:(fun (Cte_query (alias, query, materialized)) ->
-                let query = query in
-                let query = to_syntax query in
-                let alias = Syntax.make_id alias in
-                Syntax.With_query (alias, query, materialized))
-          in
-          Q_select
-            {
-              with_fields;
-              select = Select_fields select;
-              from;
-              prewhere;
-              where;
-              qualify;
-              group_by;
-              having;
-              order_by;
-              limit;
-              offset;
-              settings;
-            }
-      | Union { x; y; exprs = _; scope = _ } ->
-          Q_union (to_syntax x, to_syntax y)
-    and from_one_to_syntax : type a. a from_one0 -> Syntax.from_one =
-     fun from ->
-      match from with
-      | From_table { db; table; alias; final; _ } ->
-          Syntax.make_from_one
-            (F_table
-               {
-                 db = Syntax.make_id db;
-                 table = Syntax.make_id table;
-                 alias = Syntax.make_id alias;
-                 final;
-               })
-      | From_select { select; alias; cluster_name } ->
-          Syntax.make_from_one
-            (F_select
-               {
-                 select = Syntax.make_query (select_to_syntax select);
-                 alias = Syntax.make_id alias;
-                 cluster_name =
-                   Option.map
-                     (fun name -> Syntax.Cluster_name (Syntax.make_id name))
-                     cluster_name;
-               })
-      | From_cte_ref { cte_alias; alias; _ } ->
-          let param = Syntax.make_id cte_alias in
-          let alias = Syntax.make_id alias in
-          Syntax.make_from_one
-            (F_param
-               {
-                 param =
-                   { param; param_has_scope = false; param_optional = false };
-                 alias;
-                 final = false;
-               })
-    and from_to_syntax : type a. a from0 -> Syntax.from =
-     fun from ->
-      match from with
-      | From_map (from, _f) -> from_to_syntax from
-      | From { from = A_from_one from; _ } ->
-          let from = from_one_to_syntax from in
-          Syntax.make_from (F from)
-      | From_join { kind; from = A_from from; join = A_from_one join; on; _ }
-        -> (
-          let translate () =
-            let kind =
-              match kind with
-              | `INNER_JOIN -> `INNER_JOIN
-              | `LEFT_JOIN | `LEFT_JOIN_OPTIONAL -> `LEFT_JOIN
+          let join = from_one_to_syntax join in
+          Syntax.make_from (F_join { kind; from; join; on })
+        in
+        match kind with
+        | `LEFT_JOIN_OPTIONAL ->
+            let rec should_eliminate = function
+              | From_table { used; _ } -> not used
+              | From_cte_ref { cte; _ } -> should_eliminate cte
+              | From_select { select; _ } -> (
+                  match select with
+                  | Select { rev_fields; _ } -> List.is_empty rev_fields
+                  | Union { exprs; _ } -> List.is_empty exprs)
             in
-            let (A_expr on) = Lazy.force on in
-            let from = from_to_syntax from in
-            let join = from_one_to_syntax join in
-            Syntax.make_from (F_join { kind; from; join; on })
-          in
-          match kind with
-          | `LEFT_JOIN_OPTIONAL ->
-              let rec should_eliminate = function
-                | From_table { used; _ } -> not used
-                | From_cte_ref { cte; _ } -> should_eliminate cte
-                | From_select { select; _ } -> (
-                    match select with
-                    | Select { rev_fields; _ } -> List.is_empty rev_fields
-                    | Union { exprs; _ } -> List.is_empty exprs)
-              in
-              if not (should_eliminate join) then translate ()
-              else from_to_syntax from
-          | `LEFT_JOIN | `INNER_JOIN -> translate ())
-    in
-    Syntax.make_query (select_to_syntax q)
+            if not (should_eliminate join) then translate ()
+            else from_to_syntax from
+        | `LEFT_JOIN | `INNER_JOIN -> translate ())
 end
 
 let select_syntax ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by
@@ -1727,6 +1730,43 @@ module Parse = struct
         | `List jsons -> List.map jsons ~f:(parse parser)
         | json -> parse_error ~json "expected an Array(T)")
 
+  let rec expr_to_json (expr : Syntax.expr) : json =
+    match expr.Syntax.node with
+    | Syntax.E_lit (L_int i) -> `Int i
+    | Syntax.E_lit (L_float f) -> `Float f
+    | Syntax.E_lit (L_string s) -> `String s
+    | Syntax.E_lit (L_bool b) -> `Bool b
+    | Syntax.E_lit L_null -> `Null
+    | Syntax.E_call (Func { node = "["; _ }, es) ->
+        `List (List.map es ~f:expr_to_json)
+    | Syntax.E_call (Func { node = "tuple"; _ }, es) ->
+        `List (List.map es ~f:expr_to_json)
+    | Syntax.E_call (Func { node = "map"; _ }, es) ->
+        let kvs =
+          let rec loop args =
+            match args with
+            | [] -> []
+            | k :: v :: args ->
+                let k = expr_to_json k in
+                let k = string_of_json k in
+                let v = expr_to_json v in
+                (k, v) :: loop args
+            | [ _ ] ->
+                parse_error "expected an even number of arguments to map(..)"
+          in
+          loop es
+        in
+        `Assoc kvs
+    | _ ->
+        parse_error
+          "an expression doesn't represent a value, expected a literal, array, \
+           tuple, or map"
+
+  let parse_syntax : type n s o. (n, s, o) t -> Syntax.expr -> o =
+   fun parser expr ->
+    let json = expr_to_json expr in
+    parse parser json
+
   let rec unparse : type n s o. (n, s, o) t -> o -> (n, s) expr =
    fun parser v ->
     match parser with
@@ -1917,3 +1957,5 @@ let query q f =
   let sql = Ch_queries_syntax.Printer.print_query select in
   let parse_row = Row.parse row in
   (sql, parse_row)
+
+let from_to_syntax from = To_syntax.from_to_syntax (from ())
