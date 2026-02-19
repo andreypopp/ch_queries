@@ -164,6 +164,7 @@ let rec stage_typ' typ =
       (`NON_NULL, [%type: Unsigned.uint64 Ch_queries.number])
   | T { node = "Float32" | "Float64" | "Float"; _ } ->
       (`NON_NULL, [%type: float Ch_queries.number])
+  | T { node = "JSON"; _ } -> (`NON_NULL, [%type: Ch_queries.json])
   | T { node = t; _ } ->
       Location.raise_errorf ~loc "unknown ClickHouse type: %s" t
   | T_app ({ node = "Nullable"; _ }, [ t ]) ->
@@ -257,6 +258,7 @@ let rec stage_typ_to_parser typ =
   | T { node = "UInt64"; _ } -> [%expr Ch_queries.Parse.uint64]
   | T { node = "Float32" | "Float64" | "Float"; _ } ->
       [%expr Ch_queries.Parse.float]
+  | T { node = "JSON"; _ } -> [%expr Ch_queries.Parse.json]
   | T { node = t; _ } ->
       Location.raise_errorf ~loc "unknown ClickHouse type: %s" t
   | T_custom { node = ocaml_type; _ } ->

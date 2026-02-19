@@ -2369,6 +2369,7 @@ module Parse : sig
   val int64 : (non_null, int64 number, int64) t
   val uint64 : (non_null, uint64 number, uint64) t
   val float : (non_null, float number, float) t
+  val json : (non_null, json, json) t
   val date : (non_null, date, float) t
   val datetime : (non_null, datetime, float) t
 

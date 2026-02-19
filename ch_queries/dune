@@ -3,4 +3,4 @@
  (public_name ch_queries)
  (flags
   (:standard -open ContainersLabels))
- (libraries containers unix extunix integers ch_queries.syntax))
+ (libraries containers unix extunix integers yojson ch_queries.syntax))

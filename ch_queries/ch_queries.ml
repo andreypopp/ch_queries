@@ -1748,6 +1748,14 @@ module Parse = struct
         Expr.array items
 
   let nullable p = NULLABLE p
+
+  let json =
+    let unparse x =
+      unsafe_concat
+        [ A_expr (string (Yojson.Basic.to_string x)); A_expr (unsafe "::JSON") ]
+    in
+    VAL (Fun.id, unparse)
+
   let string = VAL (string_of_json, string)
   let bool = VAL (bool_of_json, bool)
   let int = NUMBER (int_of_json, int)

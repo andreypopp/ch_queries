@@ -32,6 +32,7 @@
   containers
   extunix
   integers
+  yojson
   (ocamlformat :with-test)
   (yojson :with-test)
   (mdx :with-test))
