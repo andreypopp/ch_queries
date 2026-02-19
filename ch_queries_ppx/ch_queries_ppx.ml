@@ -88,9 +88,9 @@ let from_scope_expr ~scopes from =
   let from =
     from_scope_expr' from
     |> List.rev_map ~f:(fun (id, expr) ->
-           ( id,
-             pcf_method ~loc
-               (located_of_id id, Public, Cfk_concrete (Fresh, expr)) ))
+        ( id,
+          pcf_method ~loc (located_of_id id, Public, Cfk_concrete (Fresh, expr))
+        ))
   in
   let rec build curr_scope = function
     | [] -> failwith "impossible: should have at least FROM scope"
@@ -302,7 +302,7 @@ let query_scope ~loc ~alias scope expr =
 
 let normalise_col name =
   (if Char.is_uppercase_ascii name.[0] then "_" ^ name else name)
-  |> String.split_on_char ~by:'.'
+  |> Stdlib.StringLabels.split_on_char ~sep:'.'
   |> String.concat ~sep:"__dot__"
 
 let refer_to_scope ~loc ?map scope id =
@@ -1472,7 +1472,7 @@ and stage_expr ~params expr =
             match dict.Syntax.node with
             | E_col (db, table) -> evar ~loc (refer_to_db_table db table)
             | E_lit (L_string s) -> (
-                match String.split_on_char ~by:'.' s with
+                match Stdlib.StringLabels.split_on_char ~sep:'.' s with
                 | [ db; table ] ->
                     let db_id = Syntax.make_id db in
                     let table_id = Syntax.make_id table in
@@ -1563,7 +1563,7 @@ and stage_expr ~params expr =
             match dict.Syntax.node with
             | E_col (db, table) -> evar ~loc (refer_to_db_table db table)
             | E_lit (L_string s) -> (
-                match String.split_on_char ~by:'.' s with
+                match Stdlib.StringLabels.split_on_char ~sep:'.' s with
                 | [ db; table ] ->
                     let db_id = Syntax.make_id db in
                     let table_id = Syntax.make_id table in
