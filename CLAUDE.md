@@ -74,6 +74,28 @@ When adding new syntax to the query language, follow this pattern:
 
 Always check that interface files (.mli) match implementation files (.ml) when adding new optional parameters to functions.
 
+## Adding new ClickHouse types
+
+Simple named types (like `JSON`, `String`, `Int32`) need no syntax changes — they
+are parsed as `T "TypeName"` by the existing grammar. To add a new one:
+
+1. **ch_queries.ml / ch_queries.mli**: Define a phantom type if needed (e.g.
+   `type json0 = private Json`), or reuse an existing OCaml type (e.g. `json`
+   polymorphic variant, `string`, `int`). Types like `int` and `string` are
+   reused directly; compound types like `date` use phantom types (`date0
+   timestamp`).
+2. **ch_queries_ppx.ml — `stage_typ'`**: Add a pattern matching the type name
+   string to the OCaml phantom type (e.g. `T { node = "JSON"; _ } ->
+   (\`NON_NULL, [%type: Ch_queries.json])`).
+3. **ch_queries_ppx.ml — `stage_typ_to_parser`**: Add a pattern mapping the
+   type name to a `Parse.t` value (e.g. `T { node = "JSON"; _ } -> [%expr
+   Ch_queries.Parse.json]`).
+4. **ch_queries.ml — `Parse` module**: Add a `Parse.t` value that pairs a JSON
+   decoder with an SQL expression constructor (e.g. `let json = VAL (Fun.id,
+   unparse)`). Expose it in `ch_queries.mli`.
+5. **Add tests** in `test/` covering type position (`[%t "..."]`), expression
+   ascription (`::TypeName`), query column usage, and `Parse` round-tripping.
+
 ## Code Style
 
 - **Naming**: `snake_case` for values/functions/types, `My_module` for modules/variants
