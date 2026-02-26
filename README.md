@@ -95,6 +95,30 @@ val sql : string = "SELECT users.id AS id FROM public.users AS users"
 val parse_row : json list -> int = <fun>
 ```
 
+### Parameter syntax
+
+The full set of param forms:
+
+| Syntax | Meaning |
+|--------|---------|
+| `$param` | Splice an expression |
+| `$.param` | Build an expression in a current query scope |
+| `$Mod.param` | Same as `$param` but with a module path (longident) |
+| `$.Mod.param` | Same as `$.param` but with a module path (longident) |
+| `?$.param` | Optional scope-aware parameter |
+
+Params `$.param` and `$.Mod.param` allow to build expression in the current
+query scope. The identifiers which param refer to are functions which receive
+the current query scope and return an expression.
+
+Longident syntax allows referencing values from other modules directly. Module
+components must start with an uppercase letter (e.g. `$Foo.Bar.baz`,
+`$.Foo.Bar.baz`).
+
+Optional `?$.param` parameters can only be used immediately in `WHERE`,
+`HAVING` and other clasues. If they eval to `None`, the clause will be omitted
+from the query entirely.
+
 ## `%ch.query_and_map` - queries with row parsing
 
 The `%ch.query_and_map` syntax form is a convenient way to define a query along

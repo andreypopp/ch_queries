@@ -161,6 +161,8 @@ let digit = ['0'-'9']
 let letter = ['a'-'z' 'A'-'Z']
 let id_char = letter | digit | '_'
 let id = (letter | '_') id_char*
+let uid = ['A'-'Z'] id_char*
+let longident = (uid '.')* id
 let number = digit+
 let float = digit+ '.' digit* | '.' digit+
 let param_char = '$'
@@ -177,10 +179,10 @@ rule token = parse
     let s = string_literal (Buffer.create 16) lexbuf in
     lexbuf.Lexing.lex_start_p <- lex_start_p;
     STRING s }
-  | param_char (id as s) '.' '.' '.' { PARAM_SPLICE (s, false, false) }
-  | param_char '.' (id as s) '.' '.' '.' { PARAM_SPLICE (s, true, false) }
-  | '?' param_char (id as s) '.' '.' '.' { PARAM_SPLICE (s, false, true) }
-  | '?' param_char '.' (id as s) '.' '.' '.' { PARAM_SPLICE (s, true, true) }
+  | param_char (longident as s) '.' '.' '.' { PARAM_SPLICE (s, false, false) }
+  | param_char '.' (longident as s) '.' '.' '.' { PARAM_SPLICE (s, true, false) }
+  | '?' param_char (longident as s) '.' '.' '.' { PARAM_SPLICE (s, false, true) }
+  | '?' param_char '.' (longident as s) '.' '.' '.' { PARAM_SPLICE (s, true, true) }
   | param_char '{'             {
     (* remember start position to restore later *)
     let lex_start_p = Lexing.lexeme_start_p lexbuf in
@@ -201,10 +203,10 @@ rule token = parse
     let s = ch_param buf 0 lexbuf in
     lexbuf.Lexing.lex_start_p <- lex_start_p;
     CH_PARAM s }
-  | param_char (id as s)     { PARAM (s, false, false) }
-  | param_char '.' (id as s) { PARAM (s, true, false) }
-  | '?' param_char (id as s)     { PARAM (s, false, true) }
-  | '?' param_char '.' (id as s) { PARAM (s, true, true) }
+  | param_char (longident as s)     { PARAM (s, false, false) }
+  | param_char '.' (longident as s) { PARAM (s, true, false) }
+  | '?' param_char (longident as s)     { PARAM (s, false, true) }
+  | '?' param_char '.' (longident as s) { PARAM (s, true, true) }
   | id as s             { get_keyword_or_id s }
   | '('                 { LPAREN }
   | ')'                 { RPAREN }

@@ -104,6 +104,52 @@ Test untyped expressions
   >>> RUNNING
   val e : ('a, 'b) Ch_queries.expr
 
+longident in $param
+
+  $ ./compile_and_run '
+  > module Params = struct let x = Ch_queries.int 1 end;;
+  > let e = [%eu "someUnknownFunction($Params.x, interval 1 day)"];;
+  > #show e
+  > '
+  >>> PREPROCESSING
+  module Params = struct
+    let x = Ch_queries.int 1
+  end
+  
+  let e =
+    Ch_queries.unsafe_concat
+      [
+        Ch_queries.A_expr (Ch_queries.unsafe "someUnknownFunction(");
+        Ch_queries.A_expr Params.x;
+        Ch_queries.A_expr (Ch_queries.unsafe ", interval 1 day)");
+      ]
+  >>> RUNNING
+  val e : ('a, 'b) Ch_queries.expr
+
+
+longident in $.param
+
+  $ ./compile_and_run '
+  > module Params = struct let x __q = Ch_queries.int 1 end;;
+  > let e __q = [%eu "someUnknownFunction($.Params.x, interval 1 day)"];;
+  > #show e
+  > '
+  >>> PREPROCESSING
+  module Params = struct
+    let x __q = Ch_queries.int 1
+  end
+  
+  let e __q =
+    Ch_queries.unsafe_concat
+      [
+        Ch_queries.A_expr (Ch_queries.unsafe "someUnknownFunction(");
+        Ch_queries.A_expr (Params.x __q);
+        Ch_queries.A_expr (Ch_queries.unsafe ", interval 1 day)");
+      ]
+  >>> RUNNING
+  val e : 'a -> ('b, 'c) Ch_queries.expr
+
+
   $ ./compile_and_run '
   > let e x __q = [%eu "someUnknownFunction($.x, interval 1 day)"];;
   > #show e

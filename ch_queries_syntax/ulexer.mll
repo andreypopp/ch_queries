@@ -20,11 +20,13 @@ let digit = ['0'-'9']
 let letter = ['a'-'z' 'A'-'Z']
 let id_rest = letter | digit | '_'
 let id = (letter | '_') id_rest*
+let uid = ['A'-'Z'] id_rest*
+let longident = (uid '.')* id
 let param = '$'
 
 rule token = parse
-  | param "." (id as param)  { SCOPE_PARAM param }
-  | param (id as param)      { PARAM param }
+  | param "." (longident as param)  { SCOPE_PARAM param }
+  | param (longident as param)      { PARAM param }
   | (id as x) "." (id as y)  { COLUMN (x, y) }
   | '\''                     {
     let lex_start_p = Lexing.lexeme_start_p lexbuf in
@@ -52,8 +54,8 @@ rule token = parse
     SQL sql }
 
 and sql_fragment buf = parse
-  | param "." id as matched    { rollback_match lexbuf ~matched; Buffer.contents buf }
-  | param id as matched        { rollback_match lexbuf ~matched; Buffer.contents buf }
+  | param "." longident as matched    { rollback_match lexbuf ~matched; Buffer.contents buf }
+  | param longident as matched        { rollback_match lexbuf ~matched; Buffer.contents buf }
   | id "." id as matched       { rollback_match lexbuf ~matched; Buffer.contents buf }
   | '\''                       {
     Buffer.add_char buf '\'';
