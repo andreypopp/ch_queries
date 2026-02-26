@@ -104,6 +104,21 @@ Test untyped expressions
   >>> RUNNING
   val e : ('a, 'b) Ch_queries.expr
 
+  $ ./compile_and_run '
+  > let e x __q = [%eu "someUnknownFunction($.x, interval 1 day)"];;
+  > #show e
+  > '
+  >>> PREPROCESSING
+  let e x __q =
+    Ch_queries.unsafe_concat
+      [
+        Ch_queries.A_expr (Ch_queries.unsafe "someUnknownFunction(");
+        Ch_queries.A_expr (x __q);
+        Ch_queries.A_expr (Ch_queries.unsafe ", interval 1 day)");
+      ]
+  >>> RUNNING
+  val e : ('a -> ('b, 'c) Ch_queries.expr) -> 'a -> ('d, 'e) Ch_queries.expr
+
   $ ./compile_and_run "
   > let e __q = {%eu|uniqMerge(q.visitors)OVER(ORDER BY q.step DESC)|};;
   > #show e

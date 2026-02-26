@@ -5,6 +5,7 @@
 
   let string_of_token : Uparser.token -> string = function
     | Uparser.PARAM s -> Printf.sprintf "PARAM(%s)" s
+    | Uparser.SCOPE_PARAM s -> Printf.sprintf "SCOPE_PARAM(%s)" s
     | Uparser.COLUMN (x, y) -> Printf.sprintf "COLUMN(%s %s)" x y
     | Uparser.SQL s -> Printf.sprintf "SQL(%s)" s
     | Uparser.EOF -> "EOF"
@@ -22,6 +23,7 @@ let id = (letter | '_') id_rest*
 let param = '$'
 
 rule token = parse
+  | param "." (id as param)  { SCOPE_PARAM param }
   | param (id as param)      { PARAM param }
   | (id as x) "." (id as y)  { COLUMN (x, y) }
   | '\''                     {
@@ -50,6 +52,7 @@ rule token = parse
     SQL sql }
 
 and sql_fragment buf = parse
+  | param "." id as matched    { rollback_match lexbuf ~matched; Buffer.contents buf }
   | param id as matched        { rollback_match lexbuf ~matched; Buffer.contents buf }
   | id "." id as matched       { rollback_match lexbuf ~matched; Buffer.contents buf }
   | '\''                       {

@@ -49,6 +49,7 @@
 
 %token <string * string> COLUMN
 %token <string> PARAM
+%token <string> SCOPE_PARAM
 %token <string> SQL
 %token EOF
 
@@ -77,6 +78,10 @@ uexpr_item:
     param=PARAM {
       let param = make_id $startpos $endpos param in
       make_expr $startpos $endpos (E_param {param; param_has_scope=false; param_optional=false})
+    }
+  | param=SCOPE_PARAM {
+      let param = make_id $startpos $endpos param in
+      make_expr $startpos $endpos (E_param {param; param_has_scope=true; param_optional=false})
     }
   | col=COLUMN { 
       let x, y = col in
