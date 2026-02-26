@@ -65,11 +65,11 @@ When adding new syntax to the query language, follow this pattern:
    - Add token declarations
    - Add parsing rules
    - Include new fields in existing rules (e.g., SELECT queries)
-8. **If adding new column/param-like constructs**: Consider updating ulexer.mll/uparser.mly for `%eu` support
-4. **Update printer.ml**: Add pretty-printing support for the new syntax
-5. **Update ch_queries.ml**: Add the feature to the core DSL types and translation
-6. **Update ch_queries.mli**: Add interface signatures for new functions
-7. **Update ch_queries_ppx.ml**: Add PPX transformation support
+4. **If adding new column/param-like constructs**: Consider updating ulexer.mll/uparser.mly for `%eu` support
+5. **Update printer.ml**: Add pretty-printing support for the new syntax
+6. **Update ch_queries.ml**: Add the feature to the core DSL types and translation
+7. **Update ch_queries.mli**: Add interface signatures for new functions
+8. **Update ch_queries_ppx.ml**: Add PPX transformation support
 9. **Run `dune build`** and fix any build errors systematically
 
 Always check that interface files (.mli) match implementation files (.ml) when adding new optional parameters to functions.
