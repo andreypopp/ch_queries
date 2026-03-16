@@ -2460,4 +2460,8 @@ val query :
     The parse function raises [Row.Parse_error] in case of incorrect row being
     supplied. *)
 
-val scope_of_from : 'a scope from -> 'a scope
+val scope_of_from : 'a from -> 'a
+(** Get the scope of a FROM clause. 
+
+    Might be useful for generating standalone expressions which require some scope.
+  *)
