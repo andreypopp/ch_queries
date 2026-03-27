@@ -1875,8 +1875,10 @@ module Expr : sig
 
   (** {2 Rounding functions} *)
 
-  val round : ('n, 'a number) expr -> ('n, 'a number) expr
-  (** Rounds a value to the nearest integer. *)
+  val round :
+    ?n:('n, _ number) expr -> ('n, 'a number) expr -> ('n, 'a number) expr
+  (** Rounds a value to the nearest integer. If [n] is given, rounds to [n]
+      decimal places. *)
 
   val floor : ('n, 'a number) expr -> ('n, 'a number) expr
   (** [floor x] returns the largest round number less than or equal to [x]. *)
@@ -2461,7 +2463,7 @@ val query :
     supplied. *)
 
 val scope_of_from : 'a from -> 'a
-(** Get the scope of a FROM clause. 
+(** Get the scope of a FROM clause.
 
-    Might be useful for generating standalone expressions which require some scope.
-  *)
+    Might be useful for generating standalone expressions which require some
+    scope. *)

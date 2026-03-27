@@ -1164,7 +1164,9 @@ module Expr = struct
 
   (** {2 Rounding functions} *)
 
-  let round x = def "round" [ x ]
+  let round ?n x =
+    match n with None -> def "round" [ x ] | Some n -> def "round" [ x; n ]
+
   let floor x = def "floor" [ x ]
 
   let trunc ?n x =
