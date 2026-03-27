@@ -382,20 +382,20 @@ let rec stage_clause_expr ~label expr =
   let loc = to_location expr in
   match expr.Syntax.node with
   | Syntax.E_param { param; param_has_scope; param_optional = true } ->
-      if not param_has_scope then
-        Location.raise_errorf ~loc:(to_location param)
-          "?$%s: optional parameters must use scope access syntax (?$.%s)"
-          param.Syntax.node param.Syntax.node;
       let var = evar ~loc:(to_location param) param.Syntax.node in
+      let var =
+        if param_has_scope then var
+        else [%expr Option.map (fun __v __q -> __v) [%e var]]
+      in
       (Optional label, var)
   | Syntax.E_ascribe
       ( { node = E_param { param; param_has_scope; param_optional = true }; _ },
         _ ) ->
-      if not param_has_scope then
-        Location.raise_errorf ~loc:(to_location param)
-          "?$%s: optional parameters must use scope access syntax (?$.%s)"
-          param.Syntax.node param.Syntax.node;
       let var = evar ~loc:(to_location param) param.Syntax.node in
+      let var =
+        if param_has_scope then var
+        else [%expr Option.map (fun __v __q -> __v) [%e var]]
+      in
       (Optional label, var)
   | _ -> (Labelled label, make_hole ~loc (stage_expr ~params:[] expr))
 

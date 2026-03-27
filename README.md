@@ -105,6 +105,7 @@ The full set of param forms:
 | `$.param` | Build an expression in a current query scope |
 | `$Mod.param` | Same as `$param` but with a module path (longident) |
 | `$.Mod.param` | Same as `$.param` but with a module path (longident) |
+| `?$param` | Optional parameter |
 | `?$.param` | Optional scope-aware parameter |
 
 Params `$.param` and `$.Mod.param` allow to build expression in the current
@@ -115,9 +116,10 @@ Longident syntax allows referencing values from other modules directly. Module
 components must start with an uppercase letter (e.g. `$Foo.Bar.baz`,
 `$.Foo.Bar.baz`).
 
-Optional `?$.param` parameters can only be used immediately in `WHERE`,
-`HAVING` and other clasues. If they eval to `None`, the clause will be omitted
-from the query entirely.
+Optional `?$param` and `?$.param` parameters can be used in `WHERE`, `HAVING`,
+`QUALIFY`, `LIMIT`, `OFFSET` and `ORDER BY` clauses. If they eval to `None`,
+the clause will be omitted from the query entirely. The `?$.param` form receives
+the query scope, while `?$param` splices a pre-built expression directly.
 
 ## `%ch.query_and_map` - queries with row parsing
 

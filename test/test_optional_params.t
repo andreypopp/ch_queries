@@ -282,14 +282,39 @@ optional ORDER BY with empty list omits ORDER BY clause:
   SELECT users.x AS x FROM public.users AS users
   SELECT users.x AS x FROM public.users AS users ORDER BY users.x ASC
 
-error: optional param without scope access not allowed:
+optional param without scope access in WHERE clause:
   $ ./compile_and_run '
   > let users ?where () = [%q "SELECT users.x AS x FROM public.users WHERE ?$where"];;
+  > #show users
   > '
   >>> PREPROCESSING
-  File "-", line 2, characters 71-78:
-  Error: ?$where: optional parameters must use scope access syntax (?$.where)
-  [1]
+  let users ?where () =
+    Ch_queries.select ()
+      ~from:
+        (Ch_queries.map_from_scope
+           (Ch_queries.from
+              (Ch_database.Public.users ~alias:"users" ~final:false))
+           (fun (users : _ Ch_queries.scope) ->
+             let __q =
+               object
+                 method users = users
+               end
+             in
+             object
+               method users = users
+               method x = __q#users#query ?alias:(Some "x") (fun __q -> __q#x)
+             end))
+      ~select:(fun __q ->
+        object
+          method x = __q#x
+        end)
+      ?where:(Option.map (fun __v -> fun __q -> __v) where)
+  >>> RUNNING
+  val users :
+    ?where:('a, bool) Ch_queries.expr ->
+    unit ->
+    < x : (Ch_queries.non_null, string) Ch_queries.expr > Ch_queries.scope
+    Ch_queries.select
 
 error: optional param not allowed in expression context:
   $ ./compile_and_run '
