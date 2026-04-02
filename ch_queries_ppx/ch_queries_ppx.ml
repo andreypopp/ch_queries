@@ -2027,6 +2027,7 @@ and stage_query ({ node; _ } as q) =
         group_by = _;
         having = _;
         order_by = _;
+        limit_by = _;
         limit = _;
         offset = _;
         settings = _;
@@ -2116,6 +2117,7 @@ and stage_query_args args ({ Ch_queries_syntax.Syntax.node; _ } as q) =
         group_by;
         having;
         order_by;
+        limit_by;
         limit;
         offset;
         settings;
@@ -2172,6 +2174,22 @@ and stage_query_args args ({ Ch_queries_syntax.Syntax.node; _ } as q) =
             (Labelled "order_by", order_by) :: args
       in
       let args =
+        match limit_by with
+        | None -> args
+        | Some { Syntax.limit_by_limit; limit_by_exprs } ->
+            let loc = to_location q in
+            let limit_expr = stage_expr ~params:[] limit_by_limit in
+            let exprs =
+              List.map limit_by_exprs ~f:(fun expr ->
+                  [%expr Ch_queries.A_expr [%e stage_expr ~params:[] expr]])
+            in
+            let limit_by_expr =
+              [%expr ([%e limit_expr], [%e elist ~loc exprs])]
+            in
+            let limit_by_expr = make_hole ~loc limit_by_expr in
+            (Labelled "limit_by", limit_by_expr) :: args
+      in
+      let args =
         match limit with
         | None -> args
         | Some limit -> stage_clause_expr ~label:"limit" limit :: args
@@ -2220,6 +2238,7 @@ and stage_query_syntax ({ Syntax.node; _ } as q) =
         group_by = _;
         having = _;
         order_by = _;
+        limit_by = _;
         limit = _;
         offset = _;
         settings = _;

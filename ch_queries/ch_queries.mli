@@ -155,6 +155,7 @@ val select :
   ?group_by:('from -> a_expr list) ->
   ?having:('from -> (_, bool) expr) ->
   ?order_by:('from -> an_order_by list) ->
+  ?limit_by:('from -> (_, int number) expr * a_expr list) ->
   ?limit:('from -> (_, int number) expr) ->
   ?offset:('from -> (_, int number) expr) ->
   ?settings:(string * [ `Int of int | `String of string | `Bool of bool ]) list ->
@@ -213,6 +214,7 @@ val select_syntax :
   ?group_by:('from -> a_expr list) ->
   ?having:('from -> (_, bool) expr) ->
   ?order_by:('from -> an_order_by list) ->
+  ?limit_by:('from -> (_, int number) expr * a_expr list) ->
   ?limit:('from -> (_, int number) expr) ->
   ?offset:('from -> (_, int number) expr) ->
   ?settings:(string * [ `Int of int | `String of string | `Bool of bool ]) list ->

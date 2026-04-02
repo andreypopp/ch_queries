@@ -383,6 +383,7 @@ and pp_query opts { node; eq = _; loc = _ } =
         group_by;
         having;
         order_by;
+        limit_by;
         limit;
         offset;
         settings;
@@ -461,6 +462,20 @@ and pp_query opts { node; eq = _; loc = _ } =
             let pp_items = separate (string ", ") (List.map ~f:pp_item items) in
             Some (group (string "ORDER BY " ^^ pp_items))
       in
+      let limit_by =
+        match limit_by with
+        | None -> None
+        | Some { Syntax.limit_by_limit; limit_by_exprs } ->
+            let exprs =
+              separate (string ", ")
+                (List.map ~f:(pp_expr opts ~parent_prec:0) limit_by_exprs)
+            in
+            Some
+              (group
+                 (string "LIMIT"
+                 ^/^ pp_expr opts ~parent_prec:0 limit_by_limit
+                 ^/^ string "BY" ^/^ exprs))
+      in
       let limit =
         match limit with
         | None -> None
@@ -522,6 +537,7 @@ and pp_query opts { node; eq = _; loc = _ } =
                 group_by;
                 having;
                 order_by;
+                limit_by;
                 limit;
                 offset;
                 settings;

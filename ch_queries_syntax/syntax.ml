@@ -70,6 +70,8 @@ and with_field =
 
 and query = querysyn node
 
+and limit_by = { limit_by_limit : expr; limit_by_exprs : expr list }
+
 and querysyn =
   | Q_select of {
       with_fields : with_field list;
@@ -81,6 +83,7 @@ and querysyn =
       group_by : dimension list option;
       having : expr option;
       order_by : order_by list option;
+      limit_by : limit_by option;
       limit : expr option;
       offset : expr option;
       settings : setting_item list;

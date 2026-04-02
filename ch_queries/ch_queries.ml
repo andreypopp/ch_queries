@@ -74,6 +74,7 @@ and 'scope select_payload = {
   group_by : a_expr list option;
   having : a_expr option;
   order_by : an_order_by list option;
+  limit_by : (a_expr * a_expr list) option;
   limit : a_expr option;
   offset : a_expr option;
   settings :
@@ -314,6 +315,7 @@ module To_syntax = struct
             group_by;
             having;
             order_by;
+            limit_by;
             limit;
             offset;
             settings;
@@ -333,6 +335,16 @@ module To_syntax = struct
           let group_by = Option.map group_by_to_syntax group_by in
           let having = Option.map (fun (A_expr expr) -> expr) having in
           let order_by = Option.map order_by_to_syntax order_by in
+          let limit_by =
+            Option.map
+              (fun (A_expr limit, exprs) ->
+                {
+                  Syntax.limit_by_limit = limit;
+                  limit_by_exprs =
+                    List.map ~f:(fun (A_expr e) -> e) exprs;
+                })
+              limit_by
+          in
           let limit = Option.map (fun (A_expr expr) -> expr) limit in
           let offset = Option.map (fun (A_expr expr) -> expr) offset in
           let settings =
@@ -364,6 +376,7 @@ module To_syntax = struct
               group_by;
               having;
               order_by;
+              limit_by;
               limit;
               offset;
               settings;
@@ -442,8 +455,8 @@ module To_syntax = struct
 end
 
 let select_syntax ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by
-    ?limit ?offset ?(settings = []) ~select () : Ch_queries_syntax.Syntax.query
-    =
+    ?limit_by ?limit ?offset ?(settings = []) ~select () :
+    Ch_queries_syntax.Syntax.query =
   let from = from () in
   let inner_scope = scope_from from in
   let prewhere =
@@ -456,6 +469,13 @@ let select_syntax ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by
   let group_by = Option.map (fun group_by -> group_by inner_scope) group_by in
   let having = Option.map (fun having -> A_expr (having inner_scope)) having in
   let order_by = Option.map (fun order_by -> order_by inner_scope) order_by in
+  let limit_by =
+    Option.map
+      (fun limit_by ->
+        let limit, exprs = limit_by inner_scope in
+        (A_expr limit, exprs))
+      limit_by
+  in
   let limit = Option.map (fun limit -> A_expr (limit inner_scope)) limit in
   let offset = Option.map (fun offset -> A_expr (offset inner_scope)) offset in
   let fields_aliases, rev_fields =
@@ -475,6 +495,7 @@ let select_syntax ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by
         group_by;
         having;
         order_by;
+        limit_by;
         limit;
         offset;
         settings;
@@ -1495,8 +1516,9 @@ let with_cte ?(materialized = false) ~alias:cte_alias cte_query :
   add_cte query;
   query
 
-let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit
-    ?offset ?(settings = []) ~select () ~alias:select_alias : _ scope select0 =
+let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit_by
+    ?limit ?offset ?(settings = []) ~select () ~alias:select_alias :
+    _ scope select0 =
   let from = from () in
   let inner_scope = scope_from from in
   let scope' = select inner_scope in
@@ -1510,6 +1532,13 @@ let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit
   let group_by = Option.map (fun group_by -> group_by inner_scope) group_by in
   let having = Option.map (fun having -> A_expr (having inner_scope)) having in
   let order_by = Option.map (fun order_by -> order_by inner_scope) order_by in
+  let limit_by =
+    Option.map
+      (fun limit_by ->
+        let limit, exprs = limit_by inner_scope in
+        (A_expr limit, exprs))
+      limit_by
+  in
   let limit = Option.map (fun limit -> A_expr (limit inner_scope)) limit in
   let offset = Option.map (fun offset -> A_expr (offset inner_scope)) offset in
   let rec select =
@@ -1541,6 +1570,7 @@ let select ~from ?prewhere ?where ?qualify ?group_by ?having ?order_by ?limit
         group_by;
         having;
         order_by;
+        limit_by;
         limit;
         offset;
         settings;
@@ -1919,6 +1949,7 @@ let query q f =
                group_by = None;
                having = None;
                order_by = None;
+               limit_by = None;
                limit = None;
                offset = None;
                settings = [];

@@ -119,8 +119,9 @@ a_from:
     FROM f=from EOF { f }
 
 query_select:
-  with_fields=with_fields? SELECT select=select FROM from=from prewhere=prewhere? where=where? qualify=qualify? group_by=group_by? having=having? order_by=order_by? limit=limit? offset=offset? settings=settings?
-  { make_query $startpos $endpos (Syntax.Q_select { with_fields = Option.value with_fields ~default:[]; select; from; prewhere; where; qualify; group_by; having; order_by; limit; offset; settings = Option.value settings ~default:[] }) }
+  with_fields=with_fields? SELECT select=select FROM from=from prewhere=prewhere? where=where? qualify=qualify? group_by=group_by? having=having? order_by=order_by? limits=limit_by_and_limit offset=offset? settings=settings?
+  { let limit_by, limit = limits in
+    make_query $startpos $endpos (Syntax.Q_select { with_fields = Option.value with_fields ~default:[]; select; from; prewhere; where; qualify; group_by; having; order_by; limit_by; limit; offset; settings = Option.value settings ~default:[] }) }
 
 with_fields:
   WITH xs=nonempty_flex_list(COMMA, with_field) { xs }
@@ -245,8 +246,12 @@ interpolate_item:
       let e = make_expr $startpos(p) $endpos(p) (E_param p) in
       { interpolate_col = col; interpolate_expr = Some e } }
 
-limit:
-    LIMIT e=expr { e }
+limit_by_and_limit:
+    { (None, None) }
+  | LIMIT e=expr BY exprs=nonempty_flex_list(COMMA, expr) limit=ioption(preceded(LIMIT, expr))
+    { (Some { Syntax.limit_by_limit = e; limit_by_exprs = exprs }, limit) }
+  | LIMIT e=expr
+    { (None, Some e) }
 
 offset:
     OFFSET e=expr { e }
