@@ -24,15 +24,13 @@
   ocaml
   menhir
   pprint
-  (ppxlib
-   (< "0.36"))
+  ppxlib
   ppx_hash
   ppx_compare
   cmdliner
   containers
   extunix
   integers
-  yojson
   (ocamlformat :with-test)
   (yojson :with-test)
   (mdx :with-test))
