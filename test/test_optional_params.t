@@ -308,7 +308,7 @@ optional param without scope access in WHERE clause:
         object
           method x = __q#x
         end)
-      ?where:(Option.map (fun __v -> fun __q -> __v) where)
+      ?where:(Option.map (fun __v __q -> __v) where)
   >>> RUNNING
   val users :
     ?where:('a, bool) Ch_queries.expr ->

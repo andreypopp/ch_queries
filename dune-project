@@ -31,7 +31,7 @@
   containers
   extunix
   integers
-  (ocamlformat :with-test)
+  (ocamlformat (and (= 0.29.0) :with-test))
   (yojson :with-test)
   (mdx :with-test))
  (tags
