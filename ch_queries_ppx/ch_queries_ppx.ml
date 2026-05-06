@@ -445,7 +445,25 @@ and stage_expr ~params expr =
         evar ~loc ("Ch_queries.Expr." ^ name.node)
       in
       let args =
-        List.map args ~f:(fun arg -> (Nolabel, stage_expr ~params arg))
+        match name.node with
+        | "lagInFrame" | "leadInFrame" -> (
+            match args with
+            | [ x ] -> [ (Nolabel, stage_expr ~params x) ]
+            | [ x; offset ] ->
+                [
+                  (Labelled "offset", stage_expr ~params offset);
+                  (Nolabel, stage_expr ~params x);
+                ]
+            | [ x; offset; default ] ->
+                [
+                  (Labelled "offset", stage_expr ~params offset);
+                  (Labelled "default", stage_expr ~params default);
+                  (Nolabel, stage_expr ~params x);
+                ]
+            | _ ->
+                Location.raise_errorf ~loc "%s requires 1, 2, or 3 arguments"
+                  name.node)
+        | _ -> List.map args ~f:(fun arg -> (Nolabel, stage_expr ~params arg))
       in
       let args =
         match partition_by with

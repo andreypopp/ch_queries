@@ -2092,6 +2092,28 @@ module Expr : sig
   val groupUniqArray : ('n, 'a) expr -> (non_null, ('n, 'a) array) expr
   (** Creates an array from different argument values (unique). *)
 
+  (** {2 Window functions} *)
+
+  val lagInFrame :
+    ?partition_by:a_expr list ->
+    ?order_by:(a_expr * [ `ASC | `DESC ]) list ->
+    ?offset:(_, int number) expr ->
+    ?default:('n, 'a) expr ->
+    ('n, 'a) expr ->
+    ('n, 'a) expr
+  (** Returns the value evaluated at the row that is at the specified physical
+      offset before the current row within the ordered frame. *)
+
+  val leadInFrame :
+    ?partition_by:a_expr list ->
+    ?order_by:(a_expr * [ `ASC | `DESC ]) list ->
+    ?offset:(_, int number) expr ->
+    ?default:('n, 'a) expr ->
+    ('n, 'a) expr ->
+    ('n, 'a) expr
+  (** Returns the value evaluated at the row that is at the specified physical
+      offset after the current row within the ordered frame. *)
+
   (** {2 Aggregate functions with -If suffix} *)
 
   val avgIf :
