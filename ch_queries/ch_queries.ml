@@ -1297,6 +1297,25 @@ module Expr = struct
   let groupArray x = def "groupArray" [ x ]
   let groupUniqArray x = def "groupUniqArray" [ x ]
 
+  (** {2 Window functions} *)
+
+  let in_frame_window name ?partition_by ?order_by ?offset ?default x =
+    let args =
+      match (offset, default) with
+      | None, None -> [ x ]
+      | Some o, None -> [ x; o ]
+      | Some o, Some d -> [ x; o; d ]
+      | None, Some _ ->
+          failwith (name ^ ": default requires offset to be specified")
+    in
+    make_window name ?partition_by ?order_by args
+
+  let lagInFrame ?partition_by ?order_by ?offset ?default x =
+    in_frame_window "lagInFrame" ?partition_by ?order_by ?offset ?default x
+
+  let leadInFrame ?partition_by ?order_by ?offset ?default x =
+    in_frame_window "leadInFrame" ?partition_by ?order_by ?offset ?default x
+
   (** {2 Aggregate functions with -If suffix} *)
 
   let avgIf x cond = def "avgIf" [ x; cond ]
