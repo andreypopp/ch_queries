@@ -399,6 +399,31 @@ let rec stage_clause_expr ~label expr =
       (Optional label, var)
   | _ -> (Labelled label, make_hole ~loc (stage_expr ~params:[] expr))
 
+(** Label optional trailing args for window functions of shape
+    [f(x [, offset [, default]])]. Returns [Some] for matching names,
+    [None] otherwise. *)
+and stage_in_frame_args ~loc ~params name args =
+  match name with
+  | "lagInFrame" | "leadInFrame" -> (
+      match args with
+      | [ x ] -> Some [ (Nolabel, stage_expr ~params x) ]
+      | [ x; offset ] ->
+          Some
+            [
+              (Labelled "offset", stage_expr ~params offset);
+              (Nolabel, stage_expr ~params x);
+            ]
+      | [ x; offset; default ] ->
+          Some
+            [
+              (Labelled "offset", stage_expr ~params offset);
+              (Labelled "default", stage_expr ~params default);
+              (Nolabel, stage_expr ~params x);
+            ]
+      | _ ->
+          Location.raise_errorf ~loc "%s requires 1, 2, or 3 arguments" name)
+  | _ -> None
+
 and stage_expr ~params expr =
   let loc = to_location expr in
   match expr.node with
@@ -445,25 +470,10 @@ and stage_expr ~params expr =
         evar ~loc ("Ch_queries.Expr." ^ name.node)
       in
       let args =
-        match name.node with
-        | "lagInFrame" | "leadInFrame" -> (
-            match args with
-            | [ x ] -> [ (Nolabel, stage_expr ~params x) ]
-            | [ x; offset ] ->
-                [
-                  (Labelled "offset", stage_expr ~params offset);
-                  (Nolabel, stage_expr ~params x);
-                ]
-            | [ x; offset; default ] ->
-                [
-                  (Labelled "offset", stage_expr ~params offset);
-                  (Labelled "default", stage_expr ~params default);
-                  (Nolabel, stage_expr ~params x);
-                ]
-            | _ ->
-                Location.raise_errorf ~loc "%s requires 1, 2, or 3 arguments"
-                  name.node)
-        | _ -> List.map args ~f:(fun arg -> (Nolabel, stage_expr ~params arg))
+        match stage_in_frame_args ~loc ~params name.node args with
+        | Some labelled -> labelled
+        | None ->
+            List.map args ~f:(fun arg -> (Nolabel, stage_expr ~params arg))
       in
       let args =
         match partition_by with
@@ -1757,6 +1767,16 @@ and stage_expr ~params expr =
           | _ ->
               Location.raise_errorf ~loc
                 "toYearWeek requires 1, 2, or 3 arguments")
+      | Func { node = ("lagInFrame" | "leadInFrame") as name; _ } ->
+          let f = evar ~loc ("Ch_queries.Expr." ^ name) in
+          let args =
+            match stage_in_frame_args ~loc ~params name args with
+            | Some labelled -> labelled
+            | None ->
+                (* unreachable: stage_in_frame_args returns Some for these names *)
+                assert false
+          in
+          pexp_apply ~loc f args
       | Func name ->
           let f =
             let loc = to_location name in
