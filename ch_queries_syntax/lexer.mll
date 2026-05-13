@@ -367,15 +367,17 @@ and unsafe_expr buf brace_count = parse
         state.after_as <- true;
         produce lexbuf
       | false, tok ->
-        (match soft_kw_to_id tok with
-         | Some name when was_after_dot -> mark_dot (Parser.ID name)
-         | Some name ->
-           let next = next_raw lexbuf in
-           state.penging <- Some next;
-           (match next with
+        begin match soft_kw_to_id tok with
+        | Some name when was_after_dot -> mark_dot (Parser.ID name)
+        | Some name ->
+            let next = next_raw lexbuf in
+            state.penging <- Some next;
+            begin match next with
             | Parser.LPAREN -> mark_dot (Parser.ID name)
-            | _ -> mark_dot tok)
-         | None -> mark_dot tok)
+            | _ -> mark_dot tok
+            end
+        | None -> mark_dot tok
+        end
     in
     produce
 
