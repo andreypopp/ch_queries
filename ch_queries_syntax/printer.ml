@@ -563,9 +563,9 @@ and pp_query opts { node; eq = _; loc = _ } =
                 Some from;
                 prewhere;
                 where;
-                qualify;
                 group_by;
                 having;
+                qualify;
                 order_by;
                 limit_by;
                 limit;

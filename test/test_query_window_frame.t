@@ -163,6 +163,24 @@ Window frame with GROUP BY:
   FROM public.users AS users
   GROUP BY users.x
 
+Window frame mixed with GROUP BY and QUALIFY:
+
+  $ ./compile_and_run "
+  > let users = [%q {q|SELECT users.x AS x, sum(users.id)over(partition by users.x order by users.id rows between unbounded preceding and current row) AS s FROM public.users GROUP BY users.x QUALIFY sum(users.id)over(partition by users.x order by users.id rows between unbounded preceding and current row) > 0|q}];;
+  > let sql, _parse_row = Ch_queries.query users @@ fun __q -> Ch_queries.Row.ignore [%e {e|q.s|e}];;
+  > let () = print_endline sql;;
+  > " --run-only
+  >>> RUNNING
+  SELECT
+    sum(users.id) OVER (PARTITION BY users.x ORDER BY users.id ASC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+      AS s
+  FROM public.users AS users
+  GROUP BY users.x
+  QUALIFY
+  sum(users.id) OVER (PARTITION BY users.x ORDER BY users.id ASC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+  >
+  0
+
 range() still works as a function despite RANGE keyword:
 
   $ ./compile_and_run "
