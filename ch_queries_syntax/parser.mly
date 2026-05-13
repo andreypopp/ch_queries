@@ -120,7 +120,7 @@ a_from:
     FROM f=from EOF { f }
 
 query_select:
-  with_fields=with_fields? SELECT select=select FROM from=from prewhere=prewhere? where=where? qualify=qualify? group_by=group_by? having=having? order_by=order_by? limits=limit_by_and_limit offset=offset? settings=settings?
+  with_fields=with_fields? SELECT select=select FROM from=from prewhere=prewhere? where=where? group_by=group_by? having=having? qualify=qualify? order_by=order_by? limits=limit_by_and_limit offset=offset? settings=settings?
   { let limit_by, limit = limits in
     make_query $startpos $endpos (Syntax.Q_select { with_fields = Option.value with_fields ~default:[]; select; from; prewhere; where; qualify; group_by; having; order_by; limit_by; limit; offset; settings = Option.value settings ~default:[] }) }
 
