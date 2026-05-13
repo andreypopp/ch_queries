@@ -59,6 +59,14 @@
     ("STEP", STEP);
     ("TO", TO);
     ("INTERPOLATE", INTERPOLATE);
+    ("ROWS", ROWS);
+    ("RANGE", RANGE);
+    ("BETWEEN", BETWEEN);
+    ("UNBOUNDED", UNBOUNDED);
+    ("PRECEDING", PRECEDING);
+    ("FOLLOWING", FOLLOWING);
+    ("CURRENT", CURRENT);
+    ("ROW", ROW);
   ]
 
   let keyword_table = Hashtbl.create 16
@@ -146,6 +154,14 @@
     | Parser.STEP -> "STEP"
     | Parser.TO -> "TO"
     | Parser.INTERPOLATE -> "INTERPOLATE"
+    | Parser.ROWS -> "ROWS"
+    | Parser.RANGE -> "RANGE"
+    | Parser.BETWEEN -> "BETWEEN"
+    | Parser.UNBOUNDED -> "UNBOUNDED"
+    | Parser.PRECEDING -> "PRECEDING"
+    | Parser.FOLLOWING -> "FOLLOWING"
+    | Parser.CURRENT -> "CURRENT"
+    | Parser.ROW -> "ROW"
     | Parser.AS_MATERIALIZED -> "AS_MATERIALIZED"
     | Parser.AS_LPAREN -> "AS_LPAREN"
     | Parser.AS_PARAM (s, has_scope, optional) -> Printf.sprintf "AS_PARAM(%s, %b, %b)" s has_scope optional
@@ -301,35 +317,65 @@ and unsafe_expr buf brace_count = parse
   type lexstate = {
     mutable penging: Parser.token option;
     mutable after_as: bool;
+    mutable after_dot: bool;
   }
 
-  let token () = 
-    let state = {after_as=false; penging=None} in
-    let rec produce lexbuf =
+  (* "Soft" keywords introduced for window frame syntax. These collide with
+     valid identifiers (e.g. the `range` function), so we tokenize them as
+     keywords but downgrade to ID when used in a function-call or column-access
+     position. *)
+  let soft_kw_to_id = function
+    | Parser.ROWS -> Some "rows"
+    | Parser.RANGE -> Some "range"
+    | Parser.ROW -> Some "row"
+    | Parser.CURRENT -> Some "current"
+    | Parser.UNBOUNDED -> Some "unbounded"
+    | Parser.PRECEDING -> Some "preceding"
+    | Parser.FOLLOWING -> Some "following"
+    | Parser.BETWEEN -> Some "between"
+    | _ -> None
+
+  let token () =
+    let state = {after_as=false; after_dot=false; penging=None} in
+    let next_raw lexbuf =
       match state.penging with
-      | Some tok -> 
-        state.penging <- None;
-        tok
-      | None ->
-      let tok = token lexbuf in
+      | Some tok -> state.penging <- None; tok
+      | None -> token lexbuf
+    in
+    let mark_dot tok =
+      state.after_dot <- (match tok with Parser.DOT -> true | _ -> false);
+      tok
+    in
+    let rec produce lexbuf =
+      let was_after_dot = state.after_dot in
+      let tok = next_raw lexbuf in
       match state.after_as, tok with
       | true, Parser.LPAREN ->
         state.after_as <- false;
-        Parser.AS_LPAREN
+        mark_dot Parser.AS_LPAREN
       | true, Parser.ID(id) when String.(equal (uppercase_ascii id) "MATERIALIZED") ->
         state.after_as <- false;
-        Parser.AS_MATERIALIZED
+        mark_dot Parser.AS_MATERIALIZED
       | true, Parser.PARAM s ->
         state.after_as <- false;
-        Parser.AS_PARAM s
+        mark_dot (Parser.AS_PARAM s)
       | true, tok ->
         state.after_as <- false;
         state.penging <- Some tok;
-        Parser.AS
+        mark_dot Parser.AS
       | false, Parser.AS ->
         state.after_as <- true;
         produce lexbuf
-      | false, tok -> tok
+      | false, tok ->
+        (match soft_kw_to_id tok with
+         | Some name when was_after_dot -> mark_dot (Parser.ID name)
+         | Some name ->
+           let next = next_raw lexbuf in
+           state.penging <- Some next;
+           (match next with
+            | Parser.LPAREN -> mark_dot (Parser.ID name)
+            | _ -> mark_dot tok)
+         | None -> mark_dot tok)
     in
     produce
 

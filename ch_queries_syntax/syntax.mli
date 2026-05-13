@@ -43,7 +43,23 @@ and in_query = In_query of query | In_expr of expr
 and window_spec = {
   partition_by : dimension list option;
   order_by : order_by list option;
+  frame : window_frame option;
 }
+
+and window_frame = {
+  frame_kind : [ `ROWS | `RANGE ];
+  frame_start : frame_bound;
+  frame_end : frame_bound option;
+      (** [None] means the frame is just a single bound (e.g. [ROWS UNBOUNDED
+          PRECEDING]). [Some b] means [BETWEEN frame_start AND b]. *)
+}
+
+and frame_bound =
+  | Frame_unbounded_preceding
+  | Frame_preceding of expr
+  | Frame_current_row
+  | Frame_following of expr
+  | Frame_unbounded_following
 
 and interpolate_item = { interpolate_col : id; interpolate_expr : expr option }
 

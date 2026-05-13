@@ -47,6 +47,7 @@
 %token ARROW
 %token WITH
 %token FILL STEP TO INTERPOLATE
+%token ROWS RANGE BETWEEN UNBOUNDED PRECEDING FOLLOWING CURRENT ROW
 %token AS_MATERIALIZED AS_LPAREN
 %token <string * bool * bool> AS_PARAM
 %token EOF
@@ -285,11 +286,28 @@ interval_unit:
   | SECOND { Second }
 
 window_spec:
-    partition_by=partition_by? order_by=order_by?
-    { { partition_by; order_by } }
+    partition_by=partition_by? order_by=order_by? frame=window_frame?
+    { { partition_by; order_by; frame } }
 
 partition_by:
     PARTITION BY dimensions=nonempty_flex_list(COMMA, dimension) { dimensions }
+
+window_frame:
+    kind=frame_kind BETWEEN start_=frame_bound AND end_=frame_bound
+    { { frame_kind = kind; frame_start = start_; frame_end = Some end_ } }
+  | kind=frame_kind b=frame_bound
+    { { frame_kind = kind; frame_start = b; frame_end = None } }
+
+frame_kind:
+    ROWS  { `ROWS }
+  | RANGE { `RANGE }
+
+frame_bound:
+    UNBOUNDED PRECEDING { Frame_unbounded_preceding }
+  | UNBOUNDED FOLLOWING { Frame_unbounded_following }
+  | CURRENT ROW         { Frame_current_row }
+  | e=expr PRECEDING    { Frame_preceding e }
+  | e=expr FOLLOWING    { Frame_following e }
 
 from:
     f=from_one

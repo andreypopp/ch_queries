@@ -51,6 +51,21 @@ type fill = {
 type an_order_by = a_expr * [ `ASC | `DESC ] * fill option
 (** ORDER BY item with optional fill specification. *)
 
+type frame_bound =
+  [ `UNBOUNDED_PRECEDING
+  | `PRECEDING of a_expr
+  | `CURRENT_ROW
+  | `FOLLOWING of a_expr
+  | `UNBOUNDED_FOLLOWING ]
+(** A bound used in a window frame clause. *)
+
+type window_frame =
+  [ `ROWS of frame_bound * frame_bound option
+  | `RANGE of frame_bound * frame_bound option ]
+(** Window frame clause. The second component is the optional [AND end_] bound:
+    [None] means a single-bound frame ([ROWS UNBOUNDED PRECEDING]), [Some b]
+    means [ROWS BETWEEN start AND b]. *)
+
 type 'a scope =
   < query' :
       'n 'e.
@@ -2035,42 +2050,49 @@ module Expr : sig
   val avg :
     ?partition_by:a_expr list ->
     ?order_by:(a_expr * [ `ASC | `DESC ]) list ->
+    ?frame:window_frame ->
     ('n, _ number) expr ->
     (non_null, float number) expr
 
   val count :
     ?partition_by:a_expr list ->
     ?order_by:(a_expr * [ `ASC | `DESC ]) list ->
+    ?frame:window_frame ->
     ('n, _) expr ->
     (non_null, int64 number) expr
 
   val sum :
     ?partition_by:a_expr list ->
     ?order_by:(a_expr * [ `ASC | `DESC ]) list ->
+    ?frame:window_frame ->
     ('n, 't number) expr ->
     (non_null, 't number) expr
 
   val uniq :
     ?partition_by:a_expr list ->
     ?order_by:(a_expr * [ `ASC | `DESC ]) list ->
+    ?frame:window_frame ->
     ('n, _) expr ->
     (non_null, int64 number) expr
 
   val uniqExact :
     ?partition_by:a_expr list ->
     ?order_by:(a_expr * [ `ASC | `DESC ]) list ->
+    ?frame:window_frame ->
     ('n, _) expr ->
     (non_null, int64 number) expr
 
   val min :
     ?partition_by:a_expr list ->
     ?order_by:(a_expr * [ `ASC | `DESC ]) list ->
+    ?frame:window_frame ->
     ('n, 'a) expr ->
     ('n, 'a) expr
 
   val max :
     ?partition_by:a_expr list ->
     ?order_by:(a_expr * [ `ASC | `DESC ]) list ->
+    ?frame:window_frame ->
     ('n, 'a) expr ->
     ('n, 'a) expr
 
@@ -2097,6 +2119,7 @@ module Expr : sig
   val lagInFrame :
     ?partition_by:a_expr list ->
     ?order_by:(a_expr * [ `ASC | `DESC ]) list ->
+    ?frame:window_frame ->
     ?offset:(_, int number) expr ->
     ?default:('n, 'a) expr ->
     ('n, 'a) expr ->
@@ -2107,6 +2130,7 @@ module Expr : sig
   val leadInFrame :
     ?partition_by:a_expr list ->
     ?order_by:(a_expr * [ `ASC | `DESC ]) list ->
+    ?frame:window_frame ->
     ?offset:(_, int number) expr ->
     ?default:('n, 'a) expr ->
     ('n, 'a) expr ->
@@ -2244,6 +2268,7 @@ module Expr : sig
   val uniqMerge :
     ?partition_by:a_expr list ->
     ?order_by:(a_expr * [ `ASC | `DESC ]) list ->
+    ?frame:window_frame ->
     (_, (non_null, int64 number) agg_state) expr ->
     (non_null, int64 number) expr
 
@@ -2308,6 +2333,7 @@ module Expr : sig
   val uniqMergeState :
     ?partition_by:a_expr list ->
     ?order_by:(a_expr * [ `ASC | `DESC ]) list ->
+    ?frame:window_frame ->
     (_, (non_null, int64 number) agg_state) expr ->
     (non_null, (non_null, int64 number) agg_state) expr
   (** uniqMerge with State combinator. *)

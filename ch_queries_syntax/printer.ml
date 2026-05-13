@@ -107,6 +107,33 @@ let rec pp_expr opts ~parent_prec expr =
             string "ORDER BY" ^^ space
             ^^ separate (string "," ^^ space) (List.map ~f:pp_order orders)
       in
+      let pp_frame_bound = function
+        | Frame_unbounded_preceding -> string "UNBOUNDED PRECEDING"
+        | Frame_unbounded_following -> string "UNBOUNDED FOLLOWING"
+        | Frame_current_row -> string "CURRENT ROW"
+        | Frame_preceding e ->
+            pp_expr opts ~parent_prec:0 e ^^ space ^^ string "PRECEDING"
+        | Frame_following e ->
+            pp_expr opts ~parent_prec:0 e ^^ space ^^ string "FOLLOWING"
+      in
+      let pp_frame =
+        match window_spec.frame with
+        | None -> empty
+        | Some { frame_kind; frame_start; frame_end } ->
+            let kind =
+              match frame_kind with
+              | `ROWS -> string "ROWS"
+              | `RANGE -> string "RANGE"
+            in
+            let body =
+              match frame_end with
+              | None -> pp_frame_bound frame_start
+              | Some e ->
+                  string "BETWEEN" ^^ space ^^ pp_frame_bound frame_start
+                  ^^ space ^^ string "AND" ^^ space ^^ pp_frame_bound e
+            in
+            kind ^^ space ^^ body
+      in
       let pp_over_clause =
         let has_partition = Option.is_some window_spec.partition_by in
         let has_order =
@@ -114,13 +141,16 @@ let rec pp_expr opts ~parent_prec expr =
           | None | Some [] -> false
           | Some _ -> true
         in
-        let content =
-          match (has_partition, has_order) with
-          | false, false -> empty
-          | true, false -> pp_partition_by
-          | false, true -> pp_order_by
-          | true, true -> pp_partition_by ^^ space ^^ pp_order_by
+        let has_frame = Option.is_some window_spec.frame in
+        let parts =
+          List.filter_map ~f:Fun.id
+            [
+              (if has_partition then Some pp_partition_by else None);
+              (if has_order then Some pp_order_by else None);
+              (if has_frame then Some pp_frame else None);
+            ]
         in
+        let content = separate space parts in
         string "OVER" ^^ space ^^ string "(" ^^ content ^^ string ")"
       in
       group
