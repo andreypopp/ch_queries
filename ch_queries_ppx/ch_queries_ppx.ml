@@ -464,7 +464,7 @@ and stage_expr ~params expr =
         | Second -> [%expr `SECOND]
       in
       [%expr Ch_queries.interval [%e eint ~loc n] [%e unit_expr]]
-  | Syntax.E_window (name, args, { partition_by; order_by }) ->
+  | Syntax.E_window (name, args, { partition_by; order_by; frame }) ->
       let f =
         let loc = to_location name in
         evar ~loc ("Ch_queries.Expr." ^ name.node)
@@ -486,6 +486,12 @@ and stage_expr ~params expr =
         | None -> args
         | Some order_by ->
             (Labelled "order_by", stage_window_order_by ~loc order_by) :: args
+      in
+      let args =
+        match frame with
+        | None -> args
+        | Some frame ->
+            (Labelled "frame", stage_window_frame ~loc ~params frame) :: args
       in
       pexp_apply ~loc f args
   | Syntax.E_call (func, args) -> (
@@ -1931,6 +1937,29 @@ and stage_fill ~loc fill =
       fill_step = [%e fill_step];
       fill_interpolate = [%e fill_interpolate];
     }]
+
+and stage_frame_bound ~loc ~params = function
+  | Syntax.Frame_unbounded_preceding -> [%expr `UNBOUNDED_PRECEDING]
+  | Syntax.Frame_unbounded_following -> [%expr `UNBOUNDED_FOLLOWING]
+  | Syntax.Frame_current_row -> [%expr `CURRENT_ROW]
+  | Syntax.Frame_preceding e ->
+      let e = stage_expr ~params e in
+      [%expr `PRECEDING (Ch_queries.A_expr [%e e])]
+  | Syntax.Frame_following e ->
+      let e = stage_expr ~params e in
+      [%expr `FOLLOWING (Ch_queries.A_expr [%e e])]
+
+and stage_window_frame ~loc ~params { Syntax.frame_kind; frame_start; frame_end }
+    =
+  let start = stage_frame_bound ~loc ~params frame_start in
+  let end_ =
+    match frame_end with
+    | None -> [%expr None]
+    | Some b -> [%expr Some [%e stage_frame_bound ~loc ~params b]]
+  in
+  match frame_kind with
+  | `ROWS -> [%expr `ROWS ([%e start], [%e end_])]
+  | `RANGE -> [%expr `RANGE ([%e start], [%e end_])]
 
 (** Generate order_by for window functions - uses simple (a_expr * dir) tuples
 *)

@@ -64,6 +64,17 @@ and fill = {
 
 and an_order_by = a_expr * [ `ASC | `DESC ] * fill option
 
+and frame_bound =
+  [ `UNBOUNDED_PRECEDING
+  | `PRECEDING of a_expr
+  | `CURRENT_ROW
+  | `FOLLOWING of a_expr
+  | `UNBOUNDED_FOLLOWING ]
+
+and window_frame =
+  [ `ROWS of frame_bound * frame_bound option
+  | `RANGE of frame_bound * frame_bound option ]
+
 and 'scope select_payload = {
   mutable ctes : cte_query list;
   from : a_from0;
@@ -1251,9 +1262,30 @@ module Expr = struct
 
   (** {1 Aggregate functions} *)
 
-  let make_window f ?partition_by ?order_by args =
-    match (partition_by, order_by) with
-    | None, None -> def f args
+  let frame_bound_to_syntax : frame_bound -> Syntax.frame_bound = function
+    | `UNBOUNDED_PRECEDING -> Frame_unbounded_preceding
+    | `UNBOUNDED_FOLLOWING -> Frame_unbounded_following
+    | `CURRENT_ROW -> Frame_current_row
+    | `PRECEDING (A_expr e) -> Frame_preceding e
+    | `FOLLOWING (A_expr e) -> Frame_following e
+
+  let frame_to_syntax : window_frame -> Syntax.window_frame = function
+    | `ROWS (s, e) ->
+        {
+          frame_kind = `ROWS;
+          frame_start = frame_bound_to_syntax s;
+          frame_end = Option.map frame_bound_to_syntax e;
+        }
+    | `RANGE (s, e) ->
+        {
+          frame_kind = `RANGE;
+          frame_start = frame_bound_to_syntax s;
+          frame_end = Option.map frame_bound_to_syntax e;
+        }
+
+  let make_window f ?partition_by ?order_by ?frame args =
+    match (partition_by, order_by, frame) with
+    | None, None, None -> def f args
     | _ ->
         let partition_by =
           Option.map
@@ -1266,29 +1298,30 @@ module Expr = struct
                  Syntax.Order_by_expr (expr, dir, None)))
             order_by
         in
-        let window = { Syntax.partition_by; order_by } in
+        let frame = Option.map frame_to_syntax frame in
+        let window = { Syntax.partition_by; order_by; frame } in
         Syntax.make_expr (E_window (Syntax.make_id f, args, window))
 
-  let avg ?partition_by ?order_by x =
-    make_window "avg" ?partition_by ?order_by [ x ]
+  let avg ?partition_by ?order_by ?frame x =
+    make_window "avg" ?partition_by ?order_by ?frame [ x ]
 
-  let count ?partition_by ?order_by x =
-    make_window "count" ?partition_by ?order_by [ x ]
+  let count ?partition_by ?order_by ?frame x =
+    make_window "count" ?partition_by ?order_by ?frame [ x ]
 
-  let sum ?partition_by ?order_by x =
-    make_window "sum" ?partition_by ?order_by [ x ]
+  let sum ?partition_by ?order_by ?frame x =
+    make_window "sum" ?partition_by ?order_by ?frame [ x ]
 
-  let uniq ?partition_by ?order_by x =
-    make_window "uniq" ?partition_by ?order_by [ x ]
+  let uniq ?partition_by ?order_by ?frame x =
+    make_window "uniq" ?partition_by ?order_by ?frame [ x ]
 
-  let uniqExact ?partition_by ?order_by x =
-    make_window "uniqExact" ?partition_by ?order_by [ x ]
+  let uniqExact ?partition_by ?order_by ?frame x =
+    make_window "uniqExact" ?partition_by ?order_by ?frame [ x ]
 
-  let min ?partition_by ?order_by x =
-    make_window "min" ?partition_by ?order_by [ x ]
+  let min ?partition_by ?order_by ?frame x =
+    make_window "min" ?partition_by ?order_by ?frame [ x ]
 
-  let max ?partition_by ?order_by x =
-    make_window "max" ?partition_by ?order_by [ x ]
+  let max ?partition_by ?order_by ?frame x =
+    make_window "max" ?partition_by ?order_by ?frame [ x ]
 
   let any x = def "any" [ x ]
   let anyLast x = def "anyLast" [ x ]
@@ -1299,7 +1332,7 @@ module Expr = struct
 
   (** {2 Window functions} *)
 
-  let in_frame_window name ?partition_by ?order_by ?offset ?default x =
+  let in_frame_window name ?partition_by ?order_by ?frame ?offset ?default x =
     let args =
       match (offset, default) with
       | None, None -> [ x ]
@@ -1308,13 +1341,15 @@ module Expr = struct
       | None, Some _ ->
           failwith (name ^ ": default requires offset to be specified")
     in
-    make_window name ?partition_by ?order_by args
+    make_window name ?partition_by ?order_by ?frame args
 
-  let lagInFrame ?partition_by ?order_by ?offset ?default x =
-    in_frame_window "lagInFrame" ?partition_by ?order_by ?offset ?default x
+  let lagInFrame ?partition_by ?order_by ?frame ?offset ?default x =
+    in_frame_window "lagInFrame" ?partition_by ?order_by ?frame ?offset ?default
+      x
 
-  let leadInFrame ?partition_by ?order_by ?offset ?default x =
-    in_frame_window "leadInFrame" ?partition_by ?order_by ?offset ?default x
+  let leadInFrame ?partition_by ?order_by ?frame ?offset ?default x =
+    in_frame_window "leadInFrame" ?partition_by ?order_by ?frame ?offset
+      ?default x
 
   (** {2 Aggregate functions with -If suffix} *)
 
@@ -1368,8 +1403,8 @@ module Expr = struct
   let countMerge x = def "countMerge" [ x ]
   let sumMerge x = def "sumMerge" [ x ]
 
-  let uniqMerge ?partition_by ?order_by x =
-    make_window "uniqMerge" ?partition_by ?order_by [ x ]
+  let uniqMerge ?partition_by ?order_by ?frame x =
+    make_window "uniqMerge" ?partition_by ?order_by ?frame [ x ]
 
   let uniqExactMerge x = def "uniqExactMerge" [ x ]
   let minMerge x = def "minMerge" [ x ]
@@ -1391,8 +1426,8 @@ module Expr = struct
   let sumMapMergeState keys values = def "sumMapMergeState" [ keys; values ]
   let avgMergeStateIf x cond = def "avgMergeStateIf" [ x; cond ]
 
-  let uniqMergeState ?partition_by ?order_by x =
-    make_window "uniqMergeState" ?partition_by ?order_by [ x ]
+  let uniqMergeState ?partition_by ?order_by ?frame x =
+    make_window "uniqMergeState" ?partition_by ?order_by ?frame [ x ]
 
   (** {2 Join Tables / Dictionaries} *)
 
